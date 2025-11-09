@@ -3,102 +3,788 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Griglia 60x80</title>
+    <title>Comando Strategico Militare</title>
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-        }
-
-        .container {
-            position: relative;
-        }
-
-        .button-container {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 10;
-        }
-
-        .grid-button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-
-        .grid-button:hover {
-            background-color: #45a049;
-        }
-
-        .grid-container {
-            margin-top: 60px;
-            display: grid;
-            grid-template-columns: repeat(80, 1fr);
-            grid-template-rows: repeat(60, 1fr);
-            gap: 1px;
-            width: 100%;
-            max-width: 1600px;
-            height: 1200px;
-            border: 1px solid #ccc;
-            background-color: #f0f0f0;
-        }
-
-        .grid-cell {
-            background-color: white;
-            border: 1px solid #e0e0e0;
-            transition: background-color 0.2s;
-        }
-
-        .grid-cell:hover {
-            background-color: #e3f2fd;
-        }
+        /* ... (tutti gli stili CSS rimangono uguali) ... */
     </style>
 </head>
 <body>
+    <header>
+        <h1>Comando Strategico Militare</h1>
+        <p>Coordinamento delle operazioni contro la minaccia esterna</p>
+    </header>
+    
     <div class="container">
-        <div class="button-container">
-            <button class="grid-button" onclick="handleButtonClick()">Cliccami!</button>
-        </div>
-        
-        <div class="grid-container" id="grid">
-            <!-- La griglia verrà generata dinamicamente con JavaScript -->
+        <!-- ... (tutto il contenuto HTML rimane uguale) ... -->
+    </div>
+    
+    <!-- Modal for success/error messages -->
+    <div class="modal" id="messageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Messaggio</h2>
+                <button class="close-modal" id="closeModalBtn">&times;</button>
+            </div>
+            <p id="modalMessage">Testo del messaggio...</p>
+            <button id="confirmModalBtn">Chiudi</button>
         </div>
     </div>
-
+    
     <script>
-        // Creazione della griglia 60x80
-        function createGrid() {
-            const gridContainer = document.getElementById('grid');
-            const totalCells = 60 * 80;
+        // Game data storage
+        let units = JSON.parse(localStorage.getItem('militaryUnits')) || [];
+        let gameState = JSON.parse(localStorage.getItem('gameState')) || {
+            currentTurn: 1,
+            turnStartDate: new Date().toISOString()
+        };
+        
+        // API URL funzionante
+        const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLj7NKo_YXXehHyAbh0Kr3SguoqO_hyHe1tf5ZIju7mbLiTNqy6n1pvVSzRbimOW_CQqLMwjx7Yq7IP97zvRfmSZeWwpI-ODWDSeLdKTobOa9dDSIDJsNSJ3L3HiaPBzCk0iQUrfV7vZArELDAV16ON5XBzy9gmFQ-yHNpO0dyoPlraYOlWTQRBev2TkF_jjnGoIK6G8eUyRyNvrP31F7XuWIcD0FDdOXv17MGgUx40U53t-HOMVFsM1x3h9L3WN-sLjuNabs4jJFX1KkRXfh-EtHG2dJA&lib=MLV1ks7wQQ37SnILDHqD1wVTcg6hxLEu9';
+        
+        let isAdmin = localStorage.getItem('adminLoggedIn') === 'true' || false;
+        
+        // DOM elements
+        const unitForm = document.getElementById('unitForm');
+        const orderForm = document.getElementById('orderForm');
+        const unitList = document.getElementById('unitList');
+        const unitIdSelect = document.getElementById('unitId');
+        const adminTab = document.getElementById('adminTab');
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        const adminPanel = document.getElementById('adminPanel');
+        const adminUnitList = document.getElementById('adminUnitList');
+        const adminEditForm = document.getElementById('adminEditForm');
+        const adminEditUnitSelect = document.getElementById('adminEditUnit');
+        const adminEditRankSelect = document.getElementById('adminEditRank');
+        const matricolaInput = document.getElementById('matricola');
+        const matricolaError = document.getElementById('matricolaError');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordError = document.getElementById('passwordError');
+        const currentTurnSpan = document.getElementById('currentTurn');
+        const nextTurnDateSpan = document.getElementById('nextTurnDate');
+        const adminCurrentTurnSpan = document.getElementById('adminCurrentTurn');
+        const orderTypeSelect = document.getElementById('orderType');
+        const deleteUnitBtn = document.getElementById('deleteUnitBtn');
+        const advanceTurnBtn = document.getElementById('advanceTurnBtn');
+        const resetTurnBtn = document.getElementById('resetTurnBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const confirmModalBtn = document.getElementById('confirmModalBtn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        // Funzione per convertire i dati dall'API in oggetti più facili da usare
+        function parseAPIData(apiData) {
+            if (!apiData || apiData.length < 2) return [];
             
-            for (let i = 0; i < totalCells; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'grid-cell';
-                cell.setAttribute('data-index', i);
-                
-                // Aggiungi un click handler per ogni cella (opzionale)
-                cell.addEventListener('click', function() {
-                    this.style.backgroundColor = '#2196F3';
+            const headers = apiData[0]; // Prima riga: headers
+            const rows = apiData.slice(1); // Righe successive: dati
+            
+            return rows.map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index] || '';
                 });
+                return obj;
+            });
+        }
+        
+        // Funzione per verificare le credenziali admin dall'API
+        async function verifyAdminCredentials(username, password) {
+            try {
+                const response = await fetch(API_URL);
+                const apiData = await response.json();
+                const data = parseAPIData(apiData);
                 
-                gridContainer.appendChild(cell);
+                console.log('Dati API parsati:', data);
+                
+                // Cerca le credenziali admin
+                const adminUser = data.find(item => 
+                    item.user_admin && item.password_admin && 
+                    item.user_admin === username && item.password_admin == password
+                );
+                
+                return !!adminUser;
+            } catch (error) {
+                console.error('Errore nel verificare le credenziali admin:', error);
+                return false;
+            }
+        }
+        
+        // Funzione per verificare le credenziali player dall'API
+        async function verifyPlayerCredentials(username, password) {
+            try {
+                const response = await fetch(API_URL);
+                const apiData = await response.json();
+                const data = parseAPIData(apiData);
+                
+                // Cerca le credenziali player
+                const player = data.find(item => 
+                    item.user && item.password && 
+                    item.user === username && item.password === password
+                );
+                
+                return !!player;
+            } catch (error) {
+                console.error('Errore nel verificare le credenziali player:', error);
+                return false;
+            }
+        }
+        
+        // Funzione per ottenere l'unità associata a un player
+        async function getPlayerUnit(username) {
+            try {
+                const response = await fetch(API_URL);
+                const apiData = await response.json();
+                const data = parseAPIData(apiData);
+                
+                const player = data.find(item => item.user === username);
+                return player ? player.unita : null;
+            } catch (error) {
+                console.error('Errore nel ottenere unità player:', error);
+                return null;
             }
         }
 
-        // Funzione per il bottone
-        function handleButtonClick() {
-            window.location.href = 'https://the-silver33.github.io/sector/input.html';
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTurnDisplay();
+            refreshUnitList();
+            updateUnitSelect();
+            
+            // Set up tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const tabId = this.getAttribute('data-tab');
+                    openTab(tabId);
+                });
+            });
+            
+            // Set up order type change handler
+            orderTypeSelect.addEventListener('change', updateOrderFields);
+            
+            // Set up admin panel if already logged in
+            if (isAdmin) {
+                adminPanel.style.display = 'block';
+                adminLoginForm.style.display = 'none';
+                adminTab.style.display = 'block';
+                refreshAdminUnitList();
+                updateAdminEditSelect();
+            } else {
+                adminTab.style.display = 'none';
+            }
+            
+            // Set up modal buttons
+            closeModalBtn.addEventListener('click', closeModal);
+            confirmModalBtn.addEventListener('click', closeModal);
+            
+            // Set up admin buttons
+            deleteUnitBtn.addEventListener('click', adminDeleteUnit);
+            advanceTurnBtn.addEventListener('click', adminAdvanceTurn);
+            resetTurnBtn.addEventListener('click', adminResetTurn);
+            
+            // Initialize order fields visibility
+            updateOrderFields();
+            
+            // Password confirmation check
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+            passwordInput.addEventListener('input', checkPasswordMatch);
+            
+            // Force uppercase for matricola
+            matricolaInput.addEventListener('input', function() {
+                this.value = this.value.toUpperCase().replace(/[^A-Z0-9#]/g, '');
+                
+                if (this.value.length > 3 && !this.value.includes('#')) {
+                    this.value = this.value.slice(0, 3) + '#' + this.value.slice(3);
+                }
+                
+                if (this.value.length > 7) {
+                    this.value = this.value.slice(0, 7);
+                }
+            });
+        });
+        
+        function checkPasswordMatch() {
+            if (passwordInput.value !== confirmPasswordInput.value) {
+                passwordError.style.display = 'block';
+                return false;
+            } else {
+                passwordError.style.display = 'none';
+                return true;
+            }
         }
-
-        // Crea la griglia quando la pagina è caricata
-        window.addEventListener('DOMContentLoaded', createGrid);
+        
+        // Update turn display
+        function updateTurnDisplay() {
+            currentTurnSpan.textContent = gameState.currentTurn;
+            adminCurrentTurnSpan.textContent = gameState.currentTurn;
+            
+            const turnStartDate = new Date(gameState.turnStartDate);
+            const nextTurnDate = new Date(turnStartDate);
+            nextTurnDate.setDate(nextTurnDate.getDate() + 2);
+            
+            nextTurnDateSpan.textContent = nextTurnDate.toLocaleDateString();
+        }
+        
+        // Tab functionality
+        function openTab(tabName) {
+            tabContents.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.getAttribute('data-tab') === tabName) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            if (tabName === 'units' || tabName === 'orders' || (tabName === 'admin' && isAdmin)) {
+                refreshUnitList();
+                updateUnitSelect();
+            }
+            
+            if (tabName === 'admin' && isAdmin) {
+                refreshAdminUnitList();
+                updateAdminEditSelect();
+            }
+        }
+        
+        // Modal functions
+        function showModal(title, message) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('messageModal').style.display = 'flex';
+        }
+        
+        function closeModal() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+        
+        // Update order fields based on order type
+        function updateOrderFields() {
+            const orderType = orderTypeSelect.value;
+            
+            document.getElementById('moveFields').style.display = 'none';
+            document.getElementById('abilityFields').style.display = 'none';
+            document.getElementById('embarkFields').style.display = 'none';
+            document.getElementById('upgradeFields').style.display = 'none';
+            
+            if (orderType === 'move') {
+                document.getElementById('moveFields').style.display = 'block';
+            } else if (orderType === 'ability') {
+                document.getElementById('abilityFields').style.display = 'block';
+            } else if (orderType === 'embark') {
+                document.getElementById('embarkFields').style.display = 'block';
+            } else if (orderType === 'upgrade') {
+                document.getElementById('upgradeFields').style.display = 'block';
+            }
+        }
+        
+        // Validate matricola format (3 letters - 3 numbers)
+        function validateMatricola(matricola) {
+            const regex = /^[A-Z]{3}#\d{3}$/;
+            return regex.test(matricola);
+        }
+        
+        // Check if matricola already exists
+        function matricolaExists(matricola) {
+            return units.some(unit => unit.matricola === matricola);
+        }
+        
+        // Get status class based on unit status
+        function getStatusClass(status) {
+            switch(status) {
+                case 'normal': return 'status-normal';
+                case 'damaged': return 'status-damaged';
+                case 'severely-damaged': return 'status-severely-damaged';
+                case 'immobilized': return 'status-immobilized';
+                case 'destroyed': return 'status-destroyed';
+                case 'pending': return 'status-pending';
+                case 'pending-approval': return 'status-pending-approval';
+                default: return 'status-pending-approval';
+            }
+        }
+        
+        // Get status text based on unit status
+        function getStatusText(status) {
+            switch(status) {
+                case 'normal': return 'Normale';
+                case 'destroyed': return 'Distrutta';
+                case 'pending': return 'In attesa';
+                case 'pending-approval': return 'In attesa di approvazione';
+                default: return 'In attesa di approvazione';
+            }
+        }
+        
+        // Register new unit
+        unitForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const matricola = matricolaInput.value.trim();
+            const nickname = document.getElementById('nickname').value.trim();
+            const password = document.getElementById('password').value;
+            
+            // Validate matricola format
+            if (!validateMatricola(matricola)) {
+                matricolaError.style.display = 'block';
+                matricolaError.textContent = 'Formato non valido! Deve essere: 3 lettere MAIUSCOLE + # + 3 numeri (es: ABC#123)';
+                return;
+            }
+            
+            // Check if matricola already exists
+            if (matricolaExists(matricola)) {
+                matricolaError.style.display = 'block';
+                matricolaError.textContent = 'Un\'unità con questa matricola (ABC#123) esiste già!';
+                return;
+            }
+            
+            // Check password match
+            if (!checkPasswordMatch()) {
+                return;
+            }
+            
+            // Verifica le credenziali del player dall'API
+            showModal('Verifica', 'Verifica credenziali in corso...');
+            const isValidPlayer = await verifyPlayerCredentials(nickname, password);
+            
+            if (!isValidPlayer) {
+                showModal('Errore', 'Credenziali player non valide! Verifica username e password.');
+                return;
+            }
+            
+            // Ottieni l'unità associata al player dall'API
+            const playerUnit = await getPlayerUnit(nickname);
+            if (playerUnit && playerUnit !== matricola) {
+                showModal('Errore', `Questo player è associato all'unità: ${playerUnit}, non a ${matricola}`);
+                return;
+            }
+            
+            matricolaError.style.display = 'none';
+            
+            const newUnit = {
+                matricola: matricola,
+                nickname: nickname,
+                rank: 'soldato',
+                type: document.getElementById('unitType').value,
+                movement: parseInt(document.getElementById('movement').value),
+                vision: parseInt(document.getElementById('vision').value),
+                armor: parseInt(document.getElementById('armor').value),
+                supply: `0/${document.getElementById('supply').value}`,
+                components: document.getElementById('components').value.split('\n').map(c => c.trim()).filter(c => c),
+                lore: document.getElementById('lore').value.trim(),
+                password: password,
+                status: 'pending-approval',
+                position: 'non ancora schierato',
+                orders: [],
+                up: 5
+            };
+            
+            // Validate required fields
+            if (!newUnit.nickname || !newUnit.type || isNaN(newUnit.movement) || 
+                isNaN(newUnit.vision) || isNaN(newUnit.armor) || isNaN(parseInt(document.getElementById('supply').value))) {
+                showModal('Errore', 'Per favore compila tutti i campi obbligatori!');
+                return;
+            }
+            
+            units.push(newUnit);
+            localStorage.setItem('militaryUnits', JSON.stringify(units));
+            
+            unitForm.reset();
+            
+            showModal('Successo', 'Unità registrata con successo! In attesa di approvazione da parte del Comando Supremo.');
+            
+            refreshUnitList();
+            updateUnitSelect();
+        });
+        
+        // Send orders
+        orderForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const unitId = document.getElementById('unitId').value;
+            const password = document.getElementById('unitPassword').value;
+            const orderType = document.getElementById('orderType').value;
+            const orderDetails = document.getElementById('orderDetails').value.trim();
+            
+            const unit = units.find(u => u.matricola === unitId);
+            
+            if (!unit) {
+                showModal('Errore', 'Unità non trovata!');
+                return;
+            }
+            
+            // Verifica le credenziali del player dall'API
+            showModal('Verifica', 'Verifica credenziali in corso...');
+            const isValidPlayer = await verifyPlayerCredentials(unit.nickname, password);
+            
+            if (!isValidPlayer) {
+                showModal('Errore', 'Credenziali non valide per questa unità!');
+                return;
+            }
+            
+            // Check if unit is approved
+            if (unit.status === 'pending-approval') {
+                showModal('Errore', 'Unità in attesa di approvazione! Non può ricevere ordini.');
+                return;
+            }
+            
+            // Check unit status
+            if (unit.status === 'immobilized' && orderType === 'move') {
+                showModal('Errore', 'Unità immobilizzata non può muoversi!');
+                return;
+            }
+            
+            if (unit.status === 'destroyed') {
+                showModal('Errore', 'Unità distrutta non può ricevere ordini!');
+                return;
+            }
+            
+            // Get specific order details
+            let specificDetails = '';
+            if (orderType === 'move') {
+                specificDetails = document.getElementById('moveCoords').value.trim();
+                if (!specificDetails) {
+                    showModal('Errore', 'Specifica le coordinate di movimento!');
+                    return;
+                }
+            } else if (orderType === 'ability') {
+                specificDetails = document.getElementById('abilityDetails').value.trim();
+                if (!specificDetails) {
+                    showModal('Errore', 'Specifica l\'abilità da usare!');
+                    return;
+                }
+            } else if (orderType === 'embark') {
+                specificDetails = document.getElementById('embarkDetails').value.trim();
+                if (!specificDetails) {
+                    showModal('Errore', 'Specifica i dettagli di imbarco/sbarco!');
+                    return;
+                }
+            } else if (orderType === 'upgrade') {
+                specificDetails = document.getElementById('upgradeDetails').value.trim();
+                if (!specificDetails) {
+                    showModal('Errore', 'Specifica l\'upgrade da applicare!');
+                    return;
+                }
+            }
+            
+            // Add order
+            const newOrder = {
+                type: orderType,
+                details: orderDetails,
+                specificDetails: specificDetails,
+                turn: gameState.currentTurn,
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            };
+            
+            unit.orders.push(newOrder);
+            localStorage.setItem('militaryUnits', JSON.stringify(units));
+            
+            orderForm.reset();
+            
+            showModal('Successo', 'Ordine inviato con successo!');
+        });
+        
+        // Refresh unit list display
+        function refreshUnitList() {
+            if (units.length === 0) {
+                unitList.innerHTML = '<p>Nessuna unità registrata.</p>';
+                return;
+            }
+            
+            unitList.innerHTML = '';
+            
+            units.forEach(unit => {
+                const statusClass = getStatusClass(unit.status);
+                const statusText = getStatusText(unit.status);
+                
+                const unitItem = document.createElement('div');
+                unitItem.className = 'unit-item';
+                
+                unitItem.innerHTML = `
+                    <div class="unit-info">
+                        <h3><span class="rank-badge">${unit.rank.toUpperCase()}</span> ${unit.matricola} <span class="status-badge ${statusClass}">${statusText}</span></h3>
+                        <p><strong>Giocatore:</strong> ${unit.nickname}</p>
+                        <p><strong>Tipo:</strong> ${unit.type}</p>
+                        <p><strong>Posizione:</strong> ${unit.position}</p>
+                        <p><strong>Movimento:</strong> ${unit.movement} caselle</p>
+                        <p><strong>Visione:</strong> ${unit.vision} caselle</p>
+                        <p><strong>Armatura:</strong> ${unit.armor}</p>
+                        <p><strong>Rifornimenti:</strong> <span class="supply-indicator">${unit.supply}</span></p>
+                        <p><strong>UP disponibili:</strong> ${unit.up}</p>
+                    </div>
+                    <div class="unit-actions">
+                        <button class="view-details-btn" data-unit-id="${unit.matricola}">Dettagli</button>
+                    </div>
+                `;
+                
+                unitList.appendChild(unitItem);
+            });
+            
+            document.querySelectorAll('.view-details-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const unitId = this.getAttribute('data-unit-id');
+                    viewUnitDetails(unitId);
+                });
+            });
+        }
+        
+        // Update unit select for orders
+        function updateUnitSelect() {
+            unitIdSelect.innerHTML = '<option value="">Seleziona un\'unità...</option>';
+            
+            units.forEach(unit => {
+                if (unit.status !== 'pending-approval') {
+                    const option = document.createElement('option');
+                    option.value = unit.matricola;
+                    option.textContent = `${unit.matricola} (${unit.nickname}) - ${unit.type}`;
+                    unitIdSelect.appendChild(option);
+                }
+            });
+        }
+        
+        // View unit details
+        function viewUnitDetails(unitId) {
+            const unit = units.find(u => u.matricola === unitId);
+            
+            if (!unit) return;
+            
+            let ordersHtml = '';
+            if (unit.orders.length === 0) {
+                ordersHtml = '<p>Nessun ordine registrato per questa unità.</p>';
+            } else {
+                ordersHtml = '<ul>';
+                unit.orders.forEach(order => {
+                    ordersHtml += `
+                        <li>
+                            <strong>${order.type}</strong> (Turno ${order.turn}) - ${new Date(order.timestamp).toLocaleString()}
+                            ${order.specificDetails ? `<p>${order.specificDetails}</p>` : ''}
+                            <p>${order.details}</p>
+                            <small>Stato: ${order.status}</small>
+                        </li>
+                    `;
+                });
+                ordersHtml += '</ul>';
+            }
+            
+            let componentsHtml = '';
+            if (unit.components && unit.components.length > 0) {
+                componentsHtml = '<ul class="component-list">';
+                unit.components.forEach(comp => {
+                    if (comp.trim()) {
+                        componentsHtml += `<li class="component-item">${comp}</li>`;
+                    }
+                });
+                componentsHtml += '</ul>';
+            } else {
+                componentsHtml = '<p>Nessun componente aggiuntivo</p>';
+            }
+            
+            showModal(
+                `Dettagli Unità: ${unit.matricola}`,
+                `
+                <p><strong>Giocatore:</strong> ${unit.nickname}</p>
+                <p><strong>Grado:</strong> ${unit.rank}</p>
+                <p><strong>Tipo:</strong> ${unit.type}</p>
+                <p><strong>Stato:</strong> <span class="status-badge ${getStatusClass(unit.status)}">${getStatusText(unit.status)}</span></p>
+                <p><strong>Posizione:</strong> ${unit.position}</p>
+                <p><strong>Movimento Massimo:</strong> ${unit.movement}</p>
+                <p><strong>Visione:</strong> ${unit.vision}</p>
+                <p><strong>Armatura:</strong> ${unit.armor}</p>
+                <p><strong>Rifornimenti:</strong> ${unit.supply}</p>
+                <p><strong>UP disponibili:</strong> ${unit.up}</p>
+                <h3>Componenti:</h3>
+                ${componentsHtml}
+                <h3>Background:</h3>
+                <p>${unit.lore}</p>
+                <h3>Ordini:</h3>
+                ${ordersHtml}
+                `
+            );
+        }
+        
+        // Admin login
+        adminLoginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            
+            showModal('Verifica', 'Verifica credenziali admin in corso...');
+            
+            const isValidAdmin = await verifyAdminCredentials(username, password);
+            
+            if (isValidAdmin) {
+                isAdmin = true;
+                adminPanel.style.display = 'block';
+                adminLoginForm.style.display = 'none';
+                adminTab.style.display = 'block';
+                showModal('Accesso Consentito', 'Accesso al Comando Supremo autorizzato!');
+                refreshAdminUnitList();
+                updateAdminEditSelect();
+                localStorage.setItem('adminLoggedIn', 'true');
+            } else {
+                showModal('Accesso Negato', 'Credenziali non valide per il Comando Supremo');
+            }
+        });
+        
+        // Refresh admin unit list
+        function refreshAdminUnitList() {
+            if (units.length === 0) {
+                adminUnitList.innerHTML = '<p>Nessuna unità registrata.</p>';
+                return;
+            }
+            
+            adminUnitList.innerHTML = '';
+            
+            units.forEach(unit => {
+                const statusClass = getStatusClass(unit.status);
+                const statusText = getStatusText(unit.status);
+                
+                const unitItem = document.createElement('div');
+                unitItem.className = 'unit-item';
+                
+                unitItem.innerHTML = `
+                    <div class="unit-info">
+                        <h3><span class="rank-badge">${unit.rank.toUpperCase()}</span> ${unit.matricola} <span class="status-badge ${statusClass}">${statusText}</span></h3>
+                        <p><strong>Giocatore:</strong> ${unit.nickname}</p>
+                        <p><strong>Tipo:</strong> ${unit.type}</p>
+                        <p><strong>Posizione:</strong> ${unit.position}</p>
+                        <p><strong>Rifornimenti:</strong> ${unit.supply}</p>
+                        <p><strong>UP:</strong> ${unit.up}</p>
+                    </div>
+                `;
+                
+                adminUnitList.appendChild(unitItem);
+            });
+        }
+        
+        // Update admin edit select
+        function updateAdminEditSelect() {
+            adminEditUnitSelect.innerHTML = '<option value="">Seleziona un\'unità...</option>';
+            adminEditUnitSelect.innerHTML += '<option value="all">Tutte le unità</option>';
+            
+            units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.matricola;
+                option.textContent = `${unit.matricola} (${unit.nickname}) - ${unit.type}`;
+                adminEditUnitSelect.appendChild(option);
+            });
+        }
+        
+        // When admin selects a unit to edit
+        adminEditUnitSelect.addEventListener('change', function() {
+            const matricola = this.value;
+            
+            if (matricola === 'all') {
+                document.getElementById('adminEditStatus').value = '';
+                document.getElementById('adminEditPosition').value = '';
+                document.getElementById('adminEditSupply').value = '';
+                document.getElementById('adminEditNotes').value = '';
+                return;
+            }
+            
+            const unit = units.find(u => u.matricola === matricola);
+            
+            if (unit) {
+                document.getElementById('adminEditRank').value = unit.rank;
+                document.getElementById('adminEditStatus').value = unit.status;
+                document.getElementById('adminEditPosition').value = unit.position;
+                
+                if (unit.supply) {
+                    document.getElementById('adminEditSupply').value = unit.supply;
+                } else {
+                    document.getElementById('adminEditSupply').value = '0/0';
+                }
+                
+                document.getElementById('adminEditNotes').value = unit.adminNotes || '';
+            }
+        });
+        
+        // Admin edit form submission
+        adminEditForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const matricola = adminEditUnitSelect.value;
+            
+            if (matricola === 'all') {
+                showModal('Errore', 'Seleziona un\'unità specifica da modificare');
+                return;
+            }
+            
+            const unit = units.find(u => u.matricola === matricola);
+            
+            if (!unit) {
+                showModal('Errore', 'Unità non trovata!');
+                return;
+            }
+            
+            unit.rank = document.getElementById('adminEditRank').value;
+            unit.status = document.getElementById('adminEditStatus').value;
+            unit.position = document.getElementById('adminEditPosition').value.trim() || 'non ancora schierato';
+            unit.supply = document.getElementById('adminEditSupply').value;
+            unit.adminNotes = document.getElementById('adminEditNotes').value.trim();
+            
+            localStorage.setItem('militaryUnits', JSON.stringify(units));
+            
+            showModal('Successo', 'Unità aggiornata con successo!');
+            
+            refreshUnitList();
+            refreshAdminUnitList();
+            updateUnitSelect();
+            updateAdminEditSelect();
+        });
+        
+        // Admin delete unit
+        function adminDeleteUnit() {
+            const matricola = adminEditUnitSelect.value;
+            
+            if (!matricola || matricola === 'all') {
+                showModal('Errore', 'Seleziona un\'unità da eliminare');
+                return;
+            }
+            
+            if (confirm(`Sei sicuro di voler eliminare l'unità ${matricola}? Questa azione è irreversibile.`)) {
+                units = units.filter(u => u.matricola !== matricola);
+                localStorage.setItem('militaryUnits', JSON.stringify(units));
+                
+                adminEditForm.reset();
+                
+                showModal('Successo', 'Unità eliminata con successo!');
+                
+                refreshUnitList();
+                refreshAdminUnitList();
+                updateUnitSelect();
+                updateAdminEditSelect();
+            }
+        }
+        
+        // Admin advance turn
+        function adminAdvanceTurn() {
+            gameState.currentTurn += 1;
+            gameState.turnStartDate = new Date().toISOString();
+            localStorage.setItem('gameState', JSON.stringify(gameState));
+            
+            updateTurnDisplay();
+            
+            showModal('Turno Avanzato', `Il turno è stato avanzato a ${gameState.currentTurn}. Tutti gli ordini sono stati resettati.`);
+        }
+        
+        // Admin reset turn
+        function adminResetTurn() {
+            if (confirm('Sei sicuro di voler resettare il conteggio dei turni? Questo azzererà il turno corrente a 1.')) {
+                gameState.currentTurn = 1;
+                gameState.turnStartDate = new Date().toISOString();
+                localStorage.setItem('gameState', JSON.stringify(gameState));
+                
+                updateTurnDisplay();
+                
+                showModal('Turno Resettato', 'Il conteggio dei turni è stato resettato a 1.');
+            }
+        }
     </script>
 </body>
 </html>

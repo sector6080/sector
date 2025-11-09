@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Griglia 60x80</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            position: relative;
+        }
+
+        .button-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+        }
+
+        .grid-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .grid-button:hover {
+            background-color: #45a049;
+        }
+
+        .grid-container {
+            margin-top: 60px;
+            display: grid;
+            grid-template-columns: repeat(80, 1fr);
+            grid-template-rows: repeat(60, 1fr);
+            gap: 1px;
+            width: 100%;
+            max-width: 1600px;
+            height: 1200px;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+        }
+
+        .grid-cell {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            transition: background-color 0.2s;
+        }
+
+        .grid-cell:hover {
+            background-color: #e3f2fd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="button-container">
+            <button class="grid-button" onclick="handleButtonClick()">Cliccami!</button>
+        </div>
+        
+        <div class="grid-container" id="grid">
+            <!-- La griglia verrà generata dinamicamente con JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Creazione della griglia 60x80
+        function createGrid() {
+            const gridContainer = document.getElementById('grid');
+            const totalCells = 60 * 80;
+            
+            for (let i = 0; i < totalCells; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.setAttribute('data-index', i);
+                
+                // Aggiungi un click handler per ogni cella (opzionale)
+                cell.addEventListener('click', function() {
+                    this.style.backgroundColor = '#2196F3';
+                });
+                
+                gridContainer.appendChild(cell);
+            }
+        }
+
+        // Funzione per il bottone
+        function handleButtonClick() {
+            window.location.href = 'https://the-silver33.github.io/sector/input.html';
+        }
+
+        // Crea la griglia quando la pagina è caricata
+        window.addEventListener('DOMContentLoaded', createGrid);
+    </script>
+</body>
+</html>
