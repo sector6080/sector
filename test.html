@@ -5,7 +5,344 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comando Strategico Militare</title>
     <style>
-        /* ... (tutti gli stili CSS rimangono uguali) ... */
+        :root {
+            --primary: #1a472a;
+            --secondary: #2d3436;
+            --accent: #2ecc71;
+            --light: #dfe6e9;
+            --dark: #0a1a12;
+            --status-normal: #27ae60;
+            --status-damaged: #f39c12;
+            --status-severely-damaged: #e67e22;
+            --status-immobilized: #e74c3c;
+            --status-destroyed: #7f8c8d;
+            --status-pending: #3498db;
+            --status-pending-approval: #9b59b6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--dark);
+            color: var(--light);
+            line-height: 1.6;
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .card {
+            background-color: var(--secondary);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            transition: transform 0.3s ease;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h2 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: var(--light);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #3d4a4e;
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: #3d4a4e;
+            color: var(--light);
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        button {
+            background-color: var(--accent);
+            color: var(--dark);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+        }
+        
+        button.secondary {
+            background-color: var(--secondary);
+            color: var(--light);
+            border: 1px solid var(--accent);
+        }
+        
+        .unit-list {
+            margin-top: 2rem;
+        }
+        
+        .unit-item {
+            background-color: var(--secondary);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .unit-info {
+            flex: 1;
+        }
+        
+        .unit-actions {
+            margin-left: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            color: white;
+        }
+        
+        .status-normal {
+            background-color: var(--status-normal);
+        }
+        
+        .status-damaged {
+            background-color: var(--status-damaged);
+        }
+        
+        .status-severely-damaged {
+            background-color: var(--status-severely-damaged);
+        }
+        
+        .status-immobilized {
+            background-color: var(--status-immobilized);
+        }
+        
+        .status-destroyed {
+            background-color: var(--status-destroyed);
+        }
+        
+        .status-pending {
+            background-color: var(--status-pending);
+        }
+        
+        .status-pending-approval {
+            background-color: var(--status-pending-approval);
+        }
+        
+        .rank-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .unit-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .unit-actions {
+                margin-left: 0;
+                margin-top: 1rem;
+                width: 100%;
+            }
+            
+            .unit-actions button {
+                width: 100%;
+            }
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: var(--secondary);
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            border-top: 4px solid var(--accent);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--light);
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #3d4a4e;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: var(--light);
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            border-bottom-color: var(--accent);
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .tab:hover:not(.active) {
+            border-bottom-color: #3d4a4e;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Admin section */
+        .admin-section {
+            background-color: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .admin-section h2 {
+            color: #e74c3c;
+        }
+        
+        /* Error message */
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+        
+        /* Login form */
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        /* Supply indicator */
+        .supply-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background-color: #34495e;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        /* Component list */
+        .component-list {
+            list-style-type: none;
+            margin-top: 0.5rem;
+        }
+        
+        .component-item {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #3d4a4e;
+        }
+        
+        .required-field::after {
+            content: " *";
+            color: #e74c3c;
+        }
     </style>
 </head>
 <body>
@@ -15,7 +352,245 @@
     </header>
     
     <div class="container">
-        <!-- ... (tutto il contenuto HTML rimane uguale) ... -->
+        <div class="tabs">
+            <div class="tab active" data-tab="register">Registra Unità</div>
+            <div class="tab" data-tab="orders">Invia Ordini</div>
+            <div class="tab" data-tab="units">Unità Registrate</div>
+            <div class="tab" data-tab="admin" id="adminTab">Comando Supremo</div>
+        </div>
+        
+        <div id="register" class="tab-content active">
+            <div class="card">
+                <h2>Registra Nuova Unità</h2>
+                <form id="unitForm">
+                    <div class="form-group">
+                        <label for="matricola" class="required-field">Matricola:</label>
+                        <input type="text" id="matricola" required placeholder="Es: ABC#123 (3 lettere - # - 3 numeri)" pattern="[A-Za-z]{3}#\d{3}" title="Inserire 3 lettere seguite da # e 3 numeri (es: ABC#123)">
+                        <div class="error-message" id="matricolaError">Formato non valido o codice già esistente</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nickname" class="required-field">Nome Giocatore:</label>
+                        <input type="text" id="nickname" required placeholder="Il tuo nome in gioco">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="unitType" class="required-field">Tipo Unità:</label>
+                        <select id="unitType" required>
+                            <option value="">Seleziona...</option>
+                            <option value="fanteria">Fanteria</option>
+                            <option value="ingegneri">Ingegneri</option>
+                            <option value="motorizzata">Motorizzata</option>
+                            <option value="artiglieria">Artiglieria</option>
+                            <option value="aerei">Aerei</option>
+                            <option value="elite">Elite</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="movement" class="required-field">Movimento (caselle/turno):</label>
+                        <input type="number" id="movement" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="vision" class="required-field">Visione (raggio in caselle):</label>
+                        <input type="number" id="vision" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="armor" class="required-field">Armatura:</label>
+                        <input type="number" id="armor" min="0" max="10" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="supply" class="required-field">Capacità Rifornimenti:</label>
+                        <input type="number" id="supply" min="0" max="10" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="components" class="required-field">Componenti:</label>
+                        <textarea id="components" rows="3" required placeholder="Copiare e incollare qua dalla lista moduli (un componente per riga)"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lore" class="required-field">Background Unità:</label>
+                        <textarea id="lore" rows="3" required placeholder="Come si è formata? Perché combatte?"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password" class="required-field">Password Unità:</label>
+                        <input type="password" id="password" required placeholder="Non dimenticare la password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword" class="required-field">Conferma Password:</label>
+                        <input type="password" id="confirmPassword" required placeholder="Conferma la password">
+                        <div class="error-message" id="passwordError">Le password non coincidono</div>
+                    </div>
+                    
+                    <button type="submit">Registra Unità</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="orders" class="tab-content">
+            <div class="card">
+                <h2>Invia Ordini</h2>
+                <p class="supply-indicator">Turno corrente: <span id="currentTurn">1</span> - Prossimo turno: <span id="nextTurnDate"></span></p>
+                
+                <form id="orderForm">
+                    <div class="form-group">
+                        <label for="unitId">Seleziona Unità:</label>
+                        <select id="unitId" required>
+                            <option value="">Seleziona un'unità...</option>
+                            <!-- Unit options will be added dynamically -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="unitPassword">Password Unità:</label>
+                        <input type="password" id="unitPassword" required placeholder="Inserisci la password dell'unità">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="orderType">Tipo di Ordine:</label>
+                        <select id="orderType" required>
+                            <option value="">Seleziona...</option>
+                            <option value="move">Movimento</option>
+                            <option value="ability">Abilità</option>
+                            <option value="embark">Salire/Scendere</option>
+                            <option value="upgrade">Upgrade</option>
+                            <option value="recover">Ripristinarsi</option>
+                            <option value="cover">Coprirsi</option>
+                            <option value="recon">Ricognizione</option>
+                            <option value="camouflage">Camuffarsi</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="moveFields" style="display:none;">
+                        <label for="moveCoords">Coordinate di Movimento (es: G5 -> G8):</label>
+                        <input type="text" id="moveCoords" placeholder="Formato: A1 -> B2">
+                    </div>
+                    
+                    <div class="form-group" id="abilityFields" style="display:none;">
+                        <label for="abilityDetails">Specifica Abilità:</label>
+                        <input type="text" id="abilityDetails" placeholder="Descrivi l'abilità da usare">
+                    </div>
+                    
+                    <div class="form-group" id="embarkFields" style="display:none;">
+                        <label for="embarkDetails">Dettagli Imbarco/Sbarco:</label>
+                        <input type="text" id="embarkDetails" placeholder="Specifica il veicolo o la posizione">
+                    </div>
+                    
+                    <div class="form-group" id="upgradeFields" style="display:none;">
+                        <label for="upgradeDetails">Upgrade da applicare:</label>
+                        <input type="text" id="upgradeDetails" placeholder="Descrivi l'upgrade">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="orderDetails">Note Aggiuntive:</label>
+                        <textarea id="orderDetails" rows="3" placeholder="Eventuali dettagli aggiuntivi..."></textarea>
+                    </div>
+                    
+                    <button type="submit">Invia Ordine</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="units" class="tab-content">
+            <h2>Unità Registrate</h2>
+            <div class="unit-list" id="unitList">
+                <!-- Unit items will be added dynamically -->
+                <p>Nessuna unità registrata.</p>
+            </div>
+        </div>
+        
+        <div id="admin" class="tab-content">
+            <div class="card">
+                <h2>Accesso Comando Supremo</h2>
+                <form id="adminLoginForm" class="login-form">
+                    <div class="form-group">
+                        <label for="adminUsername">Username:</label>
+                        <input type="text" id="adminUsername" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adminPassword">Password:</label>
+                        <input type="password" id="adminPassword" required>
+                    </div>
+                    
+                    <button type="submit">Accedi</button>
+                </form>
+                
+                <div id="adminPanel" style="display:none;">
+                    <h2>Pannello Comando Supremo</h2>
+                    <div class="admin-section">
+                        <h3>Tutte le Unità Registrate</h3>
+                        <div class="unit-list" id="adminUnitList">
+                            <!-- All units will be listed here -->
+                        </div>
+                    </div>
+                    
+                    <div class="admin-section">
+                        <h3>Gestione Unità</h3>
+                        <form id="adminEditForm">
+                            <div class="form-group">
+                                <label for="adminEditUnit">Seleziona Unità:</label>
+                                <select id="adminEditUnit" required>
+                                    <option value="">Seleziona un'unità...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="adminEditRank">Grado/Ruolo:</label>
+                                <select id="adminEditRank">
+                                    <option value="soldato">Soldato</option>
+                                    <option value="caporale">Caporale</option>
+                                    <option value="capitano">Capitano</option>
+                                    <option value="presidente">Presidente del Congresso</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="adminEditStatus">Stato Unità:</label>
+                                <select id="adminEditStatus">
+                                    <option value="pending-approval">In attesa di approvazione</option>
+                                    <option value="normal">Normale</option>
+                                    <option value="destroyed">Distrutta</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="adminEditPosition">Posizione (y,x):</label>
+                                <input type="text" id="adminEditPosition" placeholder="es: G5">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="adminEditSupply">Rifornimenti (attuali/totali):</label>
+                                <input type="text" id="adminEditSupply" placeholder="es: 3/5">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="adminEditNotes">Note Comando:</label>
+                                <textarea id="adminEditNotes" rows="2"></textarea>
+                            </div>
+                            
+                            <button type="submit" class="secondary">Salva Modifiche</button>
+                            <button type="button" id="deleteUnitBtn" style="background-color: #e74c3c;">Elimina Unità</button>
+                        </form>
+                    </div>
+                    
+                    <div class="admin-section">
+                        <h3>Gestione Turno</h3>
+                        <div class="form-group">
+                            <label>Numero Turno Corrente: <span id="adminCurrentTurn">1</span></label>
+                        </div>
+                        <button id="advanceTurnBtn">Avanza Turno</button>
+                        <button id="resetTurnBtn" class="secondary">Resetta Turno</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Modal for success/error messages -->
