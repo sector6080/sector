@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mappa di Gioco - Google Sheets</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            border-bottom: 5px solid #f39c12;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        
+        .map-section {
+            flex: 3;
+            min-width: 300px;
+            padding: 15px;
+        }
+        
+        .controls-section {
+            flex: 1;
+            min-width: 300px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            margin-left: 15px;
+        }
+        
+        .map-container {
+            border: 3px solid #2c3e50;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 70vh;
+            background-color: #ecf0f1;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        #mapGrid {
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        
+        #mapGrid td {
+            width: 12px;
+            height: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        #mapGrid td:hover {
+            transform: scale(1.3);
+            z-index: 10;
+            position: relative;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+        }
+        
+        .controls {
+            margin-bottom: 25px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f39c12;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 14px;
+        }
+        
+        button:hover {
+            background: linear-gradient(to right, #2980b9, #3498db);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #7f8c8d;
+            border-radius: 4px;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .success {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .coordinates {
+            margin-top: 15px;
+            padding: 10px;
+            background: #2c3e50;
+            color: white;
+            border-radius: 6px;
+            text-align: center;
+            font-family: monospace;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .controls-section {
+                margin-left: 0;
+                margin-top: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Mappa di Gioco</h1>
+            <p class="subtitle">Mappa 60x80 generata da Google Sheets</p>
+        </header>
+        
+        <div class="content">
+            <div class="map-section">
+                <h2>Visualizzazione Mappa</h2>
+                <div class="map-container">
+                    <table id="mapGrid"></table>
+                </div>
+                <div class="coordinates" id="coordinates">Coordinate: -</div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="controls">
+                    <h2>Configurazione</h2>
+                    
+                    <div class="control-group">
+                        <h3>Collegamento a Google Sheets</h3>
+                        <label for="sheetUrl">URL del Foglio di Calcolo:</label>
+                        <input type="text" id="sheetUrl" placeholder="Incolla l'URL del tuo Google Sheet">
+                        
+                        <label for="sheetName">Nome del Foglio (opzionale):</label>
+                        <input type="text" id="sheetName" placeholder="Lasciare vuoto per il primo foglio">
+                        
+                        <label for="apiKey">API Key (opzionale):</label>
+                        <input type="text" id="apiKey" placeholder="Per fogli non pubblici">
+                        
+                        <button id="loadData">Carica Dati dalla Sheet</button>
+                    </div>
+                    
+                    <div class="control-group">
+                        <h3>Informazioni Mappa</h3>
+                        <div id="statusMessage" class="status">Inserisci l'URL del Google Sheet e clicca "Carica Dati"</div>
+                        
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #90EE90;"></div>
+                                <span>Pianura (P)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #8B4513;"></div>
+                                <span>Montagna (M)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #1E90FF;"></div>
+                                <span>Acqua (A)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #808080;"></div>
+                                <span>Ponte (B)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #FFD700;"></div>
+                                <span>Tesoro (T)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background-color: #228B22;"></div>
+                                <span>Foresta (F)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Mappa di Gioco &copy; 2023 - Dati caricati da Google Sheets</p>
+        </footer>
+    </div>
+
+    <script>
+        // Definizione dei tipi di terreno e dei loro colori
+        const terrainTypes = {
+            'P': { name: 'Pianura', color: '#90EE90' },
+            'M': { name: 'Montagna', color: '#8B4513' },
+            'F': { name: 'Foresta', color: '#228B22' },
+            'A': { name: 'Acqua', color: '#1E90FF' },
+            'D': { name: 'Deserto', color: '#F0E68C' },
+            'S': { name: 'Spiaggia', color: '#F5DEB3' },
+            'G': { name: 'Ghiacciaio', color: '#E6F3FF' },
+            'V': { name: 'Vulcano', color: '#8B0000' },
+            'C': { name: 'Città', color: '#FFA500' },
+            'B': { name: 'Ponte', color: '#808080' },
+            'T': { name: 'Tesoro', color: '#FFD700' },
+            'X': { name: 'Area Speciale', color: '#BA55D3' }
+        };
+
+        // Elementi DOM
+        const sheetUrlInput = document.getElementById('sheetUrl');
+        const sheetNameInput = document.getElementById('sheetName');
+        const apiKeyInput = document.getElementById('apiKey');
+        const loadDataButton = document.getElementById('loadData');
+        const mapGrid = document.getElementById('mapGrid');
+        const statusMessage = document.getElementById('statusMessage');
+        const coordinatesDisplay = document.getElementById('coordinates');
+
+        // Inizializza la griglia della mappa
+        function initializeMapGrid() {
+            mapGrid.innerHTML = '';
+            
+            for (let row = 0; row < 60; row++) {
+                const tr = document.createElement('tr');
+                
+                for (let col = 0; col < 80; col++) {
+                    const td = document.createElement('td');
+                    td.dataset.row = row;
+                    td.dataset.col = col;
+                    td.title = `Coordinate: (${row}, ${col}) - Nessun dato`;
+                    
+                    // Aggiungi event listener per il passaggio del mouse
+                    td.addEventListener('mouseover', function() {
+                        coordinatesDisplay.textContent = `Coordinate: (${row}, ${col}) - ${this.title.split(' - ')[1]}`;
+                    });
+                    
+                    tr.appendChild(td);
+                }
+                
+                mapGrid.appendChild(tr);
+            }
+            
+            statusMessage.textContent = 'Mappa inizializzata. Carica i dati da Google Sheets.';
+            statusMessage.className = 'status success';
+        }
+
+        // Estrae l'ID del foglio dall'URL
+        function extractSheetId(url) {
+            const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+            return match ? match[1] : null;
+        }
+
+        // Carica i dati da Google Sheets
+        async function loadDataFromSheet() {
+            const sheetUrl = sheetUrlInput.value.trim();
+            const sheetName = sheetNameInput.value.trim() || 'Sheet1';
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (!sheetUrl) {
+                statusMessage.textContent = 'Inserisci un URL valido di Google Sheets.';
+                statusMessage.className = 'status error';
+                return;
+            }
+            
+            const sheetId = extractSheetId(sheetUrl);
+            if (!sheetId) {
+                statusMessage.textContent = 'URL non valido. Assicurati di usare un URL di Google Sheets.';
+                statusMessage.className = 'status error';
+                return;
+            }
+            
+            statusMessage.textContent = 'Caricamento dati in corso...';
+            statusMessage.className = 'status loading';
+            
+            try {
+                // Costruisci l'URL per l'API di Google Sheets
+                let url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?`;
+                
+                if (apiKey) {
+                    url += `key=${apiKey}`;
+                } else {
+                    // Se non c'è API key, assumiamo che il foglio sia pubblico
+                    url += `valueRenderOption=UNFORMATTED_VALUE&majorDimension=ROWS`;
+                }
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    throw new Error(`Errore nel caricamento: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.values || data.values.length === 0) {
+                    throw new Error('Nessun dato trovato nel foglio specificato.');
+                }
+                
+                // Aggiorna la mappa con i dati
+                updateMapWithData(data.values);
+                
+                statusMessage.textContent = `Dati caricati con successo! Righe: ${data.values.length}`;
+                statusMessage.className = 'status success';
+                
+            } catch (error) {
+                console.error('Errore:', error);
+                statusMessage.textContent = `Errore: ${error.message}`;
+                statusMessage.className = 'status error';
+            }
+        }
+
+        // Aggiorna la mappa con i dati ricevuti
+        function updateMapWithData(data) {
+            for (let row = 0; row < 60; row++) {
+                for (let col = 0; col < 80; col++) {
+                    const cell = mapGrid.rows[row].cells[col];
+                    let terrainCode = 'P'; // Default: Pianura
+                    
+                    // Se abbiamo dati per questa riga e colonna
+                    if (data[row] && data[row][col] !== undefined) {
+                        terrainCode = data[row][col].toString().charAt(0).toUpperCase();
+                    }
+                    
+                    // Applica il colore in base al tipo di terreno
+                    const terrain = terrainTypes[terrainCode] || terrainTypes['P'];
+                    cell.style.backgroundColor = terrain.color;
+                    cell.title = `Coordinate: (${row}, ${col}) - ${terrain.name}`;
+                }
+            }
+        }
+
+        // Esempio di dati per test (se non si ha un Google Sheets)
+        function loadExampleData() {
+            statusMessage.textContent = 'Caricamento dati di esempio...';
+            statusMessage.className = 'status loading';
+            
+            // Simula un ritardo di caricamento
+            setTimeout(() => {
+                // Crea dati di esempio
+                const exampleData = [];
+                for (let row = 0; row < 60; row++) {
+                    const rowData = [];
+                    for (let col = 0; col < 80; col++) {
+                        // Crea un modello di terreno interessante
+                        if (row < 10 || row > 50 || col < 10 || col > 70) {
+                            rowData.push('A'); // Acqua ai bordi
+                        } else if (row > 20 && row < 40 && col > 30 && col < 50) {
+                            rowData.push('M'); // Montagna al centro
+                        } else if ((row + col) % 7 === 0) {
+                            rowData.push('F'); // Foreste sparse
+                        } else if ((row * col) % 11 === 0) {
+                            rowData.push('B'); // Ponti sparsi
+                        } else if (row === 30 && col > 15 && col < 65) {
+                            rowData.push('B'); // Un ponte orizzontale
+                        } else if (col === 40 && row > 10 && row < 50) {
+                            rowData.push('B'); // Un ponte verticale
+                        } else if ((row * col) % 23 === 0) {
+                            rowData.push('T'); // Tesori sparsi
+                        } else {
+                            rowData.push('P'); // Pianura
+                        }
+                    }
+                    exampleData.push(rowData);
+                }
+                
+                updateMapWithData(exampleData);
+                
+                statusMessage.textContent = 'Dati di esempio caricati con successo!';
+                statusMessage.className = 'status success';
+                
+                // Inserisci un URL di esempio
+                sheetUrlInput.value = 'https://docs.google.com/spreadsheets/d/1Uoz5xYisxmd7uUUIFrsAX-yZ4mckYSUdSopG2pNaL1k/edit?gid=0#gid=0';
+            }, 1500);
+        }
+
+        // Aggiungi event listeners
+        loadDataButton.addEventListener('click', loadDataFromSheet);
+        
+        // Inizializza la mappa al caricamento della pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMapGrid();
+            // Carica dati di esempio per dimostrazione
+            loadExampleData();
+        });
+    </script>
+</body>
+</html>
