@@ -3,1287 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comando Strategico Militare</title>
+    <title>Test API Credenziali</title>
     <style>
-        :root {
-            --primary: #1a472a;
-            --secondary: #2d3436;
-            --accent: #2ecc71;
-            --light: #dfe6e9;
-            --dark: #0a1a12;
-            --status-normal: #27ae60;
-            --status-damaged: #f39c12;
-            --status-severely-damaged: #e67e22;
-            --status-immobilized: #e74c3c;
-            --status-destroyed: #7f8c8d;
-            --status-pending: #3498db;
-            --status-pending-approval: #9b59b6;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
         body {
-            background-color: var(--dark);
-            color: var(--light);
-            line-height: 1.6;
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
-        
-        header {
-            background-color: var(--primary);
-            color: white;
-            padding: 1rem 0;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .card {
-            background-color: var(--secondary);
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            transition: transform 0.3s ease;
-            border-left: 4px solid var(--accent);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        
-        .card:hover {
-            transform: translateY(-5px);
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            width: 200px;
         }
-        
-        .card h2 {
-            color: var(--accent);
-            margin-bottom: 1rem;
-            border-bottom: 2px solid var(--accent);
-            padding-bottom: 0.5rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-            color: var(--light);
-        }
-        
-        input, select, textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #3d4a4e;
-            border-radius: 4px;
-            font-size: 1rem;
-            background-color: #3d4a4e;
-            color: var(--light);
-        }
-        
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        
         button {
-            background-color: var(--accent);
-            color: var(--dark);
+            background: #007cba;
+            color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
-            font-weight: bold;
+            border-radius: 4px;
         }
-        
         button:hover {
-            background-color: #27ae60;
-            transform: translateY(-2px);
+            background: #005a87;
         }
-        
-        button.secondary {
-            background-color: var(--secondary);
-            color: var(--light);
-            border: 1px solid var(--accent);
-        }
-        
-        .unit-list {
-            margin-top: 2rem;
-        }
-        
-        .unit-item {
-            background-color: var(--secondary);
-            padding: 1rem;
-            margin-bottom: 1rem;
+        .result {
+            margin-top: 10px;
+            padding: 10px;
             border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid var(--accent);
         }
-        
-        .unit-info {
-            flex: 1;
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
-        
-        .unit-actions {
-            margin-left: 1rem;
-            display: flex;
-            gap: 0.5rem;
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-left: 0.5rem;
-            color: white;
-        }
-        
-        .status-normal {
-            background-color: var(--status-normal);
-        }
-        
-        .status-damaged {
-            background-color: var(--status-damaged);
-        }
-        
-        .status-severely-damaged {
-            background-color: var(--status-severely-damaged);
-        }
-        
-        .status-immobilized {
-            background-color: var(--status-immobilized);
-        }
-        
-        .status-destroyed {
-            background-color: var(--status-destroyed);
-        }
-        
-        .status-pending {
-            background-color: var(--status-pending);
-        }
-        
-        .status-pending-approval {
-            background-color: var(--status-pending-approval);
-        }
-        
-        .rank-badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-right: 0.5rem;
-            background-color: var(--primary);
-            color: white;
-        }
-        
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .unit-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .unit-actions {
-                margin-left: 0;
-                margin-top: 1rem;
-                width: 100%;
-            }
-            
-            .unit-actions button {
-                width: 100%;
-            }
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal-content {
-            background-color: var(--secondary);
-            padding: 2rem;
-            border-radius: 8px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            border-top: 4px solid var(--accent);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--light);
-        }
-        
-        /* Tabs */
-        .tabs {
-            display: flex;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #3d4a4e;
-        }
-        
-        .tab {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            color: var(--light);
-            transition: all 0.3s;
-        }
-        
-        .tab.active {
-            border-bottom-color: var(--accent);
-            font-weight: bold;
-            color: var(--accent);
-        }
-        
-        .tab:hover:not(.active) {
-            border-bottom-color: #3d4a4e;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        /* Admin section */
-        .admin-section {
-            background-color: rgba(231, 76, 60, 0.1);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 2rem;
-        }
-        
-        .admin-section h2 {
-            color: #e74c3c;
-        }
-        
-        /* Error message */
-        .error-message {
-            color: #e74c3c;
-            font-size: 0.9rem;
-            margin-top: 0.25rem;
-            display: none;
-        }
-        
-        /* Login form */
-        .login-form {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
-        /* Supply indicator */
-        .supply-indicator {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            background-color: #34495e;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-        
-        /* Component list */
-        .component-list {
-            list-style-type: none;
-            margin-top: 0.5rem;
-        }
-        
-        .component-item {
-            padding: 0.3rem 0;
-            border-bottom: 1px solid #3d4a4e;
-        }
-        
-        .required-field::after {
-            content: " *";
-            color: #e74c3c;
+        .loading {
+            color: #856404;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Comando Strategico Militare</h1>
-        <p>Coordinamento delle operazioni contro la minaccia esterna</p>
-    </header>
-    
-    <div class="container">
-        <div class="tabs">
-            <div class="tab active" data-tab="register">Registra Unità</div>
-            <div class="tab" data-tab="orders">Invia Ordini</div>
-            <div class="tab" data-tab="units">Unità Registrate</div>
-            <div class="tab" data-tab="admin" id="adminTab">Comando Supremo</div>
-        </div>
-        
-        <div id="register" class="tab-content active">
-            <div class="card">
-                <h2>Registra Nuova Unità</h2>
-                <form id="unitForm">
-                    <div class="form-group">
-                        <label for="matricola" class="required-field">Matricola:</label>
-                        <input type="text" id="matricola" required placeholder="Es: ABC#123 (3 lettere - # - 3 numeri)" pattern="[A-Za-z]{3}#\d{3}" title="Inserire 3 lettere seguite da # e 3 numeri (es: ABC#123)">
-                        <div class="error-message" id="matricolaError">Formato non valido o codice già esistente</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="nickname" class="required-field">Nome Giocatore:</label>
-                        <input type="text" id="nickname" required placeholder="Il tuo nome in gioco">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="unitType" class="required-field">Tipo Unità:</label>
-                        <select id="unitType" required>
-                            <option value="">Seleziona...</option>
-                            <option value="fanteria">Fanteria</option>
-                            <option value="ingegneri">Ingegneri</option>
-                            <option value="motorizzata">Motorizzata</option>
-                            <option value="artiglieria">Artiglieria</option>
-                            <option value="aerei">Aerei</option>
-                            <option value="elite">Elite</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="movement" class="required-field">Movimento (caselle/turno):</label>
-                        <input type="number" id="movement" min="1" max="10" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="vision" class="required-field">Visione (raggio in caselle):</label>
-                        <input type="number" id="vision" min="1" max="10" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="armor" class="required-field">Armatura:</label>
-                        <input type="number" id="armor" min="0" max="10" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="supply" class="required-field">Capacità Rifornimenti:</label>
-                        <input type="number" id="supply" min="0" max="10" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="components" class="required-field">Componenti:</label>
-                        <textarea id="components" rows="3" required placeholder="Copiare e incollare qua dalla lista moduli (un componente per riga)"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="lore" class="required-field">Background Unità:</label>
-                        <textarea id="lore" rows="3" required placeholder="Come si è formata? Perché combatte?"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="password" class="required-field">Password Unità:</label>
-                        <input type="password" id="password" required placeholder="Non dimenticare la password">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="confirmPassword" class="required-field">Conferma Password:</label>
-                        <input type="password" id="confirmPassword" required placeholder="Conferma la password">
-                        <div class="error-message" id="passwordError">Le password non coincidono</div>
-                    </div>
-                    
-                    <button type="submit">Registra Unità</button>
-                </form>
-            </div>
-        </div>
-        
-        <div id="orders" class="tab-content">
-            <div class="card">
-                <h2>Invia Ordini</h2>
-                <p class="supply-indicator">Turno corrente: <span id="currentTurn">1</span> - Prossimo turno: <span id="nextTurnDate"></span></p>
-                
-                <form id="orderForm">
-                    <div class="form-group">
-                        <label for="unitId">Seleziona Unità:</label>
-                        <select id="unitId" required>
-                            <option value="">Seleziona un'unità...</option>
-                            <!-- Unit options will be added dynamically -->
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="unitPassword">Password Unità:</label>
-                        <input type="password" id="unitPassword" required placeholder="Inserisci la password dell'unità">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="orderType">Tipo di Ordine:</label>
-                        <select id="orderType" required>
-                            <option value="">Seleziona...</option>
-                            <option value="move">Movimento</option>
-                            <option value="ability">Abilità</option>
-                            <option value="embark">Salire/Scendere</option>
-                            <option value="upgrade">Upgrade</option>
-                            <option value="recover">Ripristinarsi</option>
-                            <option value="cover">Coprirsi</option>
-                            <option value="recon">Ricognizione</option>
-                            <option value="camouflage">Camuffarsi</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group" id="moveFields" style="display:none;">
-                        <label for="moveCoords">Coordinate di Movimento (es: G5 -> G8):</label>
-                        <input type="text" id="moveCoords" placeholder="Formato: A1 -> B2">
-                    </div>
-                    
-                    <div class="form-group" id="abilityFields" style="display:none;">
-                        <label for="abilityDetails">Specifica Abilità:</label>
-                        <input type="text" id="abilityDetails" placeholder="Descrivi l'abilità da usare">
-                    </div>
-                    
-                    <div class="form-group" id="embarkFields" style="display:none;">
-                        <label for="embarkDetails">Dettagli Imbarco/Sbarco:</label>
-                        <input type="text" id="embarkDetails" placeholder="Specifica il veicolo o la posizione">
-                    </div>
-                    
-                    <div class="form-group" id="upgradeFields" style="display:none;">
-                        <label for="upgradeDetails">Upgrade da applicare:</label>
-                        <input type="text" id="upgradeDetails" placeholder="Descrivi l'upgrade">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="orderDetails">Note Aggiuntive:</label>
-                        <textarea id="orderDetails" rows="3" placeholder="Eventuali dettagli aggiuntivi..."></textarea>
-                    </div>
-                    
-                    <button type="submit">Invia Ordine</button>
-                </form>
-            </div>
-        </div>
-        
-        <div id="units" class="tab-content">
-            <h2>Unità Registrate</h2>
-            <div class="unit-list" id="unitList">
-                <!-- Unit items will be added dynamically -->
-                <p>Nessuna unità registrata.</p>
-            </div>
-        </div>
-        
-        <div id="admin" class="tab-content">
-            <div class="card">
-                <h2>Accesso Comando Supremo</h2>
-                <form id="adminLoginForm" class="login-form">
-                    <div class="form-group">
-                        <label for="adminUsername">Username:</label>
-                        <input type="text" id="adminUsername" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="adminPassword">Password:</label>
-                        <input type="password" id="adminPassword" required>
-                    </div>
-                    
-                    <button type="submit">Accedi</button>
-                </form>
-                
-                <div id="adminPanel" style="display:none;">
-                    <h2>Pannello Comando Supremo</h2>
-                    <div class="admin-section">
-                        <h3>Tutte le Unità Registrate</h3>
-                        <div class="unit-list" id="adminUnitList">
-                            <!-- All units will be listed here -->
-                        </div>
-                    </div>
-                    
-                    <div class="admin-section">
-                        <h3>Gestione Unità</h3>
-                        <form id="adminEditForm">
-                            <div class="form-group">
-                                <label for="adminEditUnit">Seleziona Unità:</label>
-                                <select id="adminEditUnit" required>
-                                    <option value="">Seleziona un'unità...</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="adminEditRank">Grado/Ruolo:</label>
-                                <select id="adminEditRank">
-                                    <option value="soldato">Soldato</option>
-                                    <option value="caporale">Caporale</option>
-                                    <option value="capitano">Capitano</option>
-                                    <option value="presidente">Presidente del Congresso</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="adminEditStatus">Stato Unità:</label>
-                                <select id="adminEditStatus">
-                                    <option value="pending-approval">In attesa di approvazione</option>
-                                    <option value="normal">Normale</option>
-                                    <option value="destroyed">Distrutta</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="adminEditPosition">Posizione (y,x):</label>
-                                <input type="text" id="adminEditPosition" placeholder="es: G5">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="adminEditSupply">Rifornimenti (attuali/totali):</label>
-                                <input type="text" id="adminEditSupply" placeholder="es: 3/5">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="adminEditNotes">Note Comando:</label>
-                                <textarea id="adminEditNotes" rows="2"></textarea>
-                            </div>
-                            
-                            <button type="submit" class="secondary">Salva Modifiche</button>
-                            <button type="button" id="deleteUnitBtn" style="background-color: #e74c3c;">Elimina Unità</button>
-                        </form>
-                    </div>
-                    
-                    <div class="admin-section">
-                        <h3>Gestione Turno</h3>
-                        <div class="form-group">
-                            <label>Numero Turno Corrente: <span id="adminCurrentTurn">1</span></label>
-                        </div>
-                        <button id="advanceTurnBtn">Avanza Turno</button>
-                        <button id="resetTurnBtn" class="secondary">Resetta Turno</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <h1>Test API Credenziali</h1>
+
+    <div class="test-section">
+        <h2>Test Connessione API</h2>
+        <button onclick="testAPI()">Test Connessione</button>
+        <div id="apiResult"></div>
     </div>
-    
-    <!-- Modal for success/error messages -->
-    <div class="modal" id="messageModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Messaggio</h2>
-                <button class="close-modal" id="closeModalBtn">&times;</button>
-            </div>
-            <p id="modalMessage">Testo del messaggio...</p>
-            <button id="confirmModalBtn">Chiudi</button>
-        </div>
+
+    <div class="test-section">
+        <h2>Test Credenziali Player</h2>
+        <input type="text" id="playerUser" placeholder="Username player" value="pippo">
+        <input type="password" id="playerPassword" placeholder="Password" value="seygex12">
+        <button onclick="testPlayer()">Test Player</button>
+        <div id="playerResult"></div>
     </div>
-    
+
+    <div class="test-section">
+        <h2>Test Credenziali Admin</h2>
+        <input type="text" id="adminUser" placeholder="Username admin" value="admin">
+        <input type="password" id="adminPassword" placeholder="Password" value="123">
+        <button onclick="testAdmin()">Test Admin</button>
+        <div id="adminResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Unità Player</h2>
+        <input type="text" id="unitUser" placeholder="Username player" value="pippo">
+        <button onclick="testUnit()">Test Unità</button>
+        <div id="unitResult"></div>
+    </div>
+
     <script>
-        // Game data storage
-        let units = JSON.parse(localStorage.getItem('militaryUnits')) || [];
-        let gameState = JSON.parse(localStorage.getItem('gameState')) || {
-            currentTurn: 1,
-            turnStartDate: new Date().toISOString()
-        };
-        const adminPassword = "123"; // In a real app, use proper authentication
-        let isAdmin = localStorage.getItem('adminLoggedIn') === 'true' || false;
-        
-        // DOM elements
-        const unitForm = document.getElementById('unitForm');
-        const orderForm = document.getElementById('orderForm');
-        const unitList = document.getElementById('unitList');
-        const unitIdSelect = document.getElementById('unitId');
-        const adminTab = document.getElementById('adminTab');
-        const adminLoginForm = document.getElementById('adminLoginForm');
-        const adminPanel = document.getElementById('adminPanel');
-        const adminUnitList = document.getElementById('adminUnitList');
-        const adminEditForm = document.getElementById('adminEditForm');
-        const adminEditUnitSelect = document.getElementById('adminEditUnit');
-        const adminEditRankSelect = document.getElementById('adminEditRank');
-        const matricolaInput = document.getElementById('matricola');
-        const matricolaError = document.getElementById('matricolaError');
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordInput = document.getElementById('confirmPassword');
-        const passwordError = document.getElementById('passwordError');
-        const currentTurnSpan = document.getElementById('currentTurn');
-        const nextTurnDateSpan = document.getElementById('nextTurnDate');
-        const adminCurrentTurnSpan = document.getElementById('adminCurrentTurn');
-        const orderTypeSelect = document.getElementById('orderType');
-        const deleteUnitBtn = document.getElementById('deleteUnitBtn');
-        const advanceTurnBtn = document.getElementById('advanceTurnBtn');
-        const resetTurnBtn = document.getElementById('resetTurnBtn');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const confirmModalBtn = document.getElementById('confirmModalBtn');
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateTurnDisplay();
-            refreshUnitList();
-            updateUnitSelect();
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzax_zbu_DO5YI-ZrDIQ4TocaCP_ACfpPqzHhEiKDw/dev';
+        const API_URL_ALT = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLj7NKo_YXXehHyAbh0Kr3SguoqO_hyHe1tf5ZIju7mbLiTNqy6n1pvVSzRbimOW_CQqLMwjx7Yq7IP97zvRfmSZeWwpI-ODWDSeLdKTobOa9dDSIDJsNSJ3L3HiaPBzCk0iQUrfV7vZArELDAV16ON5XBzy9gmFQ-yHNpO0dyoPlraYOlWTQRBev2TkF_jjnGoIK6G8eUyRyNvrP31F7XuWIcD0FDdOXv17MGgUx40U53t-HOMVFsM1x3h9L3WN-sLjuNabs4jJFX1KkRXfh-EtHG2dJA&lib=MLV1ks7wQQ37SnILDHqD1wVTcg6hxLEu9';
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.innerHTML = '<div class="loading">Test in corso...</div>';
             
-            // Set up tab switching
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const tabId = this.getAttribute('data-tab');
-                    openTab(tabId);
-                });
-            });
-            
-            // Set up order type change handler
-            orderTypeSelect.addEventListener('change', updateOrderFields);
-            
-            // Set up admin panel if already logged in
-            if (isAdmin) {
-                adminPanel.style.display = 'block';
-                adminLoginForm.style.display = 'none';
-                adminTab.style.display = 'block';
-                refreshAdminUnitList();
-                updateAdminEditSelect();
-            } else {
-                adminTab.style.display = 'none';
-            }
-            
-            // Set up modal buttons
-            closeModalBtn.addEventListener('click', closeModal);
-            confirmModalBtn.addEventListener('click', closeModal);
-            
-            // Set up admin buttons
-            deleteUnitBtn.addEventListener('click', adminDeleteUnit);
-            advanceTurnBtn.addEventListener('click', adminAdvanceTurn);
-            resetTurnBtn.addEventListener('click', adminResetTurn);
-            
-            // Initialize order fields visibility
-            updateOrderFields();
-            
-            // Password confirmation check
-            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-            passwordInput.addEventListener('input', checkPasswordMatch);
-            
-            // Force uppercase for matricola
-            matricolaInput.addEventListener('input', function() {
-            // Mantieni solo lettere maiuscole, numeri e #
-            this.value = this.value.toUpperCase().replace(/[^A-Z0-9#]/g, '');
-            
-            // Inserisci automaticamente il # dopo 3 caratteri se non presente
-            if (this.value.length > 3 && !this.value.includes('#')) {
-                this.value = this.value.slice(0, 3) + '#' + this.value.slice(3);
-            }
-            
-            // Limita la lunghezza a 7 caratteri (ABC#123)
-            if (this.value.length > 7) {
-                this.value = this.value.slice(0, 7);
-            }
-        });
-        
-        function checkPasswordMatch() {
-            if (passwordInput.value !== confirmPasswordInput.value) {
-                passwordError.style.display = 'block';
-                return false;
-            } else {
-                passwordError.style.display = 'none';
-                return true;
-            }
-        }
-        
-        // Update turn display
-        function updateTurnDisplay() {
-            currentTurnSpan.textContent = gameState.currentTurn;
-            adminCurrentTurnSpan.textContent = gameState.currentTurn;
-            
-            // Calculate next turn date (2 days from turn start)
-            const turnStartDate = new Date(gameState.turnStartDate);
-            const nextTurnDate = new Date(turnStartDate);
-            nextTurnDate.setDate(nextTurnDate.getDate() + 2);
-            
-            nextTurnDateSpan.textContent = nextTurnDate.toLocaleDateString();
-        }
-        
-        // Tab functionality
-        function openTab(tabName) {
-            // Hide all tab contents
-            tabContents.forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Show the selected tab content
-            document.getElementById(tabName).classList.add('active');
-            
-            // Update active tab
-            tabs.forEach(tab => {
-                tab.classList.remove('active');
-                if (tab.getAttribute('data-tab') === tabName) {
-                    tab.classList.add('active');
-                }
-            });
-            
-            // Refresh unit list if needed
-            if (tabName === 'units' || tabName === 'orders' || (tabName === 'admin' && isAdmin)) {
-                refreshUnitList();
-                updateUnitSelect();
-            }
-            
-            if (tabName === 'admin' && isAdmin) {
-                refreshAdminUnitList();
-                updateAdminEditSelect();
-            }
-        }
-        
-        // Modal functions
-        function showModal(title, message) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalMessage').textContent = message;
-            document.getElementById('messageModal').style.display = 'flex';
-        }
-        
-        function closeModal() {
-            document.getElementById('messageModal').style.display = 'none';
-        }
-        
-        // Update order fields based on order type
-        function updateOrderFields() {
-            const orderType = orderTypeSelect.value;
-            
-            // Hide all fields first
-            document.getElementById('moveFields').style.display = 'none';
-            document.getElementById('abilityFields').style.display = 'none';
-            document.getElementById('embarkFields').style.display = 'none';
-            document.getElementById('upgradeFields').style.display = 'none';
-            
-            // Show relevant fields
-            if (orderType === 'move') {
-                document.getElementById('moveFields').style.display = 'block';
-            } else if (orderType === 'ability') {
-                document.getElementById('abilityFields').style.display = 'block';
-            } else if (orderType === 'embark') {
-                document.getElementById('embarkFields').style.display = 'block';
-            } else if (orderType === 'upgrade') {
-                document.getElementById('upgradeFields').style.display = 'block';
-            }
-        }
-        
-        // Validate matricola format (3 letters - 3 numbers)
-        function validateMatricola(matricola) {
-            const regex = /^[A-Z]{3}#\d{3}$/;
-            return regex.test(matricola);
-        }
-        
-        // Check if matricola already exists
-        function matricolaExists(matricola) {
-            return units.some(unit => unit.matricola === matricola);
-        }
-        
-        // Get status class based on unit status
-        function getStatusClass(status) {
-            switch(status) {
-                case 'normal': return 'status-normal';
-                case 'damaged': return 'status-damaged';
-                case 'severely-damaged': return 'status-severely-damaged';
-                case 'immobilized': return 'status-immobilized';
-                case 'destroyed': return 'status-destroyed';
-                case 'pending': return 'status-pending';
-                case 'pending-approval': return 'status-pending-approval';
-                default: return 'status-pending-approval';
-            }
-        }
-        
-        // Get status text based on unit status
-        function getStatusText(status) {
-            switch(status) {
-                case 'normal': return 'Normale';
-                case 'destroyed': return 'Distrutta';
-                case 'pending': return 'In attesa';
-                case 'pending-approval': return 'In attesa di approvazione';
-                default: return 'In attesa di approvazione';
-            }
-        }
-        
-        // Register new unit
-        unitForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const matricola = matricolaInput.value.trim();
-            
-            // Validate matricola format
-            if (!validateMatricola(matricola)) {
-                matricolaError.style.display = 'block';
-                matricolaError.textContent = 'Formato non valido! Deve essere: 3 lettere MAIUSCOLE + # + 3 numeri (es: ABC#123)';
-                return;
-            }
-            
-            // Check if matricola already exists
-            if (matricolaExists(matricola)) {
-                matricolaError.style.display = 'block';
-                matricolaError.textContent = 'Un\'unità con questa matricola (ABC#123) esiste già!';
-                return;
-            }
-            
-            // Check password match
-            if (!checkPasswordMatch()) {
-                return;
-            }
-            
-            matricolaError.style.display = 'none';
-            
-            const newUnit = {
-                matricola: matricola,
-                nickname: document.getElementById('nickname').value.trim(),
-                rank: 'soldato', // Default rank, can be changed by admin
-                type: document.getElementById('unitType').value,
-                movement: parseInt(document.getElementById('movement').value),
-                vision: parseInt(document.getElementById('vision').value),
-                armor: parseInt(document.getElementById('armor').value),
-                supply: `0/${document.getElementById('supply').value}`, // Current/Max supply
-                components: document.getElementById('components').value.split('\n').map(c => c.trim()).filter(c => c),
-                lore: document.getElementById('lore').value.trim(),
-                password: document.getElementById('password').value,
-                status: 'pending-approval', // Needs admin approval
-                position: 'non ancora schierato',
-                orders: [],
-                up: 5 // Starting UP as per manual
-            };
-            
-            // Validate required fields
-            if (!newUnit.nickname || !newUnit.type || isNaN(newUnit.movement) || 
-                isNaN(newUnit.vision) || isNaN(newUnit.armor) || isNaN(parseInt(document.getElementById('supply').value))) {
-                showModal('Errore', 'Per favore compila tutti i campi obbligatori!');
-                return;
-            }
-            
-            units.push(newUnit);
-            localStorage.setItem('militaryUnits', JSON.stringify(units));
-            
-            // Reset form
-            unitForm.reset();
-            
-            showModal('Successo', 'Unità registrata con successo! In attesa di approvazione da parte del Comando Supremo.');
-            
-            // Refresh unit list
-            refreshUnitList();
-            updateUnitSelect();
-        });
-        
-        // Send orders
-        orderForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const unitId = document.getElementById('unitId').value;
-            const password = document.getElementById('unitPassword').value;
-            const orderType = document.getElementById('orderType').value;
-            const orderDetails = document.getElementById('orderDetails').value.trim();
-            
-            // Find the unit
-            const unit = units.find(u => u.matricola === unitId);
-            
-            if (!unit) {
-                showModal('Errore', 'Unità non trovata!');
-                return;
-            }
-            
-            // Verify password
-            if (unit.password !== password) {
-                showModal('Errore', 'Password errata per questa unità!');
-                return;
-            }
-            
-            // Check if unit is approved
-            if (unit.status === 'pending-approval') {
-                showModal('Errore', 'Unità in attesa di approvazione! Non può ricevere ordini.');
-                return;
-            }
-            
-            // Check unit status
-            if (unit.status === 'immobilized' && orderType === 'move') {
-                showModal('Errore', 'Unità immobilizzata non può muoversi!');
-                return;
-            }
-            
-            if (unit.status === 'destroyed') {
-                showModal('Errore', 'Unità distrutta non può ricevere ordini!');
-                return;
-            }
-            
-            // Get specific order details
-            let specificDetails = '';
-            if (orderType === 'move') {
-                specificDetails = document.getElementById('moveCoords').value.trim();
-                if (!specificDetails) {
-                    showModal('Errore', 'Specifica le coordinate di movimento!');
-                    return;
-                }
-            } else if (orderType === 'ability') {
-                specificDetails = document.getElementById('abilityDetails').value.trim();
-                if (!specificDetails) {
-                    showModal('Errore', 'Specifica l\'abilità da usare!');
-                    return;
-                }
-            } else if (orderType === 'embark') {
-                specificDetails = document.getElementById('embarkDetails').value.trim();
-                if (!specificDetails) {
-                    showModal('Errore', 'Specifica i dettagli di imbarco/sbarco!');
-                    return;
-                }
-            } else if (orderType === 'upgrade') {
-                specificDetails = document.getElementById('upgradeDetails').value.trim();
-                if (!specificDetails) {
-                    showModal('Errore', 'Specifica l\'upgrade da applicare!');
-                    return;
-                }
-            }
-            
-            // Add order
-            const newOrder = {
-                type: orderType,
-                details: orderDetails,
-                specificDetails: specificDetails,
-                turn: gameState.currentTurn,
-                timestamp: new Date().toISOString(),
-                status: 'pending'
-            };
-            
-            unit.orders.push(newOrder);
-            localStorage.setItem('militaryUnits', JSON.stringify(units));
-            
-            // Reset form
-            orderForm.reset();
-            
-            showModal('Successo', 'Ordine inviato con successo!');
-        });
-        
-        // Refresh unit list display
-        function refreshUnitList() {
-            if (units.length === 0) {
-                unitList.innerHTML = '<p>Nessuna unità registrata.</p>';
-                return;
-            }
-            
-            unitList.innerHTML = '';
-            
-            units.forEach(unit => {
-                const statusClass = getStatusClass(unit.status);
-                const statusText = getStatusText(unit.status);
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
                 
-                const unitItem = document.createElement('div');
-                unitItem.className = 'unit-item';
-                
-                unitItem.innerHTML = `
-                    <div class="unit-info">
-                        <h3><span class="rank-badge">${unit.rank.toUpperCase()}</span> ${unit.matricola} <span class="status-badge ${statusClass}">${statusText}</span></h3>
-                        <p><strong>Giocatore:</strong> ${unit.nickname}</p>
-                        <p><strong>Tipo:</strong> ${unit.type}</p>
-                        <p><strong>Posizione:</strong> ${unit.position}</p>
-                        <p><strong>Movimento:</strong> ${unit.movement} caselle</p>
-                        <p><strong>Visione:</strong> ${unit.vision} caselle</p>
-                        <p><strong>Armatura:</strong> ${unit.armor}</p>
-                        <p><strong>Rifornimenti:</strong> <span class="supply-indicator">${unit.supply}</span></p>
-                        <p><strong>UP disponibili:</strong> ${unit.up}</p>
-                    </div>
-                    <div class="unit-actions">
-                        <button class="view-details-btn" data-unit-id="${unit.matricola}">Dettagli</button>
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <strong>✓ API Funziona!</strong><br>
+                        Dati ricevuti: ${JSON.stringify(data.data)}
                     </div>
                 `;
+                console.log('Dati API:', data);
+            } catch (error) {
+                console.error('Errore API principale:', error);
                 
-                unitList.appendChild(unitItem);
-            });
-            
-            // Add event listeners to detail buttons
-            document.querySelectorAll('.view-details-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const unitId = this.getAttribute('data-unit-id');
-                    viewUnitDetails(unitId);
-                });
-            });
-        }
-        
-        // Update unit select for orders
-        function updateUnitSelect() {
-            unitIdSelect.innerHTML = '<option value="">Seleziona un\'unità...</option>';
-            
-            units.forEach(unit => {
-                // Only show approved units for orders
-                if (unit.status !== 'pending-approval') {
-                    const option = document.createElement('option');
-                    option.value = unit.matricola;
-                    option.textContent = `${unit.matricola} (${unit.nickname}) - ${unit.type}`;
-                    unitIdSelect.appendChild(option);
-                }
-            });
-        }
-        
-        // View unit details
-        function viewUnitDetails(unitId) {
-            const unit = units.find(u => u.matricola === unitId);
-            
-            if (!unit) return;
-            
-            let ordersHtml = '';
-            if (unit.orders.length === 0) {
-                ordersHtml = '<p>Nessun ordine registrato per questa unità.</p>';
-            } else {
-                ordersHtml = '<ul>';
-                unit.orders.forEach(order => {
-                    ordersHtml += `
-                        <li>
-                            <strong>${order.type}</strong> (Turno ${order.turn}) - ${new Date(order.timestamp).toLocaleString()}
-                            ${order.specificDetails ? `<p>${order.specificDetails}</p>` : ''}
-                            <p>${order.details}</p>
-                            <small>Stato: ${order.status}</small>
-                        </li>
+                // Prova con API alternativa
+                try {
+                    resultDiv.innerHTML = '<div class="loading">Provo API alternativa...</div>';
+                    const response = await fetch(API_URL_ALT);
+                    const data = await response.json();
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✓ API Alternativa Funziona!</strong><br>
+                            Dati ricevuti: ${JSON.stringify(data.data)}
+                        </div>
                     `;
-                });
-                ordersHtml += '</ul>';
+                    console.log('Dati API alternativa:', data);
+                } catch (fallbackError) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>✗ Errore API</strong><br>
+                            Errore principale: ${error.message}<br>
+                            Errore alternativa: ${fallbackError.message}
+                        </div>
+                    `;
+                }
             }
-            
-            let componentsHtml = '';
-            if (unit.components && unit.components.length > 0) {
-                componentsHtml = '<ul class="component-list">';
-                unit.components.forEach(comp => {
-                    if (comp.trim()) {
-                        componentsHtml += `<li class="component-item">${comp}</li>`;
-                    }
-                });
-                componentsHtml += '</ul>';
-            } else {
-                componentsHtml = '<p>Nessun componente aggiuntivo</p>';
-            }
-            
-            showModal(
-                `Dettagli Unità: ${unit.matricola}`,
-                `
-                <p><strong>Giocatore:</strong> ${unit.nickname}</p>
-                <p><strong>Grado:</strong> ${unit.rank}</p>
-                <p><strong>Tipo:</strong> ${unit.type}</p>
-                <p><strong>Stato:</strong> <span class="status-badge ${getStatusClass(unit.status)}">${getStatusText(unit.status)}</span></p>
-                <p><strong>Posizione:</strong> ${unit.position}</p>
-                <p><strong>Movimento Massimo:</strong> ${unit.movement}</p>
-                <p><strong>Visione:</strong> ${unit.vision}</p>
-                <p><strong>Armatura:</strong> ${unit.armor}</p>
-                <p><strong>Rifornimenti:</strong> ${unit.supply}</p>
-                <p><strong>UP disponibili:</strong> ${unit.up}</p>
-                <h3>Componenti:</h3>
-                ${componentsHtml}
-                <h3>Background:</h3>
-                <p>${unit.lore}</p>
-                <h3>Ordini:</h3>
-                ${ordersHtml}
-                `
-            );
         }
-        
-        // Admin login
-        adminLoginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+
+        async function testPlayer() {
+            const username = document.getElementById('playerUser').value;
+            const password = document.getElementById('playerPassword').value;
+            const resultDiv = document.getElementById('playerResult');
             
-            const username = document.getElementById('adminUsername').value.trim();
-            const password = document.getElementById('adminPassword').value;
+            resultDiv.innerHTML = '<div class="loading">Verifica in corso...</div>';
             
-            // Very basic admin authentication (in a real app, use proper authentication)
-            if (username === 'admin' && password === adminPassword) {
-                isAdmin = true;
-                adminPanel.style.display = 'block';
-                adminLoginForm.style.display = 'none';
-                adminTab.style.display = 'block';
-                showModal('Accesso Consentito', 'Accesso al Comando Supremo autorizzato!');
-                refreshAdminUnitList();
-                updateAdminEditSelect();
-                localStorage.setItem('adminLoggedIn', 'true');
-            } else {
-                showModal('Accesso Negato', 'Credenziali non valide');
-            }
-        });
-        
-        // Refresh admin unit list
-        function refreshAdminUnitList() {
-            if (units.length === 0) {
-                adminUnitList.innerHTML = '<p>Nessuna unità registrata.</p>';
-                return;
-            }
-            
-            adminUnitList.innerHTML = '';
-            
-            units.forEach(unit => {
-                const statusClass = getStatusClass(unit.status);
-                const statusText = getStatusText(unit.status);
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
                 
-                const unitItem = document.createElement('div');
-                unitItem.className = 'unit-item';
+                const player = data.data.find(item => 
+                    item.user && item.password && 
+                    item.user === username && item.password === password
+                );
                 
-                unitItem.innerHTML = `
-                    <div class="unit-info">
-                        <h3><span class="rank-badge">${unit.rank.toUpperCase()}</span> ${unit.matricola} <span class="status-badge ${statusClass}">${statusText}</span></h3>
-                        <p><strong>Giocatore:</strong> ${unit.nickname}</p>
-                        <p><strong>Tipo:</strong> ${unit.type}</p>
-                        <p><strong>Posizione:</strong> ${unit.position}</p>
-                        <p><strong>Rifornimenti:</strong> ${unit.supply}</p>
-                        <p><strong>UP:</strong> ${unit.up}</p>
+                if (player) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✓ Credenziali Player Valide!</strong><br>
+                            Username: ${player.user}<br>
+                            Unità: ${player.unita || 'N/A'}<br>
+                            Dati completi: ${JSON.stringify(player)}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>✗ Credenziali Player Non Valide</strong><br>
+                            Username: ${username}<br>
+                            Password: ${password}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>✗ Errore durante la verifica</strong><br>
+                        ${error.message}
                     </div>
                 `;
-                
-                adminUnitList.appendChild(unitItem);
-            });
-        }
-        
-        // Update admin edit select
-        function updateAdminEditSelect() {
-            adminEditUnitSelect.innerHTML = '<option value="">Seleziona un\'unità...</option>';
-            adminEditUnitSelect.innerHTML += '<option value="all">Tutte le unità</option>';
-            
-            units.forEach(unit => {
-                const option = document.createElement('option');
-                option.value = unit.matricola;
-                option.textContent = `${unit.matricola} (${unit.nickname}) - ${unit.type}`;
-                adminEditUnitSelect.appendChild(option);
-            });
-        }
-        
-        // When admin selects a unit to edit
-        adminEditUnitSelect.addEventListener('change', function() {
-            const matricola = this.value;
-            
-            if (matricola === 'all') {
-                // Handle "all units" case
-                document.getElementById('adminEditStatus').value = '';
-                document.getElementById('adminEditPosition').value = '';
-                document.getElementById('adminEditSupply').value = '';
-                document.getElementById('adminEditNotes').value = '';
-                return;
             }
+        }
+
+        async function testAdmin() {
+            const username = document.getElementById('adminUser').value;
+            const password = document.getElementById('adminPassword').value;
+            const resultDiv = document.getElementById('adminResult');
             
-            const unit = units.find(u => u.matricola === matricola);
+            resultDiv.innerHTML = '<div class="loading">Verifica in corso...</div>';
             
-            if (unit) {
-                document.getElementById('adminEditRank').value = unit.rank;
-                document.getElementById('adminEditStatus').value = unit.status;
-                document.getElementById('adminEditPosition').value = unit.position;
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
                 
-                // Handle supply (current/max)
-                if (unit.supply) {
-                    document.getElementById('adminEditSupply').value = unit.supply;
+                const admin = data.data.find(item => 
+                    item.user_admin && item.password_admin && 
+                    item.user_admin === username && item.password_admin === password
+                );
+                
+                if (admin) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✓ Credenziali Admin Valide!</strong><br>
+                            Username: ${admin.user_admin}<br>
+                            Dati completi: ${JSON.stringify(admin)}
+                        </div>
+                    `;
                 } else {
-                    document.getElementById('adminEditSupply').value = '0/0';
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>✗ Credenziali Admin Non Valide</strong><br>
+                            Username: ${username}<br>
+                            Password: ${password}
+                        </div>
+                    `;
                 }
-                
-                document.getElementById('adminEditNotes').value = unit.adminNotes || '';
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>✗ Errore durante la verifica</strong><br>
+                        ${error.message}
+                    </div>
+                `;
             }
+        }
+
+        async function testUnit() {
+            const username = document.getElementById('unitUser').value;
+            const resultDiv = document.getElementById('unitResult');
+            
+            resultDiv.innerHTML = '<div class="loading">Ricerca unità...</div>';
+            
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                const player = data.data.find(item => item.user === username);
+                
+                if (player) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✓ Player Trovato!</strong><br>
+                            Username: ${player.user}<br>
+                            Unità associata: ${player.unita || 'Nessuna unità'}<br>
+                            Dati completi: ${JSON.stringify(player)}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>✗ Player Non Trovato</strong><br>
+                            Username: ${username}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>✗ Errore durante la ricerca</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Test automatico al caricamento della pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Pagina caricata - pronta per i test');
         });
-        
-        // Admin edit form submission
-        adminEditForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const matricola = adminEditUnitSelect.value;
-            
-            if (matricola === 'all') {
-                showModal('Errore', 'Seleziona un\'unità specifica da modificare');
-                return;
-            }
-            
-            const unit = units.find(u => u.matricola === matricola);
-            
-            if (!unit) {
-                showModal('Errore', 'Unità non trovata!');
-                return;
-            }
-            
-            // Update unit data
-            unit.rank = document.getElementById('adminEditRank').value;
-            unit.status = document.getElementById('adminEditStatus').value;
-            unit.position = document.getElementById('adminEditPosition').value.trim() || 'non ancora schierato';
-            unit.supply = document.getElementById('adminEditSupply').value;
-            unit.adminNotes = document.getElementById('adminEditNotes').value.trim();
-            
-            localStorage.setItem('militaryUnits', JSON.stringify(units));
-            
-            showModal('Successo', 'Unità aggiornata con successo!');
-            
-            // Refresh all lists
-            refreshUnitList();
-            refreshAdminUnitList();
-            updateUnitSelect();
-            updateAdminEditSelect();
-        });
-        
-        // Admin delete unit
-        function adminDeleteUnit() {
-            const matricola = adminEditUnitSelect.value;
-            
-            if (!matricola || matricola === 'all') {
-                showModal('Errore', 'Seleziona un\'unità da eliminare');
-                return;
-            }
-            
-            if (confirm(`Sei sicuro di voler eliminare l'unità ${matricola}? Questa azione è irreversibile.`)) {
-                units = units.filter(u => u.matricola !== matricola);
-                localStorage.setItem('militaryUnits', JSON.stringify(units));
-                
-                // Reset form
-                adminEditForm.reset();
-                
-                showModal('Successo', 'Unità eliminata con successo!');
-                
-                // Refresh all lists
-                refreshUnitList();
-                refreshAdminUnitList();
-                updateUnitSelect();
-                updateAdminEditSelect();
-            }
-        }
-        
-        // Admin advance turn
-        function adminAdvanceTurn() {
-            gameState.currentTurn += 1;
-            gameState.turnStartDate = new Date().toISOString();
-            localStorage.setItem('gameState', JSON.stringify(gameState));
-            
-            // Update display
-            updateTurnDisplay();
-            
-            showModal('Turno Avanzato', `Il turno è stato avanzato a ${gameState.currentTurn}. Tutti gli ordini sono stati resettati.`);
-        }
-        
-        // Admin reset turn
-        function adminResetTurn() {
-            if (confirm('Sei sicuro di voler resettare il conteggio dei turni? Questo azzererà il turno corrente a 1.')) {
-                gameState.currentTurn = 1;
-                gameState.turnStartDate = new Date().toISOString();
-                localStorage.setItem('gameState', JSON.stringify(gameState));
-                
-                // Update display
-                updateTurnDisplay();
-                
-                showModal('Turno Resettato', 'Il conteggio dei turni è stato resettato a 1.');
-            }
-        }
-    });
     </script>
 </body>
 </html>
