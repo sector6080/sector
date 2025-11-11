@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Gestione Unità Militari</title>
+    <title>Sistema Militare - Versione Completa</title>
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #34495e;
-            --accent-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #e67e22;
-            --danger-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #2c3e50;
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
         }
         
         * {
@@ -24,55 +22,59 @@
         }
         
         body {
-            background-color: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-        }
-        
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-        
-        .map-btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-        }
-        
-        .map-btn:hover {
-            background-color: #2980b9;
+            background: #ecf0f1;
+            color: #2c3e50;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
             padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
         }
         
         .tabs {
             display: flex;
-            background-color: white;
-            border-radius: 8px 8px 0 0;
+            background: white;
+            border-radius: 10px 10px 0 0;
             overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .tab {
@@ -80,26 +82,23 @@
             padding: 1rem;
             text-align: center;
             cursor: pointer;
-            background-color: var(--light-color);
-            transition: background-color 0.3s;
+            background: var(--secondary);
+            color: white;
+            transition: all 0.3s;
         }
         
         .tab.active {
-            background-color: white;
+            background: white;
+            color: var(--primary);
             font-weight: bold;
-            border-bottom: 3px solid var(--accent-color);
-        }
-        
-        .tab:hover:not(.active) {
-            background-color: #dfe6e9;
         }
         
         .tab-content {
             display: none;
-            background-color: white;
+            background: white;
             padding: 2rem;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 2rem;
         }
         
@@ -114,204 +113,184 @@
         label {
             display: block;
             margin-bottom: 0.5rem;
-            font-weight: 500;
+            font-weight: 600;
+            color: var(--primary);
         }
         
         input, select, textarea {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
             font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+            outline: none;
         }
         
         button {
-            background-color: var(--accent-color);
+            background: var(--accent);
             color: white;
             border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px;
+            padding: 12px 24px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 1rem;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
         }
         
         button:hover {
-            background-color: #2980b9;
+            background: #2980b9;
+            transform: translateY(-2px);
         }
         
-        button.secondary {
-            background-color: var(--secondary-color);
+        .btn-success {
+            background: var(--success);
         }
         
-        button.secondary:hover {
-            background-color: #2c3e50;
+        .btn-warning {
+            background: var(--warning);
         }
         
-        .units-list {
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .units-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1.5rem;
+            margin-top: 1rem;
         }
         
         .unit-card {
-            background-color: white;
+            background: white;
             border-radius: 8px;
             padding: 1.5rem;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            border-left: 4px solid var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--accent);
+            transition: transform 0.3s;
         }
         
-        .unit-card.pending {
-            border-left-color: var(--warning-color);
+        .unit-card:hover {
+            transform: translateY(-5px);
         }
         
         .unit-card.approved {
-            border-left-color: var(--success-color);
+            border-left-color: var(--success);
         }
         
-        .unit-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
+        .unit-card.pending {
+            border-left-color: var(--warning);
         }
         
-        .unit-id {
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-        
-        .unit-status {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 0.8rem;
             font-weight: bold;
-        }
-        
-        .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
+            margin-left: 10px;
         }
         
         .status-approved {
-            background-color: #d1ecf1;
-            color: #0c5460;
+            background: #d4edda;
+            color: #155724;
         }
         
-        .unit-details {
-            margin-top: 1rem;
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
         }
         
-        .order-chain {
-            margin-top: 1.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background: var(--success);
+        }
+        
+        .notification.error {
+            background: var(--danger);
+        }
+        
+        .notification.warning {
+            background: var(--warning);
+        }
+        
+        .search-box {
+            background: #f8f9fa;
             padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .orders-list {
+            margin-top: 1rem;
         }
         
         .order-item {
-            background-color: #f8f9fa;
-            border-radius: 4px;
+            background: #f8f9fa;
             padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid var(--accent-color);
-        }
-        
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-        
-        .order-type {
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-        
-        .remove-order {
-            background-color: var(--danger-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 0.25rem 0.5rem;
-            cursor: pointer;
-        }
-        
-        .message {
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-        }
-        
-        .message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .refresh-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .stats-btn {
-            background-color: var(--secondary-color);
-            margin-top: 1rem;
-        }
-        
-        @media (max-width: 768px) {
-            .units-list {
-                grid-template-columns: 1fr;
-            }
-            
-            .tabs {
-                flex-direction: column;
-            }
+            margin: 0.5rem 0;
+            border-radius: 6px;
+            border-left: 4px solid var(--accent);
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">Sistema Militare</div>
-        <a href="https://the-silver33.github.io/sector/map.html" class="map-btn">
-            <span>Mappa</span>
-        </a>
-    </header>
-    
     <div class="container">
+        <header>
+            <h1>🎯 Sistema Militare - Versione Completa</h1>
+            <button onclick="loadAllData()" class="btn-success">🔄 Aggiorna Dati</button>
+        </header>
+
+        <div class="stats" id="statsContainer">
+            <!-- Statistiche dinamiche -->
+        </div>
+
         <div class="tabs">
             <div class="tab active" data-tab="register">Registrazione Unità</div>
             <div class="tab" data-tab="units">Unità Registrate</div>
             <div class="tab" data-tab="orders">Invia Ordini</div>
+            <div class="tab" data-tab="manage">Gestione</div>
         </div>
-        
-        <!-- Sezione Registrazione Unità -->
+
+        <!-- Registrazione Unità -->
         <div id="register" class="tab-content active">
-            <h2>Registrazione Nuova Unità</h2>
-            <form id="registration-form">
+            <h2>📝 Registra Nuova Unità</h2>
+            <form id="registrationForm">
                 <div class="form-group">
                     <label for="matricola">Matricola *</label>
-                    <input type="text" id="matricola" name="matricola" pattern="[A-Z]{3}-[0-9]+" title="Formato: ABC-123 (3 lettere maiuscole, trattino, numeri)" required>
+                    <input type="text" id="matricola" pattern="[A-Z]{3}-[0-9]+" required>
                     <small>Formato: ABC-123 (3 lettere maiuscole, trattino, numeri)</small>
                 </div>
                 
                 <div class="form-group">
                     <label for="nick">Nickname (Discord) *</label>
-                    <input type="text" id="nick" name="nick" required>
+                    <input type="text" id="nick" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="tipo">Tipo Unità *</label>
-                    <select id="tipo" name="tipo" required>
+                    <select id="tipo" required>
                         <option value="">Seleziona tipo</option>
                         <option value="Fanteria">Fanteria</option>
                         <option value="Motorizzata">Motorizzata</option>
@@ -322,613 +301,534 @@
                 
                 <div class="form-group">
                     <label for="movimento">Movimento *</label>
-                    <input type="number" id="movimento" name="movimento" min="1" required>
+                    <input type="number" id="movimento" min="1" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="visione">Visione *</label>
-                    <input type="number" id="visione" name="visione" min="1" required>
+                    <input type="number" id="visione" min="1" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="armatura">Armatura *</label>
-                    <input type="number" id="armatura" name="armatura" min="1" required>
+                    <input type="number" id="armatura" min="1" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="rifornimenti">Capacità Rifornimenti *</label>
-                    <input type="number" id="rifornimenti" name="rifornimenti" min="1" required>
+                    <input type="number" id="rifornimenti" min="1" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="componenti">Componenti</label>
-                    <textarea id="componenti" name="componenti" rows="3"></textarea>
+                    <textarea id="componenti" rows="3" placeholder="Descrizione componenti..."></textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="password">Password *</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="confirm-password">Conferma Password *</label>
-                    <input type="password" id="confirm-password" name="confirm-password" required>
+                    <label for="confirmPassword">Conferma Password *</label>
+                    <input type="password" id="confirmPassword" required>
                 </div>
                 
-                <button type="submit">Registra Unità</button>
+                <button type="submit">🎯 Registra Unità</button>
             </form>
         </div>
-        
-        <!-- Sezione Unità Registrate -->
+
+        <!-- Unità Registrate -->
         <div id="units" class="tab-content">
-            <h2>Unità Registrate</h2>
-            <button class="refresh-btn" id="refresh-units">
-                <span>Aggiorna Lista</span>
-            </button>
-            <div id="units-list" class="units-list">
-                <!-- Le unità verranno caricate qui dinamicamente -->
+            <h2>🏛️ Unità Registrate</h2>
+            <div class="search-box">
+                <input type="text" id="searchUnits" placeholder="🔍 Cerca per matricola o nick..." style="width: 100%;">
+            </div>
+            <div id="unitsGrid" class="units-grid">
+                <!-- Unitá caricate dinamicamente -->
             </div>
         </div>
-        
-        <!-- Sezione Invia Ordini -->
+
+        <!-- Invia Ordini -->
         <div id="orders" class="tab-content">
-            <h2>Invia Ordini</h2>
+            <h2>📨 Invia Ordini</h2>
             
             <div class="form-group">
-                <label for="order-unit">Seleziona Unità *</label>
-                <select id="order-unit" name="order-unit" required>
-                    <option value="">Seleziona unità</option>
+                <label for="orderUnit">Seleziona Unitá *</label>
+                <select id="orderUnit" required>
+                    <option value="">Caricamento unità approvate...</option>
                 </select>
             </div>
             
-            <div class="form-group" id="password-section" style="display: none;">
-                <label for="unit-password">Password Unità *</label>
-                <input type="password" id="unit-password" name="unit-password">
+            <div class="form-group" id="passwordSection" style="display: none;">
+                <label for="unitPassword">Password Unitá *</label>
+                <input type="password" id="unitPassword">
             </div>
             
-            <div id="order-form" style="display: none;">
+            <div id="orderForm" style="display: none;">
                 <div class="form-group">
-                    <label for="order-type">Tipo Ordine *</label>
-                    <select id="order-type" name="order-type" required>
+                    <label for="orderType">Tipo Ordine *</label>
+                    <select id="orderType" required>
                         <option value="">Seleziona tipo ordine</option>
                         <option value="muoversi">Muoversi</option>
                         <option value="salire">Salire su Mezzo</option>
                         <option value="scendere">Scendere da Mezzo</option>
                         <option value="attivare">Attivare Componenti</option>
-                        <option value="consumare">Consumare Rifornimenti</option>
                         <option value="cura">Cura</option>
                         <option value="ricaricare">Ricaricare Componente</option>
+                        <option value="consumare">Consumare Rifornimenti</option>
                         <option value="cedere">Cedere Rifornimenti</option>
                     </select>
                 </div>
                 
-                <div id="order-details">
-                    <!-- I dettagli specifici per ogni tipo di ordine verranno mostrati qui -->
+                <div id="orderDetails">
+                    <!-- Dettagli dinamici -->
                 </div>
                 
-                <button type="button" id="add-order">Aggiungi Ordine</button>
+                <button onclick="addOrderToChain()" class="btn-success">➕ Aggiungi alla Catena</button>
                 
-                <div class="order-chain" id="order-chain">
-                    <h3>Catena Ordini</h3>
-                    <div id="order-items">
-                        <!-- Gli ordini aggiunti verranno mostrati qui -->
-                    </div>
+                <div class="orders-list" id="orderChain" style="display: none;">
+                    <h3>⛓️ Catena Ordini</h3>
+                    <div id="orderItems"></div>
+                    <button onclick="submitAllOrders()" class="btn-success">🚀 Invia Tutti gli Ordini</button>
                 </div>
-                
-                <button type="button" id="submit-orders" style="display: none;">Invia Ordini</button>
             </div>
+        </div>
+
+        <!-- Gestione -->
+        <div id="manage" class="tab-content">
+            <h2>⚙️ Gestione Sistema</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalUnits">0</div>
+                    <div class="stat-label">Unitá Totali</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="approvedUnits">0</div>
+                    <div class="stat-label">Approvate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pendingUnits">0</div>
+                    <div class="stat-label">In Attesa</div>
+                </div>
+            </div>
+            
+            <button onclick="exportData()" class="btn-warning">📊 Esporta Dati</button>
+            <button onclick="showSystemInfo()" class="btn">ℹ️ Info Sistema</button>
         </div>
     </div>
 
     <script>
-        // URL della tua web app Google Apps Script
-        const API_URL = 'https://script.google.com/macros/s/AKfycbzOnva7d51fQGtk6tEB0Wk-1GqyqLSXbuapSf32Hqu29uaIIhExwq07F9sHITYxagI/exec';
+        // URL che funziona per la lettura
+        const READ_API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLirWy0te2-jxQcTLBWG5q0S1ciaEXXgdaTHjvdee3qaf9RZYdRrp_wl3HjrqxDhxAYcv_KFLvecKxj9bSxRFvZn1k38iZTvEksZat8xjthLiNYmdWQBCxhC68fCu8cRG53fCsmQ-crv-9L2NATZlayvdqFwgHB3O5GDjsfO1I7T5DN7NUEWjlPsIvKlHHNOIvJAZiwBVs6AgXjwrrlJTYIclZryy1xvv8TPMd1ClKfKvB8l4i4F0O5HizHgNnYd1DSBHGyLQ-TFHcWJiZrk1pkqOOffMA&lib=MLV1ks7wQQ37SnILDHqD1wVTcg6hxLEu9';
         
-        // Elementi DOM
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const registrationForm = document.getElementById('registration-form');
-        const unitsList = document.getElementById('units-list');
-        const refreshUnitsBtn = document.getElementById('refresh-units');
-        const orderUnitSelect = document.getElementById('order-unit');
-        const passwordSection = document.getElementById('password-section');
-        const orderForm = document.getElementById('order-form');
-        const orderTypeSelect = document.getElementById('order-type');
-        const orderDetails = document.getElementById('order-details');
-        const addOrderBtn = document.getElementById('add-order');
-        const orderItems = document.getElementById('order-items');
-        const submitOrdersBtn = document.getElementById('submit-orders');
-        const unitPasswordInput = document.getElementById('unit-password');
+        // URL per scrivere (POST)
+        const WRITE_API_URL = 'https://script.google.com/macros/s/AKfycbzOnva7d51fQGtk6tEB0Wk-1GqyqLSXbuapSf32Hqu29uaIIhExwq07F9sHITYxagI/exec';
         
-        // Gestione delle tab
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-                
-                // Aggiorna tab attiva
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Mostra contenuto tab
-                tabContents.forEach(content => {
-                    content.classList.remove('active');
-                    if (content.id === tabId) {
-                        content.classList.add('active');
+        let allUnits = [];
+        let approvedUnits = [];
+        let currentOrders = [];
+
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            setupEventListeners();
+            showNotification('Sistema caricato!', 'success');
+        });
+
+        function setupEventListeners() {
+            // Gestione tab
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                    
+                    if (tab.dataset.tab === 'units') {
+                        loadUnits();
+                    } else if (tab.dataset.tab === 'orders') {
+                        loadApprovedUnits();
                     }
                 });
-                
-                // Se è la tab delle unità, carica le unità
-                if (tabId === 'units') {
-                    loadUnits();
-                }
-                
-                // Se è la tab degli ordini, carica le unità approvate
-                if (tabId === 'orders') {
-                    loadApprovedUnits();
+            });
+
+            // Ricerca unità
+            document.getElementById('searchUnits').addEventListener('input', function(e) {
+                filterUnits(e.target.value);
+            });
+
+            // Selezione unità per ordini
+            document.getElementById('orderUnit').addEventListener('change', function() {
+                if (this.value) {
+                    document.getElementById('passwordSection').style.display = 'block';
+                } else {
+                    document.getElementById('passwordSection').style.display = 'none';
+                    document.getElementById('orderForm').style.display = 'none';
                 }
             });
-        });
-        
-        // Registrazione unità
-        registrationForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Verifica che le password coincidano
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            
-            if (password !== confirmPassword) {
-                showMessage('Le password non coincidono', 'error');
-                return;
-            }
-            
-            // Prepara i dati
-            const formData = new FormData(registrationForm);
-            const data = {
-                action: 'register',
-                data: {
-                    matricola: String(formData.get('matricola')),
-                    password: await hashPassword(password),
-                    nick: String(formData.get('nick')),
-                    tipo: String(formData.get('tipo')),
-                    movimento: Number(formData.get('movimento')),
-                    visione: Number(formData.get('visione')),
-                    armatura: Number(formData.get('armatura')),
-                    rifornimenti: Number(formData.get('rifornimenti')),
-                    componenti: String(formData.get('componenti') || 'N/A')
+
+            // Verifica password
+            document.getElementById('unitPassword').addEventListener('input', function() {
+                if (this.value.length > 0) {
+                    verifyPassword();
                 }
-            };
-            
-            // Invia richiesta
+            });
+
+            // Cambio tipo ordine
+            document.getElementById('orderType').addEventListener('change', updateOrderDetails);
+        }
+
+        // CARICAMENTO DATI
+        async function loadAllData() {
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showMessage('Unità registrata con successo! In attesa di approvazione.', 'success');
-                    registrationForm.reset();
-                } else {
-                    showMessage('Errore durante la registrazione: ' + result.message, 'error');
-                }
-            } catch (error) {
-                showMessage('Errore di connessione: ' + error.message, 'error');
-            }
-        });
-        
-        // Carica le unità registrate
-        async function loadUnits() {
-            try {
-                const response = await fetch(API_URL);
+                showNotification('🔄 Caricamento dati...', 'warning');
+                const response = await fetch(READ_API_URL);
                 const data = await response.json();
                 
                 if (data.success) {
-                    displayUnits(data.data);
+                    allUnits = data.data;
+                    approvedUnits = allUnits.filter(unit => unit.approvata === 'si');
+                    updateStats();
+                    loadUnits();
+                    loadApprovedUnits();
+                    showNotification('✅ Dati caricati correttamente!', 'success');
                 } else {
-                    showMessage('Errore nel caricamento delle unità', 'error');
+                    throw new Error(data.message);
                 }
             } catch (error) {
-                showMessage('Errore di connessione: ' + error.message, 'error');
+                showNotification(`❌ Errore caricamento: ${error.message}`, 'error');
             }
         }
-        
-        // Mostra le unità nella lista
-        function displayUnits(units) {
-            unitsList.innerHTML = '';
-            
-            if (units.length === 0) {
-                unitsList.innerHTML = '<p>Nessuna unità registrata.</p>';
-                return;
-            }
-            
-            units.forEach(unit => {
-                const unitCard = document.createElement('div');
-                unitCard.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
-                
-                const statusText = unit.approvata === 'si' ? 'Schierata' : 'In attesa di schieramento';
-                const statusClass = unit.approvata === 'si' ? 'status-approved' : 'status-pending';
-                
-                unitCard.innerHTML = `
-                    <div class="unit-header">
-                        <div class="unit-id">${unit.matricola}</div>
-                        <div class="unit-status ${statusClass}">${statusText}</div>
-                    </div>
-                    <div class="unit-nick">${unit.nick}</div>
-                    <div class="unit-type">${unit.tipo}</div>
-                    <div class="unit-details">
-                        <div>Posizione: ${unit.posizione}</div>
-                        <div>Movimento: ${unit.movimento}</div>
-                        <div>Visione: ${unit.visione}</div>
-                        <div>Armatura: ${unit.armatura}</div>
-                        <div>Rifornimenti: ${unit.rifornimenti}</div>
-                    </div>
-                    <button class="stats-btn" data-matricola="${unit.matricola}">Visualizza Statistiche</button>
-                `;
-                
-                unitsList.appendChild(unitCard);
-            });
-            
-            // Aggiungi event listener per i pulsanti delle statistiche
-            document.querySelectorAll('.stats-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const matricola = btn.getAttribute('data-matricola');
-                    showUnitStats(matricola, units);
-                });
-            });
-        }
-        
-        // Mostra statistiche dettagliate di un'unità
-        function showUnitStats(matricola, units) {
-            const unit = units.find(u => u.matricola === matricola);
-            
-            if (!unit) return;
-            
-            // Crea un modal o popup con le statistiche
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '0';
-            modal.style.left = '0';
-            modal.style.width = '100%';
-            modal.style.height = '100%';
-            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-            modal.style.display = 'flex';
-            modal.style.justifyContent = 'center';
-            modal.style.alignItems = 'center';
-            modal.style.zIndex = '1000';
-            
-            modal.innerHTML = `
-                <div style="background: white; padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%;">
-                    <h2>Statistiche Unità ${unit.matricola}</h2>
-                    <div style="margin-top: 1rem;">
-                        <p><strong>Nickname:</strong> ${unit.nick}</p>
-                        <p><strong>Tipo:</strong> ${unit.tipo}</p>
-                        <p><strong>Posizione:</strong> ${unit.posizione}</p>
-                        <p><strong>Movimento:</strong> ${unit.movimento}</p>
-                        <p><strong>Visione:</strong> ${unit.visione}</p>
-                        <p><strong>Armatura:</strong> ${unit.armatura}</p>
-                        <p><strong>Rifornimenti:</strong> ${unit.rifornimenti}</p>
-                        <p><strong>Trasportata:</strong> ${unit.trasportata || 'N/A'}</p>
-                        <p><strong>Componenti:</strong> ${unit.componenti || 'Nessuno'}</p>
-                    </div>
-                    <button id="close-modal" style="margin-top: 1rem;">Chiudi</button>
+
+        function updateStats() {
+            const total = allUnits.length;
+            const approved = allUnits.filter(u => u.approvata === 'si').length;
+            const pending = total - approved;
+
+            document.getElementById('totalUnits').textContent = total;
+            document.getElementById('approvedUnits').textContent = approved;
+            document.getElementById('pendingUnits').textContent = pending;
+
+            // Aggiorna stats container
+            document.getElementById('statsContainer').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${total}</div>
+                    <div class="stat-label">Unitá Totali</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #27ae60;">${approved}</div>
+                    <div class="stat-label">Approvate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #f39c12;">${pending}</div>
+                    <div class="stat-label">In Attesa</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: #3498db;">${currentOrders.length}</div>
+                    <div class="stat-label">Ordini in Coda</div>
                 </div>
             `;
-            
-            document.body.appendChild(modal);
-            
-            // Chiudi il modal
-            document.getElementById('close-modal').addEventListener('click', () => {
-                document.body.removeChild(modal);
+        }
+
+        // GESTIONE UNITÀ
+        function loadUnits() {
+            const grid = document.getElementById('unitsGrid');
+            grid.innerHTML = '';
+
+            if (allUnits.length === 0) {
+                grid.innerHTML = '<p>Nessuna unità registrata</p>';
+                return;
+            }
+
+            allUnits.forEach(unit => {
+                const card = document.createElement('div');
+                card.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
+                
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>${unit.matricola}</strong>
+                        <span class="status status-${unit.approvata === 'si' ? 'approved' : 'pending'}">
+                            ${unit.approvata === 'si' ? 'APPROVATA' : 'IN ATTESA'}
+                        </span>
+                    </div>
+                    <div>👤 ${unit.nick}</div>
+                    <div>🎯 ${unit.tipo} | 📍 ${unit.posizione}</div>
+                    <div>🚶 ${unit.movimento}m | 👁️ ${unit.visione}m | 🛡️ ${unit.armatura}</div>
+                    <div>📦 Rifornimenti: ${unit.rifornimenti}</div>
+                    <div>🔧 ${unit.componenti || 'Nessuno'}</div>
+                    <div style="margin-top: 10px; font-size: 0.8rem; color: #7f8c8d;">
+                        Password: ${unit.password.substring(0, 10)}...
+                    </div>
+                `;
+                
+                grid.appendChild(card);
             });
         }
-        
-        // Carica le unità approvate per gli ordini
-        async function loadApprovedUnits() {
-            try {
-                const response = await fetch(API_URL);
-                const data = await response.json();
-                
-                if (data.success) {
-                    const approvedUnits = data.data.filter(unit => unit.approvata === 'si');
-                    populateOrderUnitSelect(approvedUnits);
-                } else {
-                    showMessage('Errore nel caricamento delle unità', 'error');
-                }
-            } catch (error) {
-                showMessage('Errore di connessione: ' + error.message, 'error');
-            }
-        }
-        
-        // Popola il selettore delle unità per gli ordini
-        function populateOrderUnitSelect(units) {
-            orderUnitSelect.innerHTML = '<option value="">Seleziona unità</option>';
+
+        function filterUnits(searchTerm) {
+            const filtered = allUnits.filter(unit => 
+                unit.matricola.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                unit.nick.toLowerCase().includes(searchTerm.toLowerCase())
+            );
             
-            units.forEach(unit => {
+            const grid = document.getElementById('unitsGrid');
+            grid.innerHTML = '';
+            
+            filtered.forEach(unit => {
+                const card = document.createElement('div');
+                card.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>${unit.matricola}</strong>
+                        <span class="status status-${unit.approvata === 'si' ? 'approved' : 'pending'}">
+                            ${unit.approvata === 'si' ? 'APPROVATA' : 'IN ATTESA'}
+                        </span>
+                    </div>
+                    <div>👤 ${unit.nick}</div>
+                    <div>🎯 ${unit.tipo}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function loadApprovedUnits() {
+            const select = document.getElementById('orderUnit');
+            select.innerHTML = '<option value="">Seleziona unità approvata...</option>';
+            
+            approvedUnits.forEach(unit => {
                 const option = document.createElement('option');
                 option.value = unit.matricola;
                 option.textContent = `${unit.matricola} - ${unit.nick} (${unit.tipo})`;
-                orderUnitSelect.appendChild(option);
+                select.appendChild(option);
             });
         }
-        
-        // Quando si seleziona un'unità per gli ordini
-        orderUnitSelect.addEventListener('change', () => {
-            if (orderUnitSelect.value) {
-                passwordSection.style.display = 'block';
-            } else {
-                passwordSection.style.display = 'none';
-                orderForm.style.display = 'none';
-            }
-        });
-        
-        // Verifica password per l'unità selezionata
-        unitPasswordInput.addEventListener('input', async () => {
-            if (unitPasswordInput.value.length > 0) {
-                // In un'implementazione reale, qui verificheremmo la password con l'API
-                // Per ora, mostriamo il form degli ordini dopo un ritardo simulato
-                setTimeout(() => {
-                    orderForm.style.display = 'block';
-                }, 500);
-            } else {
-                orderForm.style.display = 'none';
-            }
-        });
-        
-        // Gestione del tipo di ordine selezionato
-        orderTypeSelect.addEventListener('change', () => {
-            updateOrderDetails();
-        });
-        
-        // Aggiorna i dettagli dell'ordine in base al tipo selezionato
-        function updateOrderDetails() {
-            const orderType = orderTypeSelect.value;
-            let html = '';
+
+        // REGISTRAZIONE
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            switch (orderType) {
-                case 'muoversi':
-                    html = `
-                        <div class="form-group">
-                            <label for="dettagli">Casella Destinazione</label>
-                            <input type="text" id="dettagli" name="dettagli" placeholder="Es: B2" required>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'salire':
-                case 'scendere':
-                    html = `
-                        <div class="form-group">
-                            <label for="dettagli">Posizione</label>
-                            <input type="text" id="dettagli" name="dettagli" placeholder="Es: C3" required>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'attivare':
-                case 'ricaricare':
-                    html = `
-                        <div class="form-group">
-                            <label for="dettagli">Nome Componente</label>
-                            <input type="text" id="dettagli" name="dettagli" placeholder="Es: Fucile" required>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'consumare':
-                    html = `
-                        <div class="form-group">
-                            <label for="quantita">Quantità Rifornimenti</label>
-                            <input type="number" id="quantita" name="quantita" min="1" required>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'cedere':
-                    html = `
-                        <div class="form-group">
-                            <label for="target">Unità Destinataria</label>
-                            <input type="text" id="target" name="target" placeholder="Es: XYZ-789" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="quantita">Quantità</label>
-                            <input type="number" id="quantita" name="quantita" min="1" required>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'cura':
-                    // Nessun dettaglio aggiuntivo necessario
-                    html = '<p>Ordine di cura - nessun dettaglio aggiuntivo richiesto</p>';
-                    break;
-                    
-                default:
-                    html = '';
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                showNotification('Le password non coincidono', 'error');
+                return;
             }
-            
-            orderDetails.innerHTML = html;
-        }
-        
-        // Aggiungi ordine alla catena
-        addOrderBtn.addEventListener('click', () => {
-            const orderType = orderTypeSelect.value;
-            const matricola = orderUnitSelect.value;
-            
-            if (!orderType || !matricola) {
-                showMessage('Seleziona un tipo di ordine e verifica di aver selezionato un\'unità', 'error');
+
+            // Controlla se la matricola esiste già
+            const matricola = document.getElementById('matricola').value;
+            if (allUnits.some(unit => unit.matricola === matricola)) {
+                showNotification('Matricola già esistente!', 'error');
+                return;
+            }
+
+            // Controlla se il nick esiste già
+            const nick = document.getElementById('nick').value;
+            if (allUnits.some(unit => unit.nick === nick)) {
+                showNotification('Nickname già registrato!', 'error');
                 return;
             }
             
-            let orderData = {
-                tipoOrdine: orderType,
+            const unitData = {
+                matricola: matricola,
+                password: await hashPassword(password),
+                nick: nick,
+                tipo: document.getElementById('tipo').value,
+                movimento: parseInt(document.getElementById('movimento').value),
+                visione: parseInt(document.getElementById('visione').value),
+                armatura: parseInt(document.getElementById('armatura').value),
+                rifornimenti: parseInt(document.getElementById('rifornimenti').value),
+                componenti: document.getElementById('componenti').value || 'N/A'
+            };
+            
+            await sendRequest('register', unitData, 'Unità registrata con successo!');
+            this.reset();
+        });
+
+        // VERIFICA PASSWORD
+        async function verifyPassword() {
+            const matricola = document.getElementById('orderUnit').value;
+            const password = document.getElementById('unitPassword').value;
+            const unit = allUnits.find(u => u.matricola === matricola);
+            
+            if (unit) {
+                const hashedInput = await hashPassword(password);
+                if (hashedInput === unit.password) {
+                    document.getElementById('orderForm').style.display = 'block';
+                    showNotification('✅ Password corretta!', 'success');
+                } else {
+                    showNotification('❌ Password errata!', 'error');
+                }
+            }
+        }
+
+        // GESTIONE ORDINI
+        function updateOrderDetails() {
+            const detailsDiv = document.getElementById('orderDetails');
+            const type = document.getElementById('orderType').value;
+            
+            let html = '';
+            switch(type) {
+                case 'muoversi':
+                    html = `<div class="form-group"><label>Casella Destinazione *</label><input type="text" id="orderDestination" placeholder="Es: B2" required></div>`;
+                    break;
+                case 'salire':
+                case 'scendere':
+                    html = `<div class="form-group"><label>Posizione *</label><input type="text" id="orderPosition" placeholder="Es: C3" required></div>`;
+                    break;
+                case 'attivare':
+                case 'ricaricare':
+                    html = `<div class="form-group"><label>Nome Componente *</label><input type="text" id="orderComponent" placeholder="Es: Fucile" required></div>`;
+                    break;
+                case 'consumare':
+                    html = `<div class="form-group"><label>Quantità Rifornimenti *</label><input type="number" id="orderQuantity" min="1" required></div>`;
+                    break;
+                case 'cedere':
+                    html = `
+                        <div class="form-group"><label>Unità Destinataria *</label>
+                        <select id="orderTarget" required>
+                            <option value="">Seleziona unità...</option>
+                            ${approvedUnits.filter(u => u.matricola !== document.getElementById('orderUnit').value)
+                                .map(u => `<option value="${u.matricola}">${u.matricola} - ${u.nick}</option>`).join('')}
+                        </select></div>
+                        <div class="form-group"><label>Quantità *</label><input type="number" id="orderQuantity" min="1" required></div>`;
+                    break;
+                case 'cura':
+                    html = '<div class="form-group"><p>💊 Ordine di cura - nessun dettaglio aggiuntivo</p></div>';
+                    break;
+            }
+            
+            detailsDiv.innerHTML = html;
+        }
+
+        function addOrderToChain() {
+            const matricola = document.getElementById('orderUnit').value;
+            const tipoOrdine = document.getElementById('orderType').value;
+            
+            if (!matricola || !tipoOrdine) {
+                showNotification('Seleziona unità e tipo ordine', 'error');
+                return;
+            }
+            
+            const orderData = {
+                matricola: matricola,
+                tipoOrdine: tipoOrdine,
                 dettagli: '',
                 target: '',
                 quantità: ''
             };
             
-            // Raccogli i dettagli specifici in base al tipo di ordine
-            switch (orderType) {
+            switch(tipoOrdine) {
                 case 'muoversi':
+                    orderData.dettagli = document.getElementById('orderDestination')?.value || '';
+                    break;
                 case 'salire':
                 case 'scendere':
+                    orderData.dettagli = document.getElementById('orderPosition')?.value || '';
+                    break;
                 case 'attivare':
                 case 'ricaricare':
-                    orderData.dettagli = document.getElementById('dettagli')?.value || '';
+                    orderData.dettagli = document.getElementById('orderComponent')?.value || '';
                     break;
-                    
                 case 'consumare':
-                    orderData.quantità = document.getElementById('quantita')?.value || '';
+                    orderData.quantità = document.getElementById('orderQuantity')?.value || '';
                     break;
-                    
                 case 'cedere':
-                    orderData.target = document.getElementById('target')?.value || '';
-                    orderData.quantità = document.getElementById('quantita')?.value || '';
+                    orderData.target = document.getElementById('orderTarget')?.value || '';
+                    orderData.quantità = document.getElementById('orderQuantity')?.value || '';
                     break;
             }
             
-            // Aggiungi l'ordine alla catena
-            addOrderToChain(orderData);
+            currentOrders.push(orderData);
+            updateOrderChainDisplay();
+            document.getElementById('orderChain').style.display = 'block';
+            showNotification('Ordine aggiunto alla catena!', 'success');
             
-            // Pulisci il form
-            orderTypeSelect.value = '';
-            orderDetails.innerHTML = '';
+            // Reset form
+            document.getElementById('orderType').value = '';
+            document.getElementById('orderDetails').innerHTML = '';
+        }
+
+        function updateOrderChainDisplay() {
+            const container = document.getElementById('orderItems');
+            container.innerHTML = '';
             
-            // Mostra il pulsante per inviare gli ordini
-            submitOrdersBtn.style.display = 'block';
-        });
-        
-        // Aggiungi ordine alla catena visuale
-        function addOrderToChain(orderData) {
-            const orderItem = document.createElement('div');
-            orderItem.className = 'order-item';
-            
-            let detailsText = '';
-            if (orderData.dettagli) detailsText += `Dettagli: ${orderData.dettagli}`;
-            if (orderData.target) detailsText += ` | Target: ${orderData.target}`;
-            if (orderData.quantità) detailsText += ` | Quantità: ${orderData.quantità}`;
-            
-            orderItem.innerHTML = `
-                <div class="order-header">
-                    <div class="order-type">${getOrderTypeText(orderData.tipoOrdine)}</div>
-                    <button class="remove-order">Rimuovi</button>
-                </div>
-                <div class="order-details">${detailsText}</div>
-            `;
-            
-            // Aggiungi l'evento per rimuovere l'ordine
-            orderItem.querySelector('.remove-order').addEventListener('click', () => {
-                orderItems.removeChild(orderItem);
-                
-                // Nascondi il pulsante di invio se non ci sono più ordini
-                if (orderItems.children.length === 0) {
-                    submitOrdersBtn.style.display = 'none';
-                }
+            currentOrders.forEach((order, index) => {
+                const item = document.createElement('div');
+                item.className = 'order-item';
+                item.innerHTML = `
+                    <strong>${order.tipoOrdine}</strong> - ${order.matricola}
+                    ${order.dettagli ? ` | ${order.dettagli}` : ''}
+                    ${order.target ? ` → ${order.target}` : ''}
+                    ${order.quantità ? ` (${order.quantità})` : ''}
+                    <button onclick="removeOrder(${index})" style="float: right; background: var(--danger); padding: 2px 8px; font-size: 0.8rem;">❌</button>
+                `;
+                container.appendChild(item);
             });
-            
-            orderItems.appendChild(orderItem);
         }
-        
-        // Testo descrittivo per i tipi di ordine
-        function getOrderTypeText(type) {
-            const types = {
-                'muoversi': 'Muoversi',
-                'salire': 'Salire su Mezzo',
-                'scendere': 'Scendere da Mezzo',
-                'attivare': 'Attivare Componenti',
-                'consumare': 'Consumare Rifornimenti',
-                'cura': 'Cura',
-                'ricaricare': 'Ricaricare Componente',
-                'cedere': 'Cedere Rifornimenti'
-            };
-            
-            return types[type] || type;
+
+        function removeOrder(index) {
+            currentOrders.splice(index, 1);
+            updateOrderChainDisplay();
+            if (currentOrders.length === 0) {
+                document.getElementById('orderChain').style.display = 'none';
+            }
         }
-        
-        // Invia gli ordini
-        submitOrdersBtn.addEventListener('click', async () => {
-            const matricola = orderUnitSelect.value;
-            const orders = [];
-            
-            // Raccogli tutti gli ordini dalla catena
-            for (let i = 0; i < orderItems.children.length; i++) {
-                const orderItem = orderItems.children[i];
-                const orderType = orderItem.querySelector('.order-type').textContent;
-                const detailsText = orderItem.querySelector('.order-details').textContent;
-                
-                // Estrai i dettagli dal testo
-                let dettagli = '';
-                let target = '';
-                let quantità = '';
-                
-                const parts = detailsText.split(' | ');
-                parts.forEach(part => {
-                    if (part.startsWith('Dettagli: ')) {
-                        dettagli = part.replace('Dettagli: ', '');
-                    } else if (part.startsWith('Target: ')) {
-                        target = part.replace('Target: ', '');
-                    } else if (part.startsWith('Quantità: ')) {
-                        quantità = part.replace('Quantità: ', '');
-                    }
-                });
-                
-                // Trova la chiave del tipo di ordine
-                const tipoOrdine = Object.keys(getOrderTypeText).find(key => 
-                    getOrderTypeText(key) === orderType
-                ) || orderType.toLowerCase();
-                
-                orders.push({
-                    matricola,
-                    tipoOrdine,
-                    dettagli,
-                    target,
-                    quantità
-                });
+
+        async function submitAllOrders() {
+            if (currentOrders.length === 0) {
+                showNotification('Nessun ordine da inviare', 'error');
+                return;
             }
             
-            // Invia ogni ordine individualmente
+            showNotification(`📨 Invio ${currentOrders.length} ordini...`, 'warning');
+            
+            for (const order of currentOrders) {
+                await sendRequest('submitOrder', order, '', false);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Delay tra ordini
+            }
+            
+            showNotification(`✅ ${currentOrders.length} ordini inviati!`, 'success');
+            currentOrders = [];
+            document.getElementById('orderChain').style.display = 'none';
+            loadAllData(); // Ricarica dati per aggiornamenti
+        }
+
+        // FUNZIONI UTILITY
+        async function sendRequest(action, data, successMessage = '', showSuccess = true) {
             try {
-                for (const order of orders) {
-                    const data = {
-                        action: 'submitOrder',
-                        data: order
-                    };
-                    
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data)
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (!result.success) {
-                        showMessage(`Errore nell'invio dell'ordine: ${result.message}`, 'error');
-                        return;
+                const response = await fetch(WRITE_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        data: data
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (showSuccess) {
+                        showNotification('✅ ' + successMessage, 'success');
                     }
+                    // Ricarica i dati dopo modifiche
+                    setTimeout(loadAllData, 1000);
+                    return true;
+                } else {
+                    showNotification('❌ ' + result.message, 'error');
+                    return false;
                 }
-                
-                showMessage('Ordini inviati con successo!', 'success');
-                
-                // Pulisci la catena degli ordini
-                orderItems.innerHTML = '';
-                submitOrdersBtn.style.display = 'none';
-                
             } catch (error) {
-                showMessage('Errore di connessione: ' + error.message, 'error');
+                showNotification('❌ Errore di connessione: ' + error.message, 'error');
+                return false;
             }
-        });
-        
-        // Aggiorna la lista delle unità
-        refreshUnitsBtn.addEventListener('click', loadUnits);
-        
-        // Funzione per hash della password (SHA-256)
+        }
+
         async function hashPassword(password) {
             const encoder = new TextEncoder();
             const data = encoder.encode(password);
@@ -936,35 +836,43 @@
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
-        
-        // Mostra messaggi di stato
-        function showMessage(message, type) {
-            // Rimuovi messaggi precedenti
-            const existingMessages = document.querySelectorAll('.message');
-            existingMessages.forEach(msg => msg.remove());
+
+        function showNotification(message, type) {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
             
-            // Crea nuovo messaggio
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = message;
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
             
-            // Aggiungi il messaggio in cima al container
-            const container = document.querySelector('.container');
-            container.insertBefore(messageDiv, container.firstChild);
-            
-            // Rimuovi il messaggio dopo 5 secondi
+            setTimeout(() => notification.classList.add('show'), 100);
             setTimeout(() => {
-                if (messageDiv.parentNode) {
-                    messageDiv.parentNode.removeChild(messageDiv);
-                }
-            }, 5000);
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
         }
-        
-        // Inizializzazione
-        document.addEventListener('DOMContentLoaded', () => {
-            // Carica le unità approvate per la sezione ordini
-            loadApprovedUnits();
-        });
+
+        function exportData() {
+            const dataStr = JSON.stringify(allUnits, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'unita_militari.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('📊 Dati esportati!', 'success');
+        }
+
+        function showSystemInfo() {
+            alert(`Sistema Militare - Info
+📊 Unitá totali: ${allUnits.length}
+✅ Approvate: ${approvedUnits.length}
+⏳ In attesa: ${allUnits.length - approvedUnits.length}
+🔄 Ultimo aggiornamento: ${new Date().toLocaleTimeString()}
+`);
+        }
     </script>
 </body>
 </html>

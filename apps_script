@@ -1,0 +1,233 @@
+// Configurazione
+var SHEET_ID = '1djpONz3rJtEce-bl4Wsy1q46NRl1jTMC3uKxN1hQMng'; // Sostituisci con il tuo ID
+var SHEET_NAME = 'Foglio1'; // Modifica se il foglio ha nome diverso
+
+function doPost(e) {
+  try {
+    // Gestione CORS per preflight
+    if (e && e.parameter && e.parameter.method === 'OPTIONS') {
+      return ContentService.createTextOutput('')
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+    
+    var data = JSON.parse(e.postData.contents);
+    var action = data.action;
+    
+    if (action === 'register') {
+      return registerUnit(data.data);
+    } else if (action === 'submitOrder') {
+      return submitOrder(data.data);
+    } else {
+      return createResponse({success: false, message: 'Azione non valida'});
+    }
+  } catch (error) {
+    return createResponse({success: false, message: error.toString()});
+  }
+}
+
+function doGet(e) {
+  // Gestione CORS per preflight
+  if (e && e.parameter && e.parameter.method === 'OPTIONS') {
+    return ContentService.createTextOutput('')
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+  
+  return getAllUnits();
+}
+
+// Registra nuova unità
+function registerUnit(unitData) {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    var data = sheet.getDataRange().getValues();
+    
+    // Trova la prima riga vuota nella sezione unità PARTENDO DALLA RIGA 3
+    var rowIndex = -1;
+    for (var i = 2; i < data.length; i++) { // Inizia da riga 3 (indice 2)
+      if (!data[i][1] || data[i][1] === '') { // Colonna B (matricola) vuota
+        rowIndex = i;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) rowIndex = data.length;
+    
+    // Compila i dati nella riga
+    sheet.getRange(rowIndex + 1, 1, 1, 12).setValues([[
+      'NO', // approvata (colonna A)
+      unitData.matricola || 'N/A', // colonna B
+      unitData.password || 'N/A', // colonna C
+      unitData.nick || 'N/A', // colonna D
+      unitData.tipo || 'N/A', // colonna E
+      'N/A', // posizione (colonna F)
+      unitData.movimento || 'N/A', // colonna G
+      unitData.visione || 'N/A', // colonna H
+      unitData.armatura || 'N/A', // colonna I
+      (unitData.rifornimenti || 'N/A') + '/' + (unitData.rifornimenti || 'N/A'), // rifornimenti (colonna J)
+      'N/A', // trasportata (colonna K)
+      unitData.componenti || 'N/A' // componenti (colonna L)
+    ]]);
+    
+    return createResponse({success: true, message: 'Unità registrata'});
+  } catch (error) {
+    return createResponse({success: false, message: error.toString()});
+  }
+}
+
+// Invia ordine
+function submitOrder(orderData) {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    var data = sheet.getDataRange().getValues();
+    
+    // Trova la prima riga vuota nella sezione ordini PARTENDO DALLA RIGA 3
+    var rowIndex = -1;
+    for (var i = 2; i < data.length; i++) { // Inizia da riga 3 (indice 2)
+      if (!data[i][14] || data[i][14] === '') { // Colonna O (approvati) vuota
+        rowIndex = i;
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) rowIndex = data.length;
+    
+    // Mappa i dati dell'ordine nelle colonne corrette
+    var movimento = 'N/A';
+    var salireScendere = 'N/A';
+    var componenti = 'N/A';
+    var rifornimenti = 'N/A';
+    
+    switch (orderData.tipoOrdine) {
+      case 'muoversi':
+        movimento = orderData.dettagli || 'N/A'; // coordinata destinazione
+        break;
+      case 'salire':
+        salireScendere = 'salire(' + (orderData.dettagli || 'N/A') + ')';
+        break;
+      case 'scendere':
+        salireScendere = 'scendere(' + (orderData.dettagli || 'N/A') + ')';
+        break;
+      case 'attivare':
+        componenti = orderData.dettagli || 'N/A';
+        break;
+      case 'ricaricare':
+        rifornimenti = 'ricarica(' + (orderData.dettagli || 'N/A') + ')';
+        break;
+      case 'cura':
+        rifornimenti = 'cura';
+        break;
+      case 'consumare':
+        rifornimenti = 'consuma(' + (orderData.quantità || 'N/A') + ')';
+        break;
+      case 'cedere':
+        rifornimenti = 'cede(' + (orderData.quantità || 'N/A') + ') a ' + (orderData.target || 'N/A');
+        break;
+    }
+    
+    // Compila i dati nella riga (colonne da O a T)
+    sheet.getRange(rowIndex + 1, 15, 1, 6).setValues([[
+      'NO', // approvati = "no" (colonna O)
+      orderData.matricola || 'N/A', // colonna P (matricola)
+      movimento, // colonna Q (movimento - coordinata destinazione)
+      salireScendere, // colonna R (salire/scendere)
+      componenti, // colonna S (componenti)
+      rifornimenti // colonna T (rifornimenti)
+    ]]);
+    
+    return createResponse({success: true, message: 'Ordine inviato'});
+  } catch (error) {
+    return createResponse({success: false, message: error.toString()});
+  }
+}
+
+// Ottiene tutte le unità
+function getAllUnits() {
+  try {
+    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    var data = sheet.getDataRange().getValues();
+    var units = [];
+    
+    // Legge le unità dalle prime 12 colonne PARTENDO DALLA RIGA 3
+    for (var i = 2; i < data.length; i++) { // Inizia da riga 3 (indice 2)
+      if (data[i][1] && data[i][1] !== '' && data[i][1] !== 'N/A') { // Se c'è una matricola valida
+        units.push({
+          approvata: data[i][0] || 'NO',
+          matricola: data[i][1] || 'N/A',
+          password: data[i][2] || 'N/A',
+          nick: data[i][3] || 'N/A',
+          tipo: data[i][4] || 'N/A',
+          posizione: data[i][5] || 'N/A',
+          movimento: data[i][6] || 'N/A',
+          visione: data[i][7] || 'N/A',
+          armatura: data[i][8] || 'N/A',
+          rifornimenti: data[i][9] || 'N/A',
+          trasportata: data[i][10] || 'N/A',
+          componenti: data[i][11] || 'N/A'
+        });
+      }
+    }
+    
+    return createResponse({success: true, data: units});
+  } catch (error) {
+    return createResponse({success: false, message: error.toString()});
+  }
+}
+
+// Crea risposta standard
+function createResponse(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// Funzione di test aggiornata
+function test() {
+  // Test registrazione
+  var testUnit = {
+    matricola: 'ABC-123',
+    password: 'hashedpassword',
+    nick: 'testuser',
+    tipo: 'Fanteria',
+    movimento: 2,
+    visione: 1,
+    armatura: 1,
+    rifornimenti: 3,
+    componenti: 'Fucile'
+  };
+  
+  var result = registerUnit(testUnit);
+  Logger.log('Registrazione: ' + JSON.stringify(result));
+  
+  // Test ordine - muoversi
+  var testOrder = {
+    matricola: 'ABC-123',
+    tipoOrdine: 'muoversi',
+    dettagli: 'B2'
+  };
+  
+  var result2 = submitOrder(testOrder);
+  Logger.log('Ordine muoversi: ' + JSON.stringify(result2));
+  
+  // Test ordine - salire
+  var testOrder2 = {
+    matricola: 'ABC-123',
+    tipoOrdine: 'salire',
+    dettagli: 'C3'
+  };
+  
+  var result3 = submitOrder(testOrder2);
+  Logger.log('Ordine salire: ' + JSON.stringify(result3));
+  
+  // Test ordine - cura
+  var testOrder3 = {
+    matricola: 'ABC-123',
+    tipoOrdine: 'cura'
+  };
+  
+  var result4 = submitOrder(testOrder3);
+  Logger.log('Ordine cura: ' + JSON.stringify(result4));
+  
+  // Test get units
+  var result5 = getAllUnits();
+  Logger.log('Unità: ' + JSON.stringify(result5));
+}
