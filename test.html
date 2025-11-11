@@ -658,69 +658,137 @@
             document.getElementById('registrationForm').reset();
         }
 
-        // GESTIONE UNITÀ
-        function loadUnits() {
-            const grid = document.getElementById('unitsGrid');
-            
-            if (allUnits.length === 0) {
-                grid.innerHTML = '<div class="loading">Nessuna unità registrata</div>';
-                return;
-            }
+        // INVIO DATI con Google Forms - VERSIONE CORRETTA
+        async function sendViaGoogleForms(action, data) {
+            return new Promise((resolve, reject) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'https://docs.google.com/forms/d/e/1FAIpQLSdl4rtf7gXKCmJJgcePMJ-EE21XChmf14OX4vqkdqJ9zUXy6A/formResponse';
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
 
-            grid.innerHTML = '';
-            allUnits.forEach(unit => {
-                const card = document.createElement('div');
-                card.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
-                
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <strong>${unit.matricola}</strong>
-                        <span class="status status-${unit.approvata === 'si' ? 'approved' : 'pending'}">
-                            ${unit.approvata === 'si' ? 'APPROVATA' : 'IN ATTESA'}
-                        </span>
-                    </div>
-                    <div>👤 ${unit.nick}</div>
-                    <div>🎯 ${unit.tipo} | 📍 ${unit.posizione}</div>
-                    <div>🚶 ${unit.movimento}m | 👁️ ${unit.visione}m | 🛡️ ${unit.armatura}</div>
-                    <div>📦 Rifornimenti: ${unit.rifornimenti}</div>
-                    <div>🔧 ${unit.componenti || 'Nessuno'}</div>
-                    <div style="margin-top: 10px; font-size: 0.8rem; color: #7f8c8d;">
-                        Password: ${unit.password ? unit.password.substring(0, 10) + '...' : 'N/A'}
-                    </div>
-                `;
-                
-                grid.appendChild(card);
+                // Crea una stringa leggibile invece di JSON
+                let formData = '';
+                if (action === 'register') {
+                    formData = `REGISTRAZIONE - Matricola: ${data.matricola}, Nick: ${data.nick}, Tipo: ${data.tipo}, Movimento: ${data.movimento}, Visione: ${data.visione}, Armatura: ${data.armatura}, Rifornimenti: ${data.rifornimenti}`;
+                } else if (action === 'submitOrder') {
+                    formData = `ORDINE - Matricola: ${data.matricola}, Tipo: ${data.tipoOrdine}, Dettagli: ${data.dettagli || ''}, Target: ${data.target || ''}, Quantità: ${data.quantità || ''}`;
+                }
+
+                const input = document.createElement('input');
+                input.name = 'entry.1179309262'; // ID del campo del form
+                input.value = formData;
+                form.appendChild(input);
+
+                let iframe = document.getElementById('hiddenFrame');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.name = 'hiddenFrame';
+                    iframe.id = 'hiddenFrame';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+
+                iframe.onload = function() {
+                    resolve(true);
+                    setTimeout(() => {
+                        if (form.parentNode) {
+                            document.body.removeChild(form);
+                        }
+                    }, 1000);
+                };
+
+                document.body.appendChild(form);
+                form.submit();
+
+                setTimeout(() => resolve(true), 5000);
             });
         }
 
-        function filterUnits(searchTerm) {
-            const filtered = allUnits.filter(unit => 
-                unit.matricola.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                unit.nick.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+        // REGISTRAZIONE UNITÀ - Versione corretta
+        async function handleRegistration() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
             
-            const grid = document.getElementById('unitsGrid');
-            grid.innerHTML = '';
-            
-            if (filtered.length === 0) {
-                grid.innerHTML = '<div class="loading">Nessuna unità trovata</div>';
+            if (password !== confirmPassword) {
+                showNotification('Le password non coincidono', 'error');
+                return;
+            }
+
+            const matricola = document.getElementById('matricola').value;
+            if (allUnits.some(unit => unit.matricola === matricola)) {
+                showNotification('Matricola già esistente!', 'error');
+                return;
+            }
+
+            const nick = document.getElementById('nick').value;
+            if (allUnits.some(unit => unit.nick === nick)) {
+                showNotification('Nickname già registrato!', 'error');
                 return;
             }
             
-            filtered.forEach(unit => {
-                const card = document.createElement('div');
-                card.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <strong>${unit.matricola}</strong>
-                        <span class="status status-${unit.approvata === 'si' ? 'approved' : 'pending'}">
-                            ${unit.approvata === 'si' ? 'APPROVATA' : 'IN ATTESA'}
-                        </span>
-                    </div>
-                    <div>👤 ${unit.nick}</div>
-                    <div>🎯 ${unit.tipo}</div>
-                `;
-                grid.appendChild(card);
+            const unitData = {
+                matricola: matricola,
+                password: await hashPassword(password),
+                nick: nick,
+                tipo: document.getElementById('tipo').value,
+                movimento: parseInt(document.getElementById('movimento').value),
+                visione: parseInt(document.getElementById('visione').value),
+                armatura: parseInt(document.getElementById('armatura').value),
+                rifornimenti: parseInt(document.getElementById('rifornimenti').value),
+                componenti: document.getElementById('componenti').value || 'N/A'
+            };
+            
+            // INVIA AL FORM E ALLO SCRIPT DIRECTAMENTE
+            await sendDataWithFallback('register', unitData, 'Unità registrata con successo!');
+            document.getElementById('registrationForm').reset();
+        }
+
+        // INVIO CON DOPPIO FALLBACK
+        async function sendDataWithFallback(action, data, successMessage) {
+            showNotification('📨 Invio dati in corso...', 'warning');
+            
+            try {
+                // PRIMA PROVA: Invio diretto allo script
+                const directSuccess = await sendDirectToScript(action, data);
+                if (directSuccess) {
+                    showNotification('✅ ' + successMessage, 'success');
+                    setTimeout(loadAllData, 2000);
+                    return true;
+                }
+                
+                // SECONDA PROVA: Google Forms con dati leggibili
+                await sendViaGoogleForms(action, data);
+                showNotification('✅ Dati inviati al Form!', 'success');
+                return true;
+                
+            } catch (error) {
+                showNotification('❌ Errore nell\'invio dati', 'error');
+                return false;
+            }
+        }
+
+        // INVIO DIRETTO ALLO SCRIPT
+        async function sendDirectToScript(action, data) {
+            return new Promise((resolve) => {
+                const callbackName = 'directCallback_' + Date.now();
+                
+                window[callbackName] = function(response) {
+                    if (response && response.success) {
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                    delete window[callbackName];
+                };
+
+                const script = document.createElement('script');
+                const encodedData = encodeURIComponent(JSON.stringify(data));
+                script.src = `${API_URL}?action=${action}&data=${encodedData}&callback=${callbackName}`;
+                script.onerror = () => resolve(false);
+                document.head.appendChild(script);
+
+                setTimeout(() => resolve(false), 8000);
             });
         }
 
