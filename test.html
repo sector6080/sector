@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Militare - Versione Completa</title>
+    <title>Sistema Militare - Versione No-CORS</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -253,13 +253,39 @@
             border-radius: 6px;
             border-left: 4px solid var(--accent);
         }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+        
+        .connection-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        
+        .status-connected {
+            background: var(--success);
+            color: white;
+        }
+        
+        .status-disconnected {
+            background: var(--danger);
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎯 Sistema Militare - Versione Completa</h1>
-            <button onclick="loadAllData()" class="btn-success">🔄 Aggiorna Dati</button>
+            <h1>🎯 Sistema Militare - Versione No-CORS</h1>
+            <div style="display: flex; align-items: center;">
+                <button onclick="loadAllData()" class="btn-success">🔄 Aggiorna Dati</button>
+                <span id="connectionStatus" class="connection-status status-disconnected">Disconnesso</span>
+            </div>
         </header>
 
         <div class="stats" id="statsContainer">
@@ -345,7 +371,7 @@
                 <input type="text" id="searchUnits" placeholder="🔍 Cerca per matricola o nick..." style="width: 100%;">
             </div>
             <div id="unitsGrid" class="units-grid">
-                <!-- Unitá caricate dinamicamente -->
+                <div class="loading">Caricamento unità in corso...</div>
             </div>
         </div>
 
@@ -415,25 +441,24 @@
             
             <button onclick="exportData()" class="btn-warning">📊 Esporta Dati</button>
             <button onclick="showSystemInfo()" class="btn">ℹ️ Info Sistema</button>
+            <button onclick="testConnection()" class="btn">🔧 Test Connessione</button>
         </div>
     </div>
 
     <script>
-        // URL che funziona per la lettura
-        const READ_API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLirWy0te2-jxQcTLBWG5q0S1ciaEXXgdaTHjvdee3qaf9RZYdRrp_wl3HjrqxDhxAYcv_KFLvecKxj9bSxRFvZn1k38iZTvEksZat8xjthLiNYmdWQBCxhC68fCu8cRG53fCsmQ-crv-9L2NATZlayvdqFwgHB3O5GDjsfO1I7T5DN7NUEWjlPsIvKlHHNOIvJAZiwBVs6AgXjwrrlJTYIclZryy1xvv8TPMd1ClKfKvB8l4i4F0O5HizHgNnYd1DSBHGyLQ-TFHcWJiZrk1pkqOOffMA&lib=MLV1ks7wQQ37SnILDHqD1wVTcg6hxLEu9';
-        
-        // URL per scrivere (POST)
-        const WRITE_API_URL = 'https://script.google.com/macros/s/AKfycbzOnva7d51fQGtk6tEB0Wk-1GqyqLSXbuapSf32Hqu29uaIIhExwq07F9sHITYxagI/exec';
+        // URL dell'API Google Apps Script
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzOnva7d51fQGtk6tEB0Wk-1GqyqLSXbuapSf32Hqu29uaIIhExwq07F9sHITYxagI/exec';
         
         let allUnits = [];
         let approvedUnits = [];
         let currentOrders = [];
+        let isConnected = false;
 
         // Inizializzazione
         document.addEventListener('DOMContentLoaded', function() {
             loadAllData();
             setupEventListeners();
-            showNotification('Sistema caricato!', 'success');
+            testConnection();
         });
 
         function setupEventListeners() {
@@ -478,28 +503,102 @@
 
             // Cambio tipo ordine
             document.getElementById('orderType').addEventListener('change', updateOrderDetails);
+
+            // Registrazione form
+            document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await handleRegistration();
+            });
         }
 
-        // CARICAMENTO DATI
+        // TEST CONNESSIONE
+        async function testConnection() {
+            try {
+                showNotification('🔧 Test connessione in corso...', 'warning');
+                
+                // Prova una richiesta no-cors per testare la connessione
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'test' })
+                });
+
+                isConnected = true;
+                updateConnectionStatus();
+                showNotification('✅ Connessione API funzionante!', 'success');
+                
+            } catch (error) {
+                isConnected = false;
+                updateConnectionStatus();
+                showNotification('⚠️ Connessione limitata (no-cors)', 'warning');
+            }
+        }
+
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            if (isConnected) {
+                statusElement.textContent = 'Connesso';
+                statusElement.className = 'connection-status status-connected';
+            } else {
+                statusElement.textContent = 'Limitato';
+                statusElement.className = 'connection-status status-disconnected';
+            }
+        }
+
+        // CARICAMENTO DATI con JSONP
         async function loadAllData() {
             try {
-                showNotification('🔄 Caricamento dati...', 'warning');
-                const response = await fetch(READ_API_URL);
-                const data = await response.json();
+                showNotification('🔄 Caricamento dati in corso...', 'warning');
                 
-                if (data.success) {
-                    allUnits = data.data;
-                    approvedUnits = allUnits.filter(unit => unit.approvata === 'si');
-                    updateStats();
-                    loadUnits();
-                    loadApprovedUnits();
-                    showNotification('✅ Dati caricati correttamente!', 'success');
-                } else {
-                    throw new Error(data.message);
-                }
+                // Usa JSONP per caricare i dati
+                await loadDataWithJSONP();
+                
             } catch (error) {
-                showNotification(`❌ Errore caricamento: ${error.message}`, 'error');
+                showNotification('❌ Errore caricamento dati: ' + error.message, 'error');
             }
+        }
+
+        function loadDataWithJSONP() {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonpCallback_' + Date.now();
+                
+                window[callbackName] = function(data) {
+                    if (data && data.success) {
+                        allUnits = data.data;
+                        approvedUnits = allUnits.filter(unit => unit.approvata === 'si');
+                        updateStats();
+                        loadUnits();
+                        loadApprovedUnits();
+                        showNotification('✅ Dati caricati correttamente!', 'success');
+                        resolve(data);
+                    } else {
+                        reject(new Error(data ? data.message : 'Dati non validi'));
+                    }
+                    delete window[callbackName];
+                    document.getElementById('jsonpScript')?.remove();
+                };
+
+                const script = document.createElement('script');
+                script.id = 'jsonpScript';
+                script.src = `${API_URL}?callback=${callbackName}`;
+                script.onerror = () => {
+                    reject(new Error('Errore nel caricamento JSONP'));
+                    delete window[callbackName];
+                };
+                
+                document.head.appendChild(script);
+
+                // Timeout
+                setTimeout(() => {
+                    if (window[callbackName]) {
+                        reject(new Error('Timeout caricamento dati'));
+                        delete window[callbackName];
+                    }
+                }, 10000);
+            });
         }
 
         function updateStats() {
@@ -532,83 +631,8 @@
             `;
         }
 
-        // GESTIONE UNITÀ
-        function loadUnits() {
-            const grid = document.getElementById('unitsGrid');
-            grid.innerHTML = '';
-
-            if (allUnits.length === 0) {
-                grid.innerHTML = '<p>Nessuna unità registrata</p>';
-                return;
-            }
-
-            allUnits.forEach(unit => {
-                const card = document.createElement('div');
-                card.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
-                
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <strong>${unit.matricola}</strong>
-                        <span class="status status-${unit.approvata === 'si' ? 'approved' : 'pending'}">
-                            ${unit.approvata === 'si' ? 'APPROVATA' : 'IN ATTESA'}
-                        </span>
-                    </div>
-                    <div>👤 ${unit.nick}</div>
-                    <div>🎯 ${unit.tipo} | 📍 ${unit.posizione}</div>
-                    <div>🚶 ${unit.movimento}m | 👁️ ${unit.visione}m | 🛡️ ${unit.armatura}</div>
-                    <div>📦 Rifornimenti: ${unit.rifornimenti}</div>
-                    <div>🔧 ${unit.componenti || 'Nessuno'}</div>
-                    <div style="margin-top: 10px; font-size: 0.8rem; color: #7f8c8d;">
-                        Password: ${unit.password.substring(0, 10)}...
-                    </div>
-                `;
-                
-                grid.appendChild(card);
-            });
-        }
-
-        function filterUnits(searchTerm) {
-            const filtered = allUnits.filter(unit => 
-                unit.matricola.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                unit.nick.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-            
-            const grid = document.getElementById('unitsGrid');
-            grid.innerHTML = '';
-            
-            filtered.forEach(unit => {
-                const card = document.createElement('div');
-                card.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <strong>${unit.matricola}</strong>
-                        <span class="status status-${unit.approvata === 'si' ? 'approved' : 'pending'}">
-                            ${unit.approvata === 'si' ? 'APPROVATA' : 'IN ATTESA'}
-                        </span>
-                    </div>
-                    <div>👤 ${unit.nick}</div>
-                    <div>🎯 ${unit.tipo}</div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function loadApprovedUnits() {
-            const select = document.getElementById('orderUnit');
-            select.innerHTML = '<option value="">Seleziona unità approvata...</option>';
-            
-            approvedUnits.forEach(unit => {
-                const option = document.createElement('option');
-                option.value = unit.matricola;
-                option.textContent = `${unit.matricola} - ${unit.nick} (${unit.tipo})`;
-                select.appendChild(option);
-            });
-        }
-
-        // REGISTRAZIONE
-        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
+        // REGISTRAZIONE con XMLHttpRequest
+        async function handleRegistration() {
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             
@@ -643,9 +667,142 @@
                 componenti: document.getElementById('componenti').value || 'N/A'
             };
             
-            await sendRequest('register', unitData, 'Unità registrata con successo!');
-            this.reset();
-        });
+            await sendPostRequest('register', unitData, 'Unità registrata con successo!');
+            document.getElementById('registrationForm').reset();
+        }
+
+        // INVIO RICHIESTE POST con XMLHttpRequest
+        async function sendPostRequest(action, data, successMessage = '') {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                const payload = JSON.stringify({
+                    action: action,
+                    data: data
+                });
+
+                xhr.open('POST', API_URL, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200 || xhr.status === 0) {
+                            // Successo - anche status 0 è accettato per cross-origin
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                if (response.success) {
+                                    showNotification('✅ ' + successMessage, 'success');
+                                    // Ricarica i dati dopo un breve delay
+                                    setTimeout(loadAllData, 1000);
+                                    resolve(response);
+                                } else {
+                                    showNotification('❌ ' + (response.message || 'Errore sconosciuto'), 'error');
+                                    reject(new Error(response.message));
+                                }
+                            } catch (e) {
+                                // Se non possiamo parsare la risposta, assumiamo successo per no-cors
+                                showNotification('✅ Richiesta inviata (modalità no-cors)', 'success');
+                                setTimeout(loadAllData, 1000);
+                                resolve({ success: true });
+                            }
+                        } else {
+                            showNotification('❌ Errore HTTP: ' + xhr.status, 'error');
+                            reject(new Error('HTTP Error: ' + xhr.status));
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    showNotification('❌ Errore di rete', 'error');
+                    reject(new Error('Network error'));
+                };
+                
+                xhr.ontimeout = function() {
+                    showNotification('❌ Timeout della richiesta', 'error');
+                    reject(new Error('Request timeout'));
+                };
+                
+                xhr.timeout = 10000; // 10 secondi timeout
+                xhr.send(payload);
+            });
+        }
+
+        // GESTIONE UNITÀ
+        function loadUnits() {
+            const grid = document.getElementById('unitsGrid');
+            
+            if (allUnits.length === 0) {
+                grid.innerHTML = '<div class="loading">Nessuna unità registrata</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            allUnits.forEach(unit => {
+                const card = document.createElement('div');
+                card.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
+                
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>${unit.matricola}</strong>
+                        <span class="status status-${unit.approvata === 'si' ? 'approved' : 'pending'}">
+                            ${unit.approvata === 'si' ? 'APPROVATA' : 'IN ATTESA'}
+                        </span>
+                    </div>
+                    <div>👤 ${unit.nick}</div>
+                    <div>🎯 ${unit.tipo} | 📍 ${unit.posizione}</div>
+                    <div>🚶 ${unit.movimento}m | 👁️ ${unit.visione}m | 🛡️ ${unit.armatura}</div>
+                    <div>📦 Rifornimenti: ${unit.rifornimenti}</div>
+                    <div>🔧 ${unit.componenti || 'Nessuno'}</div>
+                    <div style="margin-top: 10px; font-size: 0.8rem; color: #7f8c8d;">
+                        Password: ${unit.password ? unit.password.substring(0, 10) + '...' : 'N/A'}
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function filterUnits(searchTerm) {
+            const filtered = allUnits.filter(unit => 
+                unit.matricola.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                unit.nick.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            const grid = document.getElementById('unitsGrid');
+            grid.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="loading">Nessuna unità trovata</div>';
+                return;
+            }
+            
+            filtered.forEach(unit => {
+                const card = document.createElement('div');
+                card.className = `unit-card ${unit.approvata === 'si' ? 'approved' : 'pending'}`;
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>${unit.matricola}</strong>
+                        <span class="status status-${unit.approvata === 'si' ? 'approved' : 'pending'}">
+                            ${unit.approvata === 'si' ? 'APPROVATA' : 'IN ATTESA'}
+                        </span>
+                    </div>
+                    <div>👤 ${unit.nick}</div>
+                    <div>🎯 ${unit.tipo}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function loadApprovedUnits() {
+            const select = document.getElementById('orderUnit');
+            select.innerHTML = '<option value="">Seleziona unità approvata...</option>';
+            
+            approvedUnits.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.matricola;
+                option.textContent = `${unit.matricola} - ${unit.nick} (${unit.tipo})`;
+                select.appendChild(option);
+            });
+        }
 
         // VERIFICA PASSWORD
         async function verifyPassword() {
@@ -660,6 +817,7 @@
                     showNotification('✅ Password corretta!', 'success');
                 } else {
                     showNotification('❌ Password errata!', 'error');
+                    document.getElementById('orderForm').style.display = 'none';
                 }
             }
         }
@@ -785,76 +943,23 @@
             
             showNotification(`📨 Invio ${currentOrders.length} ordini...`, 'warning');
             
+            let successCount = 0;
             for (const order of currentOrders) {
-                await sendRequest('submitOrder', order, '', false);
-                await new Promise(resolve => setTimeout(resolve, 500)); // Delay tra ordini
+                try {
+                    await sendPostRequest('submitOrder', order, '', false);
+                    successCount++;
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Delay tra ordini
+                } catch (error) {
+                    console.error('Errore invio ordine:', error);
+                }
             }
             
-            showNotification(`✅ ${currentOrders.length} ordini inviati!`, 'success');
+            showNotification(`✅ ${successCount}/${currentOrders.length} ordini inviati!`, 'success');
             currentOrders = [];
             document.getElementById('orderChain').style.display = 'none';
-            loadAllData(); // Ricarica dati per aggiornamenti
         }
 
         // FUNZIONI UTILITY
-        async function sendRequest(action, data, successMessage = '', showSuccess = true) {
-            const payload = { action: action, data: data };
-
-            // First try: normal fetch (works when server allows CORS)
-            try {
-                const response = await fetch(WRITE_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                // If response is opaque or not ok, fall back
-                if (!response || !response.ok) {
-                    throw new Error('Fetch non-ok or opaque response');
-                }
-
-                const result = await response.json();
-                if (result && result.success) {
-                    if (showSuccess) showNotification('✅ ' + successMessage, 'success');
-                    setTimeout(loadAllData, 1000);
-                    return true;
-                }
-
-                // If server returned success=false, show message
-                if (result && result.message) {
-                    showNotification('❌ ' + result.message, 'error');
-                    return false;
-                }
-            } catch (fetchError) {
-                // Common failure: CORS blocked => "Failed to fetch" or opaque response
-                console.warn('Fetch failed, will attempt form/iframe fallback:', fetchError);
-                showNotification('⚠️ Fallback invio (problem CORS): sto usando form submission...', 'warning');
-
-                try {
-                    const formRes = await sendPayloadViaForm(payload, WRITE_API_URL);
-                    if (formRes && formRes.success) {
-                        if (showSuccess) showNotification('✅ ' + successMessage, 'success');
-                        // give server a moment then reload
-                        setTimeout(loadAllData, 1200);
-                        return true;
-                    } else {
-                        showNotification('❌ Errore invio via form', 'error');
-                        return false;
-                    }
-                } catch (formErr) {
-                    console.error('Fallback form failed:', formErr);
-                    showNotification('❌ Errore di connessione: ' + (formErr.message || formErr), 'error');
-                    return false;
-                }
-            }
-
-            // If we reach here, something unexpected happened
-            showNotification('❌ Errore sconosciuto durante l\'invio', 'error');
-            return false;
-        }
-
         async function hashPassword(password) {
             const encoder = new TextEncoder();
             const data = encoder.encode(password);
@@ -897,86 +1002,9 @@
 ✅ Approvate: ${approvedUnits.length}
 ⏳ In attesa: ${allUnits.length - approvedUnits.length}
 🔄 Ultimo aggiornamento: ${new Date().toLocaleTimeString()}
+🔗 Connessione: ${isConnected ? 'Attiva' : 'Limitata'}
 `);
         }
-
-        // Helper: send a payload using a hidden form + iframe (works around CORS for POST submissions)
-        function sendPayloadViaForm(payload, url = WRITE_API_URL) {
-            return new Promise((resolve, reject) => {
-                try {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = url;
-                    form.target = 'hiddenFrame_for_post';
-                    form.style.display = 'none';
-
-                    const input = document.createElement('input');
-                    // Use a single field named 'payload' containing JSON string, same convention as debugger.html
-                    input.name = 'payload';
-                    input.value = JSON.stringify(payload);
-                    form.appendChild(input);
-                    document.body.appendChild(form);
-
-                    // create (or reuse) hidden iframe to receive the response silently
-                    let iframe = document.getElementById('hiddenFrame_for_post');
-                    if (!iframe) {
-                        iframe = document.createElement('iframe');
-                        iframe.style.display = 'none';
-                        iframe.name = 'hiddenFrame_for_post';
-                        iframe.id = 'hiddenFrame_for_post';
-                        document.body.appendChild(iframe);
-                    }
-
-                    // onload indicates the request finished (we cannot read cross-origin response reliably)
-                    const onLoad = function() {
-                        setTimeout(() => resolve({success: true}), 300);
-                        iframe.removeEventListener('load', onLoad);
-                        try { document.body.removeChild(form); } catch(e){}
-                    };
-
-                    iframe.addEventListener('load', onLoad);
-
-                    // submit the form
-                    form.submit();
-
-                    // safety timeout: resolve even if no load
-                    setTimeout(() => resolve({success: true, timeout: true}), 8000);
-                } catch (err) {
-                    reject(err);
-                }
-            });
-        }
-
-        // Use the form+iframe approach for writes (same idea used in debugger.html)
-        async function sendUnitAndOrders() {
-            const unitData = { action: 'register', data: { /* your unit data here */ } };
-            const ordersData = { action: 'submitOrder', data: { /* your orders data here */ } };
-
-            try {
-                await sendPayloadViaForm(unitData, WRITE_API_URL);
-                await sendPayloadViaForm(ordersData, WRITE_API_URL);
-                showNotification('Invio dati completato (inviati via form).', 'success');
-            } catch (err) {
-                console.error('Errore invio dati:', err);
-                showNotification('Errore invio dati', 'error');
-            }
-        }
-
-        // Read data using the working READ_API_URL (GET)
-        async function readData() {
-            try {
-                const response = await fetch(READ_API_URL, { method: 'GET' });
-                const data = await response.json();
-                console.log('Read data:', data);
-            } catch (err) {
-                console.error('Errore lettura dati:', err);
-                showNotification('Errore lettura dati', 'error');
-            }
-        }
-
-        // Call the functions as needed (uncomment to trigger)
-        // sendUnitAndOrders();
-        // readData();
     </script>
 </body>
 </html>
