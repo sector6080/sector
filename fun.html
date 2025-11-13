@@ -1,25 +1,223 @@
-// Script rapido da incollare in console
-function quickFormSubmit() {
-    const data = {
-        timestamp: new Date().toLocaleString('it-IT'),
-        url: location.href,
-        userAgent: navigator.userAgent,
-        screen: `${screen.width}x${screen.height}`,
-        browser: navigator.userAgent.split(' ').slice(-2).join(' ')
-    };
-    
-    const formData = new FormData();
-    formData.append('entry.81034129', JSON.stringify(data));
-    
-    fetch('https://docs.google.com/forms/d/e/1FAIpQLScEUkDuv8YlgvHIzWNIXTbtZJKgzHuWGI36_TCLhAww/formResponse', {
-        method: 'POST',
-        mode: 'no-cors',
-        body: formData
-    }).then(() => {
-        console.log('✅ Dati inviati al form!');
-        console.log('Dati:', data);
-    }).catch(console.error);
-}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Form Data Collector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .data-item {
+            margin: 5px 0;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        button.secondary {
+            background: #34a853;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Google Form Data Collector</h1>
+        <p>Questo script raccoglie dati dal browser e li invia automaticamente al tuo Google Form.</p>
+        
+        <div class="section">
+            <h3>Dati Raccoglibili</h3>
+            <div id="dataPreview"></div>
+        </div>
 
-// Esegui subito
-quickFormSubmit();
+        <div class="section">
+            <h3>Azioni</h3>
+            <button onclick="collectAndSendToForm()">📨 Invia al Google Form</button>
+            <button class="secondary" onclick="showRawData()">👁️ Mostra Dati Grezzi</button>
+            <button class="secondary" onclick="testFormSubmission()">🧪 Test Invio Semplice</button>
+            <div id="status"></div>
+        </div>
+
+        <div class="section" id="rawDataSection" style="display: none;">
+            <h3>Dati Grezzi</h3>
+            <pre id="rawData"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Configurazione del form
+        const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScEUkDuv8YlgvHIzWNIXTbtZJKgzHuWGI36_TCLhAww/formResponse';
+        const FORM_FIELD_ID = 'entry.81034129';
+
+        // Funzione per raccogliere tutti i dati
+        function collectAllData() {
+            const data = {
+                timestamp: new Date().toLocaleString('it-IT'),
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                screen: `${screen.width}x${screen.height}`,
+                viewport: `${window.innerWidth}x${window.innerHeight}`,
+                devicePixelRatio: window.devicePixelRatio,
+                cookies: navigator.cookieEnabled ? 'enabled' : 'disabled',
+                online: navigator.onLine,
+                url: window.location.href,
+                referrer: document.referrer || 'direct',
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                hardwareConcurrency: navigator.hardwareConcurrency,
+                deviceMemory: navigator.deviceMemory || 'unknown'
+            };
+
+            // Rileva browser
+            const ua = navigator.userAgent.toLowerCase();
+            if (ua.includes('chrome') && !ua.includes('edg')) data.browser = 'Chrome';
+            else if (ua.includes('firefox')) data.browser = 'Firefox';
+            else if (ua.includes('safari') && !ua.includes('chrome')) data.browser = 'Safari';
+            else if (ua.includes('edg')) data.browser = 'Edge';
+            else data.browser = 'Other';
+
+            // Rileva dispositivo
+            if (ua.includes('mobile')) data.device = 'Mobile';
+            else if (ua.includes('tablet')) data.device = 'Tablet';
+            else data.device = 'Desktop';
+
+            return data;
+        }
+
+        // Funzione per mostrare l'anteprima dei dati
+        function showDataPreview() {
+            const data = collectAllData();
+            const container = document.getElementById('dataPreview');
+            
+            let html = '';
+            for (const [key, value] of Object.entries(data)) {
+                html += `<div class="data-item"><strong>${key}:</strong> ${value}</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        // Funzione per inviare al Google Form
+        async function collectAndSendToForm() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<div class="status loading">Raccolta dati in corso...</div>';
+
+            try {
+                const data = collectAllData();
+                
+                // Prepara i dati per il form
+                const formData = new FormData();
+                const dataString = JSON.stringify(data, null, 2);
+                
+                formData.append(FORM_FIELD_ID, dataString);
+
+                statusDiv.innerHTML = '<div class="status loading">Invio al Google Form...</div>';
+
+                // Invia i dati al form
+                const response = await fetch(FORM_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: formData
+                });
+
+                // Con no-cors non possiamo leggere la response, ma assumiamo successo
+                statusDiv.innerHTML = '<div class="status success">✅ Dati inviati con successo al Google Form!</div>';
+                
+                console.log('Dati inviati:', data);
+                
+                // Mostra i dati inviati
+                showRawData();
+                document.getElementById('rawData').textContent = dataString;
+
+            } catch (error) {
+                console.error('Errore:', error);
+                statusDiv.innerHTML = `<div class="status error">❌ Errore: ${error.message}</div>`;
+            }
+        }
+
+        // Funzione per test semplice
+        async function testFormSubmission() {
+            const statusDiv = document.getElementById('status');
+            const testData = {
+                test: true,
+                timestamp: new Date().toLocaleString('it-IT'),
+                message: 'Test invio da script',
+                userAgent: navigator.userAgent.substring(0, 50) + '...'
+            };
+
+            try {
+                const formData = new FormData();
+                formData.append(FORM_FIELD_ID, JSON.stringify(testData));
+
+                await fetch(FORM_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: formData
+                });
+
+                statusDiv.innerHTML = '<div class="status success">✅ Test inviato con successo!</div>';
+                console.log('Test data sent:', testData);
+
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Errore test: ${error.message}</div>`;
+            }
+        }
+
+        // Mostra dati grezzi
+        function showRawData() {
+            const data = collectAllData();
+            document.getElementById('rawData').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('rawDataSection').style.display = 'block';
+        }
+
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', function() {
+            showDataPreview();
+            console.log('Google Form Data Collector ready!');
+            console.log('Form Field ID:', FORM_FIELD_ID);
+        });
+
+        // Esponi le funzioni globalmente per testing
+        window.collectAllData = collectAllData;
+        window.sendToForm = collectAndSendToForm;
+    </script>
+</body>
+</html>
