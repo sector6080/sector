@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Collector Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .data-item {
+            margin: 5px 0;
+            padding: 5px;
+            background: #f9f9f9;
+            border-radius: 3px;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Data Collector Test</h1>
+        <p>Questo script raccoglie tutte le informazioni disponibili dal browser e le invia al tuo Google Sheet.</p>
+        
+        <div class="section">
+            <h3>Informazioni Browser & Sistema</h3>
+            <div id="browserData"></div>
+        </div>
+
+        <div class="section">
+            <h3>Informazioni Schermo</h3>
+            <div id="screenData"></div>
+        </div>
+
+        <div class="section">
+            <h3>Informazioni Connessione</h3>
+            <div id="networkData"></div>
+        </div>
+
+        <div class="section">
+            <h3>Geolocalizzazione</h3>
+            <div id="locationData"></div>
+            <button onclick="getLocation()">Ottieni Posizione</button>
+        </div>
+
+        <div class="section">
+            <h3>Dispositivo & Hardware</h3>
+            <div id="hardwareData"></div>
+        </div>
+
+        <div class="section">
+            <h3>Azioni</h3>
+            <button onclick="collectAndSendAllData()">📨 Invia Tutti i Dati</button>
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configurazione
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzY3D2wNc8oXlih3yUaF_ij4V9VaRkUWsYMSuikWX_DwbrtjASrsmGtHbX0G7y8gg/exec';
+
+        // Dati raccolti
+        let collectedData = {};
+
+        // Funzione per mostrare i dati nell'HTML
+        function displayData(containerId, data) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(data)) {
+                const div = document.createElement('div');
+                div.className = 'data-item';
+                div.innerHTML = `<strong>${key}:</strong> ${value}`;
+                container.appendChild(div);
+            }
+        }
+
+        // Raccoglie informazioni base del browser
+        function collectBrowserData() {
+            const data = {
+                'User Agent': navigator.userAgent,
+                'Lingua': navigator.language,
+                'Lingue Supportate': navigator.languages ? navigator.languages.join(', ') : 'N/A',
+                'Cookie Abilitati': navigator.cookieEnabled ? 'Sì' : 'No',
+                'Piattaforma': navigator.platform,
+                'Vendor': navigator.vendor || 'N/A',
+                'Java Abilitato': navigator.javaEnabled ? 'Sì' : 'No',
+                'PDF Viewer': navigator.pdfViewerEnabled ? 'Sì' : 'No',
+                'Hardware Concurrency': navigator.hardwareConcurrency || 'N/A',
+                'Max Touch Points': navigator.maxTouchPoints || 'N/A'
+            };
+            
+            collectedData.browser = data;
+            displayData('browserData', data);
+            return data;
+        }
+
+        // Raccoglie informazioni dello schermo
+        function collectScreenData() {
+            const data = {
+                'Larghezza Schermo': screen.width + 'px',
+                'Altezza Schermo': screen.height + 'px',
+                'Larghezza Disponibile': screen.availWidth + 'px',
+                'Altezza Disponibile': screen.availHeight + 'px',
+                'Profondità Colore': screen.colorDepth + ' bit',
+                'Pixel Depth': screen.pixelDepth + ' bit',
+                'Larghezza Finestra': window.innerWidth + 'px',
+                'Altezza Finestra': window.innerHeight + 'px',
+                'Device Pixel Ratio': window.devicePixelRatio || 1,
+                'Orientamento': screen.orientation ? screen.orientation.type : 'N/A'
+            };
+            
+            collectedData.screen = data;
+            displayData('screenData', data);
+            return data;
+        }
+
+        // Raccoglie informazioni di rete
+        function collectNetworkData() {
+            const data = {
+                'Connessione': navigator.connection ? navigator.connection.effectiveType : 'N/A',
+                'Downlink': navigator.connection ? navigator.connection.downlink + ' Mbps' : 'N/A',
+                'RTT': navigator.connection ? navigator.connection.rtt + ' ms' : 'N/A',
+                'Save Data': navigator.connection ? navigator.connection.saveData : 'N/A',
+                'OnLine': navigator.onLine ? 'Sì' : 'No',
+                'Protocollo': window.location.protocol,
+                'Host': window.location.host,
+                'URL Completa': window.location.href,
+                'Referrer': document.referrer || 'Nessuno'
+            };
+            
+            collectedData.network = data;
+            displayData('networkData', data);
+            return data;
+        }
+
+        // Raccoglie informazioni geolocalizzazione
+        function getLocation() {
+            const locationData = document.getElementById('locationData');
+            
+            if (!navigator.geolocation) {
+                locationData.innerHTML = '<div class="data-item error">Geolocalizzazione non supportata</div>';
+                return;
+            }
+
+            locationData.innerHTML = '<div class="data-item">Richiedendo posizione...</div>';
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const data = {
+                        'Latitudine': position.coords.latitude,
+                        'Longitudine': position.coords.longitude,
+                        'Accuracy': position.coords.accuracy + ' metri',
+                        'Altitude': position.coords.altitude || 'N/A',
+                        'Altitude Accuracy': position.coords.altitudeAccuracy ? position.coords.altitudeAccuracy + ' metri' : 'N/A',
+                        'Heading': position.coords.heading || 'N/A',
+                        'Speed': position.coords.speed || 'N/A',
+                        'Timestamp': new Date(position.timestamp).toLocaleString()
+                    };
+                    
+                    collectedData.location = data;
+                    displayData('locationData', data);
+                },
+                function(error) {
+                    let errorMessage = 'Errore sconosciuto';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'Utente ha rifiutato la geolocalizzazione';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Posizione non disponibile';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = 'Timeout della richiesta';
+                            break;
+                    }
+                    locationData.innerHTML = `<div class="data-item error">${errorMessage}</div>`;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        }
+
+        // Raccoglie informazioni hardware e dispositivo
+        function collectHardwareData() {
+            const data = {
+                'CPU Cores': navigator.hardwareConcurrency || 'N/A',
+                'Device Memory': navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A',
+                'Max Touch Points': navigator.maxTouchPoints || 'N/A',
+                'Vendor': navigator.vendor || 'N/A',
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform
+            };
+
+            // Rileva tipo dispositivo basato su user agent
+            const ua = navigator.userAgent.toLowerCase();
+            if (ua.includes('mobile')) {
+                data['Device Type'] = 'Mobile';
+            } else if (ua.includes('tablet')) {
+                data['Device Type'] = 'Tablet';
+            } else {
+                data['Device Type'] = 'Desktop';
+            }
+
+            // Rileva browser
+            if (ua.includes('chrome') && !ua.includes('edg')) {
+                data['Browser'] = 'Chrome';
+            } else if (ua.includes('firefox')) {
+                data['Browser'] = 'Firefox';
+            } else if (ua.includes('safari') && !ua.includes('chrome')) {
+                data['Browser'] = 'Safari';
+            } else if (ua.includes('edg')) {
+                data['Browser'] = 'Edge';
+            } else {
+                data['Browser'] = 'Altro';
+            }
+
+            collectedData.hardware = data;
+            displayData('hardwareData', data);
+            return data;
+        }
+
+        // Invia tutti i dati alla API
+        async function collectAndSendAllData() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<div class="status">Raccogliendo dati...</div>';
+
+            try {
+                // Raccoglie tutti i dati
+                collectBrowserData();
+                collectScreenData();
+                collectNetworkData();
+                collectHardwareData();
+
+                // Aggiunge timestamp
+                collectedData.timestamp = new Date().toISOString();
+                collectedData.pageUrl = window.location.href;
+
+                statusDiv.innerHTML = '<div class="status">Invio dati in corso...</div>';
+
+                // Invia i dati alla Google Apps Script
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(collectedData)
+                });
+
+                const result = await response.text();
+
+                if (result === 'OK') {
+                    statusDiv.innerHTML = '<div class="status success">✅ Dati inviati con successo!</div>';
+                    console.log('Dati inviati:', collectedData);
+                } else {
+                    throw new Error('Errore dal server: ' + result);
+                }
+
+            } catch (error) {
+                console.error('Errore:', error);
+                statusDiv.innerHTML = `<div class="status error">❌ Errore nell'invio: ${error.message}</div>`;
+            }
+        }
+
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', function() {
+            collectBrowserData();
+            collectScreenData();
+            collectNetworkData();
+            collectHardwareData();
+            
+            console.log('Data Collector inizializzato');
+        });
+
+        // Raccoglie dati aggiuntivi quando la pagina è completamente caricata
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const loadData = {
+                    'Tempo di Caricamento': performance.timing ? 
+                        (performance.timing.loadEventEnd - performance.timing.navigationStart) + ' ms' : 'N/A',
+                    'DOM Ready': performance.timing ?
+                        (performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart) + ' ms' : 'N/A'
+                };
+                
+                if (collectedData.network) {
+                    collectedData.network = {...collectedData.network, ...loadData};
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>
