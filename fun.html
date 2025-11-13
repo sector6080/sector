@@ -3,279 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 Page Not Found</title>
+    <title>404 Page Not Found - Website Name</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
         
         body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            overflow: hidden;
-        }
-        
-        .container {
-            text-align: center;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 3rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            max-width: 700px;
-            width: 90%;
-            position: relative;
-        }
-        
-        .error-code {
-            font-size: 8rem;
-            font-weight: 900;
-            margin-bottom: 1rem;
-            text-shadow: 3px 3px 0 #ff0000;
-            line-height: 1;
-        }
-        
-        .error-message {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            color: #ffcc00;
-        }
-        
-        .error-description {
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
+            background: #f8f9fa;
+            color: #333;
             line-height: 1.6;
-            color: #e0e0e0;
-        }
-        
-        .actions {
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e1e5e9;
+            padding: 1rem 0;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: #5f6368;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: #1a73e8;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            flex: 1;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 15px;
+        }
+
+        .error-content {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            color: #dadce0;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-title {
+            font-size: 2rem;
+            font-weight: 400;
+            color: #3c4043;
+            margin-bottom: 1rem;
+        }
+
+        .error-description {
+            color: #5f6368;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .error-code {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 2rem;
+            font-family: monospace;
+            color: #5f6368;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
             margin-bottom: 2rem;
         }
-        
+
         .btn {
-            padding: 12px 25px;
+            padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 50px;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
         }
-        
+
         .btn-primary {
-            background: #4285f4;
+            background: #1a73e8;
             color: white;
         }
-        
+
         .btn-primary:hover {
-            background: #3367d6;
-            transform: translateY(-3px);
+            background: #1669d6;
         }
-        
+
         .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
+            background: #f8f9fa;
+            color: #3c4043;
+            border: 1px solid #dadce0;
         }
-        
+
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: #f1f3f4;
         }
-        
-        .btn-warning {
-            background: #ff4444;
-            color: white;
+
+        .help-section {
+            border-top: 1px solid #e1e5e9;
+            padding-top: 2rem;
+            margin-top: 2rem;
         }
-        
-        .btn-warning:hover {
-            background: #cc0000;
+
+        .help-title {
+            font-size: 1.1rem;
+            color: #3c4043;
+            margin-bottom: 1rem;
         }
-        
-        .hidden-btn {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.5);
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-size: 0.7rem;
-            cursor: pointer;
+
+        .help-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
         }
-        
-        .hidden-btn:hover {
-            background: rgba(255, 0, 0, 0.2);
-            color: white;
+
+        .help-links a {
+            color: #1a73e8;
+            text-decoration: none;
         }
-        
-        .disclaimer {
-            background: rgba(255, 0, 0, 0.2);
-            border-left: 4px solid #ff0000;
-            padding: 15px;
-            margin-top: 20px;
-            text-align: left;
+
+        .help-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e1e5e9;
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .footer-links a {
+            color: #5f6368;
+            text-decoration: none;
             font-size: 0.9rem;
-            border-radius: 0 5px 5px 0;
         }
-        
-        .data-panel {
+
+        .footer-links a:hover {
+            color: #1a73e8;
+        }
+
+        .copyright {
+            color: #5f6368;
+            font-size: 0.9rem;
+        }
+
+        /* Hidden debug panel */
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .debug-panel:hover {
+            background: #1669d6;
+            transform: scale(1.1);
+        }
+
+        .debug-content {
             display: none;
-            margin-top: 20px;
-            text-align: left;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 15px;
-            border-radius: 5px;
-            max-height: 400px;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 1.5rem;
+            width: 400px;
+            max-width: 90vw;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+
+        .debug-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .debug-title {
+            font-weight: 600;
+            color: #3c4043;
+        }
+
+        .close-debug {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #5f6368;
+        }
+
+        .debug-section {
+            margin-bottom: 1rem;
+        }
+
+        .debug-section h4 {
+            color: #3c4043;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .debug-info {
+            background: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #5f6368;
+            max-height: 200px;
             overflow-y: auto;
         }
-        
-        .data-item {
-            margin: 5px 0;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 12px;
-            word-break: break-all;
-        }
-        
-        .sensitive-data {
-            background: rgba(255, 0, 0, 0.2);
-            border-left: 3px solid #ff4444;
-        }
-        
-        .status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-            display: none;
-        }
-        
-        .success { 
-            background: rgba(0, 255, 0, 0.2); 
-            color: #90ee90; 
-            border-left: 4px solid #00ff00;
-        }
-        
-        .error { 
-            background: rgba(255, 0, 0, 0.2); 
-            color: #ffcccb; 
-            border-left: 4px solid #ff0000;
-        }
-        
-        .loading { 
-            background: rgba(255, 255, 0, 0.2); 
-            color: #ffff00; 
-            border-left: 4px solid #ffff00;
-        }
-        
-        .floating {
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-        
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        .tabs {
+
+        .debug-actions {
             display: flex;
-            margin-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
+            gap: 0.5rem;
         }
-        
-        .tab {
-            padding: 10px 20px;
+
+        .debug-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
             cursor: pointer;
-            border-bottom: 3px solid transparent;
+            flex: 1;
         }
-        
-        .tab.active {
-            border-bottom: 3px solid #4285f4;
-            color: #4285f4;
+
+        .debug-btn.primary {
+            background: #1a73e8;
+            color: white;
         }
-        
-        .tab-content {
-            display: none;
+
+        .debug-btn.secondary {
+            background: #f8f9fa;
+            color: #3c4043;
+            border: 1px solid #dadce0;
         }
-        
-        .tab-content.active {
-            display: block;
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .main-container {
+                padding: 2rem 1rem;
+            }
+
+            .error-content {
+                padding: 2rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .debug-content {
+                width: 90vw;
+                right: 5vw;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="error-code floating">404</div>
-        <div class="error-message">Page Not Found</div>
-        <div class="error-description">
-            The page you are looking for might have been removed, had its name changed, 
-            or is temporarily unavailable. Please check the URL and try again.
-        </div>
-        
-        <div class="actions">
-            <button class="btn btn-primary pulse" onclick="goHome()">Go to Homepage</button>
-            <button class="btn btn-secondary" onclick="goBack()">Go Back</button>
-        </div>
-        
-        <div class="disclaimer">
-            <strong>SECURITY NOTICE:</strong> This is a simulated 404 page for cybersecurity education purposes only. 
-            Do not use this technique on systems you don't own or without explicit permission.
-            Some data collection methods may be blocked by browser security settings.
-        </div>
-        
-        <button class="hidden-btn" onclick="toggleDataPanel()">Data Collector</button>
-        
-        <div class="data-panel" id="dataPanel">
-            <div class="tabs">
-                <div class="tab active" onclick="switchTab('basic')">Basic Info</div>
-                <div class="tab" onclick="switchTab('network')">Network & Location</div>
-                <div class="tab" onclick="switchTab('advanced')">Advanced</div>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">WebsiteName</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/about">About</a>
+                <a href="/services">Services</a>
+                <a href="/contact">Contact</a>
             </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <div class="error-content">
+            <div class="error-icon">⚠️</div>
+            <h1 class="error-title">Page not found</h1>
+            <p class="error-description">
+                The page you're looking for doesn't exist or may have been moved. 
+                Please check the URL and try again.
+            </p>
             
-            <div id="basicTab" class="tab-content active">
-                <h3>Basic System Information</h3>
-                <div id="basicDataPreview"></div>
+            <div class="error-code">
+                Error 404: The requested resource was not found on this server.
             </div>
-            
-            <div id="networkTab" class="tab-content">
-                <h3>Network & Location Data</h3>
-                <div id="networkDataPreview"></div>
+
+            <div class="action-buttons">
+                <a href="/" class="btn btn-primary">Go to Homepage</a>
+                <button onclick="history.back()" class="btn btn-secondary">Go Back</button>
             </div>
-            
-            <div id="advancedTab" class="tab-content">
-                <h3>Advanced Fingerprinting</h3>
-                <div id="advancedDataPreview"></div>
+
+            <div class="help-section">
+                <h3 class="help-title">Need help?</h3>
+                <div class="help-links">
+                    <a href="/support">Contact Support</a>
+                    <a href="/docs">Documentation</a>
+                    <a href="/status">System Status</a>
+                </div>
             </div>
-            
-            <button class="btn btn-warning" onclick="collectAndSendToForm()" style="margin-top: 15px; width: 100%;">
-                📡 Send All Data to Server
-            </button>
-            <div id="status"></div>
         </div>
-    </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+                <a href="/security">Security</a>
+                <a href="/sitemap">Sitemap</a>
+            </div>
+            <div class="copyright">
+                &copy; 2024 WebsiteName. All rights reserved.
+            </div>
+        </div>
+    </footer>
 
     <script>
         // Configuration
