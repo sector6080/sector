@@ -544,18 +544,7 @@
                 // CORREZIONE: Legge dalla riga 2 invece della 3
                 allUnits = data.data;
                 // Se i dati iniziano dalla riga 1 (intestazioni), saltala
-                if (allUnits.length > 0 && Array.isArray(allUnits[0])) {
-                    // Controlla se la prima riga contiene intestazioni
-                    const firstRow = allUnits[0];
-                    if (firstRow.some(cell => 
-                        typeof cell === 'string' && 
-                        cell.toLowerCase().includes('matricola') || 
-                        cell.toLowerCase().includes('nick')
-                    )) {
-                        // Salta la riga 1 (intestazioni) - ora partiamo dalla riga 2
-                        allUnits = data.data.slice(1);
-                    }
-                }
+                allUnits = data.data.slice(1);
                 
                 // Resto del codice rimane uguale...
                 allUnits = allUnits.map((unit, index) => {
@@ -922,6 +911,7 @@
         function removeOrder(index) {
             currentOrders.splice(index, 1);
             updateOrderChainDisplay();
+            updateStats();
             if (currentOrders.length === 0) {
                 document.getElementById('orderChain').style.display = 'none';
             }
