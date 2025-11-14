@@ -773,7 +773,7 @@
                     document.getElementById('orderForm').style.display = 'block';
                     showNotification('✅ Password corretta!', 'success');
                 } else {
-                    showNotification('❌ Password errata!', unit.password , hashedInput);
+                    showNotification('❌ Password errata! ' + unit.password);
                     document.getElementById('orderForm').style.display = 'none';
                 }
             }
