@@ -2,6 +2,47 @@
 var SHEET_ID = '1djpONz3rJtEce-bl4Wsy1q46NRl1jTMC3uKxN1hQMng'; // Il tuo foglio esistente
 var RESPONSE_SHEET_NAME = 'Risposte del modulo 1'; // Foglio delle risposte del form
 
+// INSTALLAZIONE TRIGGER - Da eseguire una volta manualmente
+function installTrigger() {
+  ScriptApp.newTrigger('onFormSubmit')
+    .timeBased()
+    .everyMinutes(1) // Controlla ogni minuto
+    .create();
+  
+  console.log('Trigger installato!');
+}
+
+// TRIGGER AUTOMATICO per ogni nuova risposta
+function onFormSubmit() {
+  try {
+    console.log('Trigger attivato - controllo nuove risposte...');
+    processAllFormResponses();
+  } catch (error) {
+    console.error('Errore nel trigger:', error.toString());
+  }
+}
+
+// TRIGGER ALTERNATIVO - Si attiva ad ogni modifica del foglio
+function installOnEditTrigger() {
+  ScriptApp.newTrigger('onSheetEdit')
+    .forSpreadsheet(SHEET_ID)
+    .onEdit()
+    .create();
+  
+  console.log('Trigger onEdit installato!');
+}
+
+function onSheetEdit(e) {
+  // Controlla se la modifica è nel foglio delle risposte
+  var sheet = e.source.getActiveSheet();
+  if (sheet.getName() === RESPONSE_SHEET_NAME) {
+    console.log('Modifica rilevata nel foglio risposte');
+    // Aspetta 2 secondi per evitare conflitti
+    Utilities.sleep(2000);
+    processAllFormResponses();
+  }
+}
+
 function doPost(e) {
   try {
     // Gestione CORS per preflight
@@ -12,7 +53,12 @@ function doPost(e) {
     
     // Gestione da Google Forms - Legge dalla colonna B del foglio risposte
     if (e.postData && e.postData.type === 'application/x-www-form-urlencoded') {
-      return processAllFormResponses();
+      var result = processAllFormResponses();
+      
+      // Avvia anche il processamento asincrono per sicurezza
+      processAllFormResponsesAsync();
+      
+      return result;
     }
     
     // Gestione normale da fetch
@@ -34,52 +80,129 @@ function doPost(e) {
   }
 }
 
-// Processa tutte le risposte dal foglio del modulo
+// Processa tutte le risposte dal foglio del modulo - VERSIONE MIGLIORATA
 function processAllFormResponses() {
   try {
+    console.log('Inizio processamento risposte...');
     var responseSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(RESPONSE_SHEET_NAME);
+    var mainSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName('Foglio1');
+    
+    // Usa una colonna di tracking per evitare duplicati
+    var lastProcessedColumn = 20; // Colonna T per tracking
+    var processedMarker = 'PROCESSATO';
+    
     var responses = responseSheet.getRange('B2:B' + responseSheet.getLastRow()).getValues();
+    var processedStatus = responseSheet.getRange('T2:T' + responseSheet.getLastRow()).getValues();
     
     var processedCount = 0;
     var errors = [];
     
     for (var i = 0; i < responses.length; i++) {
       var formText = responses[i][0];
+      var isProcessed = processedStatus[i][0] === processedMarker;
       
-      // Salta righe vuote
-      if (!formText || formText === '') continue;
+      // Salta righe vuote o già processate
+      if (!formText || formText === '' || isProcessed) continue;
       
       try {
+        console.log('Processando riga ' + (i + 2) + ': ' + formText.substring(0, 50) + '...');
+        
         // Processa ogni risposta
         if (formText.includes('REGISTRAZIONE')) {
           processRegistrationFromForm(formText);
-          processedCount++;
         } else if (formText.includes('ORDINE')) {
           processOrderFromForm(formText);
-          processedCount++;
         } else {
           saveRawFormData(formText);
-          processedCount++;
         }
         
-        // Opzionale: marca come processato in una colonna adiacente
-        // responseSheet.getRange(i + 2, 3).setValue('PROCESSATO');
+        // Marca come processato
+        responseSheet.getRange(i + 2, lastProcessedColumn).setValue(processedMarker);
+        processedCount++;
+        
+        // Piccola pausa per evitare limiti di Google
+        if (processedCount % 10 === 0) {
+          Utilities.sleep(1000);
+        }
         
       } catch (error) {
-        errors.push('Riga ' + (i + 2) + ': ' + error.toString());
+        var errorMsg = 'Riga ' + (i + 2) + ': ' + error.toString();
+        console.error(errorMsg);
+        errors.push(errorMsg);
+        
+        // Marca come errore
+        responseSheet.getRange(i + 2, lastProcessedColumn).setValue('ERRORE: ' + error.toString().substring(0, 50));
       }
     }
     
+    var resultMessage = 'Processate ' + processedCount + ' nuove risposte';
+    if (errors.length > 0) {
+      resultMessage += ' con ' + errors.length + ' errori';
+    }
+    
+    console.log(resultMessage);
+    
     return createResponse({
       success: true, 
-      message: 'Processate ' + processedCount + ' risposte',
+      message: resultMessage,
+      processed: processedCount,
       errors: errors.length > 0 ? errors : null
     });
     
   } catch (error) {
+    console.error('Errore generale processamento:', error);
     return createResponse({success: false, message: error.toString()});
   }
 }
+
+// Versione asincrona per trigger
+function processAllFormResponsesAsync() {
+  try {
+    // Crea un trigger temporaneo per evitare timeout
+    ScriptApp.newTrigger('processAllFormResponsesBackground')
+      .timeBased()
+      .after(1000) // 1 secondo
+      .create();
+  } catch (error) {
+    console.error('Errore creazione trigger asincrono:', error);
+  }
+}
+
+function processAllFormResponsesBackground() {
+  // Rimuovi il trigger temporaneo
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'processAllFormResponsesBackground') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  
+  // Esegui il processamento
+  processAllFormResponses();
+}
+
+// FUNZIONE PER TESTARE MANUALMENTE
+function testProcessResponses() {
+  console.log('Test avviato...');
+  var result = processAllFormResponses();
+  console.log('Risultato test:', result);
+  return result;
+}
+
+// FUNZIONE PER RESETTARE STATO PROCESSAMENTO
+function resetProcessingStatus() {
+  var responseSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(RESPONSE_SHEET_NAME);
+  var lastRow = responseSheet.getLastRow();
+  
+  if (lastRow > 1) {
+    responseSheet.getRange('T2:T' + lastRow).clearContent();
+    console.log('Stato processamento resettato');
+  }
+}
+
+// [MANTIENI TUTTE LE ALTRE FUNZIONI ESISTENTI...]
+// processRegistrationFromForm, processOrderFromForm, registerUnit, submitOrder, 
+// extractValue, saveRawFormData, createResponse - RIMANGONO UGUALI
 
 // Processa registrazione dal form testo
 function processRegistrationFromForm(formText) {
@@ -111,7 +234,7 @@ function processRegistrationFromForm(formText) {
     sheet.getRange(rowIndex + 1, 1, 1, 12).setValues([[
       'NO', // approvata
       matricola || 'N/A',
-      'HASHED_FROM_FORM', // Password hashed dall'HTML
+      '1', // Password hashed dall'HTML
       nick || 'N/A',
       tipo || 'N/A',
       'N/A', // posizione
@@ -123,6 +246,7 @@ function processRegistrationFromForm(formText) {
       'N/A'  // componenti
     ]]);
     
+    console.log('Registrazione processata: ' + matricola);
     return {success: true, message: 'Unità registrata dal form: ' + matricola};
   } catch (error) {
     throw new Error('Errore registrazione: ' + error.toString());
@@ -193,6 +317,7 @@ function processOrderFromForm(formText) {
       rifornimenti
     ]]);
     
+    console.log('Ordine processato: ' + tipoOrdine + ' per ' + matricola);
     return {success: true, message: 'Ordine inviato dal form: ' + tipoOrdine};
   } catch (error) {
     throw new Error('Errore ordine: ' + error.toString());

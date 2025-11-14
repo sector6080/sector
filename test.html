@@ -672,7 +672,7 @@
             
             const unitData = {
                 matricola: matricola,
-                password: await hashPassword(password),
+                password: password,
                 nick: nick,
                 tipo: document.getElementById('tipo').value,
                 movimento: parseInt(document.getElementById('movimento').value),
@@ -768,12 +768,12 @@
             const unit = allUnits.find(u => u.matricola === matricola);
             
             if (unit) {
-                const hashedInput = await hashPassword(password);
+                const hashedInput = password;
                 if (hashedInput === unit.password) {
                     document.getElementById('orderForm').style.display = 'block';
                     showNotification('✅ Password corretta!', 'success');
                 } else {
-                    showNotification('❌ Password errata! ' + unit.password + ' bau');
+                    showNotification('❌ Password errata! ' + unit.password + hashedInput);
                     document.getElementById('orderForm').style.display = 'none';
                 }
             }
@@ -941,14 +941,6 @@
                     <div class="stat-label">Ordini in Coda</div>
                 </div>
             `;
-        }
-
-        async function hashPassword(password) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
         function showNotification(message, type) {
