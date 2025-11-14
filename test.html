@@ -445,6 +445,7 @@
         let approvedUnits = [];
         let currentOrders = [];
 
+
         // INIZIALIZZAZIONE
         document.addEventListener('DOMContentLoaded', function() {
             loadAllData();
@@ -542,7 +543,6 @@
             if (data && data.success && Array.isArray(data.data)) {
                 // CORREZIONE: Legge dalla riga 2 invece della 3
                 allUnits = data.data;
-                
                 // Se i dati iniziano dalla riga 1 (intestazioni), saltala
                 if (allUnits.length > 0 && Array.isArray(allUnits[0])) {
                     // Controlla se la prima riga contiene intestazioni
@@ -893,6 +893,7 @@
             
             currentOrders.push(orderData);
             updateOrderChainDisplay();
+            updateStats();
             document.getElementById('orderChain').style.display = 'block';
             showNotification('Ordine aggiunto alla catena!', 'success');
             
@@ -948,6 +949,7 @@
             showNotification(`✅ ${successCount}/${currentOrders.length} ordini inviati!`, 'success');
             currentOrders = [];
             document.getElementById('orderChain').style.display = 'none';
+            updateStats();
         }
 
         function updateStats() {
