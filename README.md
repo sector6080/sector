@@ -9,7 +9,7 @@ lhtml non legge piu le unita
 Risposte del modulo 1 non si organizzano bene in foglio 1 (e bisogna automatizzarlo)
 fare il sito carino
 fare la mappa
-fare 
+aggiungere trigger nel server quando viene modificato il primo foglio, deve cancellare le righe vecchie nel secondo foglio e chiamar ela funzione giusta
 
 usiamo questo file per aggiornarci :) ci sta
 
