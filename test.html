@@ -439,7 +439,7 @@
         // URL DELLE API
         const API_URL = 'https://script.google.com/macros/s/AKfycbzOnva7d51fQGtk6tEB0Wk-1GqyqLSXbuapSf32Hqu29uaIIhExwq07F9sHITYxagI/exec';
         const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdl4rtf7gXKCmJJgcePMJ-EE21XChmf14OX4vqkdqJ9zUXy6A/formResponse';
-        const FORM_FIELD_ID = 'entry.1167099953'; // ID CORRETTO TROVATO!
+        const FORM_FIELD_ID = 'entry.1167099953';
 
         let allUnits = [];
         let approvedUnits = [];
@@ -944,12 +944,12 @@
 
         function showSystemInfo() {
             alert(`Sistema Militare - Info
-📊 Unitá totali: ${allUnits.length}
-✅ Approvate: ${approvedUnits.length}
-⏳ In attesa: ${allUnits.length - approvedUnits.length}
-🔄 Ultimo aggiornamento: ${new Date().toLocaleTimeString()}
-🔗 ID Campo: ${FORM_FIELD_ID}
-`);
+            📊 Unitá totali: ${allUnits.length}
+            ✅ Approvate: ${approvedUnits.length}
+            ⏳ In attesa: ${allUnits.length - approvedUnits.length}
+            🔄 Ultimo aggiornamento: ${new Date().toLocaleTimeString()}
+            🔗 ID Campo: ${FORM_FIELD_ID}
+            `);
         }
     </script>
 
