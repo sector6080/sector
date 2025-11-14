@@ -11,3 +11,4 @@ fare il sito carino
 fare la mappa
 aggiungere trigger nel server quando viene modificato il primo foglio, deve cancellare le righe vecchie nel secondo foglio e chiamar ela funzione giusta
 fixxare la cosaa delle virgola
+ce un bug dove al posto di mandare lunita giusta manda quella precedente (html)
