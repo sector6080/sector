@@ -540,18 +540,54 @@
 
         function processLoadedData(data) {
             if (data && data.success && Array.isArray(data.data)) {
+                // CORREZIONE: Legge dalla riga 2 invece della 3
                 allUnits = data.data;
-                approvedUnits = allUnits.filter(unit => unit.approvata === 'SI');
+                
+                // Se i dati iniziano dalla riga 1 (intestazioni), saltala
+                if (allUnits.length > 0 && Array.isArray(allUnits[0])) {
+                    // Controlla se la prima riga contiene intestazioni
+                    const firstRow = allUnits[0];
+                    if (firstRow.some(cell => 
+                        typeof cell === 'string' && 
+                        cell.toLowerCase().includes('matricola') || 
+                        cell.toLowerCase().includes('nick')
+                    )) {
+                        // Salta la riga 1 (intestazioni) - ora partiamo dalla riga 2
+                        allUnits = data.data.slice(1);
+                    }
+                }
+                
+                // Resto del codice rimane uguale...
+                allUnits = allUnits.map((unit, index) => {
+                    if (Array.isArray(unit)) {
+                        return {
+                            matricola: unit[0] || `UNIT-${index+1}`,
+                            nick: unit[1] || `User-${index+1}`,
+                            tipo: unit[2] || 'Fanteria',
+                            movimento: parseInt(unit[3]) || 5,
+                            visione: parseInt(unit[4]) || 3,
+                            armatura: parseInt(unit[5]) || 2,
+                            rifornimenti: parseInt(unit[6]) || 10,
+                            componenti: unit[7] || 'N/A',
+                            approvata: unit[8] || 'si',
+                            password: unit[9] || 'hashed_password',
+                            posizione: unit[10] || 'A1'
+                        };
+                    }
+                    return unit;
+                });
+                
+                approvedUnits = allUnits.filter(unit => unit.approvata === 'si');
                 updateStats();
                 loadUnits();
                 loadApprovedUnits();
-                showNotification(`✅ Caricati ${allUnits.length} unità`, 'success');
+                showNotification(`✅ Caricati ${allUnits.length} unità (dalla riga 2)`, 'success');
                 console.log('Dati caricati:', allUnits);
             } else {
                 throw new Error('Formato dati non valido');
             }
         }
-
+        
         function loadDataWithJSONP() {
             return new Promise((resolve, reject) => {
                 const callbackName = 'jsonpCallback_' + Date.now();
