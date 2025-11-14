@@ -541,7 +541,7 @@
         function processLoadedData(data) {
             if (data && data.success && Array.isArray(data.data)) {
                 allUnits = data.data;
-                approvedUnits = allUnits.filter(unit => unit.approvata === 'si');
+                approvedUnits = allUnits.filter(unit => unit.approvata === 'SI');
                 updateStats();
                 loadUnits();
                 loadApprovedUnits();
@@ -586,7 +586,7 @@
 
         // INVIO DATI con Google Forms - VERSIONE CORRETTA
         async function sendData(action, data, successMessage = 'Operazione completata') {
-            showNotification('📨 Invio dati via Google Forms...', 'warning');
+            showNotification('📨 Invio dati via Google Forms...', 'warning');   
             
             try {
                 await sendViaGoogleForms(action, data);
