@@ -3,15 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Militare - Versione Funzionante</title>
+    <title>Sistema Militare - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #2c3e50;
-            --secondary: #34495e;
-            --accent: #3498db;
-            --success: #27ae60;
-            --warning: #f39c12;
-            --danger: #e74c3c;
+            --primary: #1a365d;
+            --primary-light: #2d4a80;
+            --secondary: #4a5568;
+            --accent: #4299e1;
+            --accent-light: #63b3ed;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --danger: #e53e3e;
+            --light: #f7fafc;
+            --dark: #2d3748;
+            --gray: #a0aec0;
+            --gray-light: #edf2f7;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --transition: all 0.3s ease;
         }
         
         * {
@@ -22,8 +32,10 @@
         }
         
         body {
-            background: #ecf0f1;
-            color: #2c3e50;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            line-height: 1.6;
         }
         
         .container {
@@ -33,77 +45,176 @@
         }
         
         header {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white;
-            padding: 1rem 2rem;
-            border-radius: 10px;
+            padding: 1.5rem 2rem;
+            border-radius: var(--border-radius);
             margin-bottom: 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: skewX(-15deg);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-title i {
+            font-size: 1.8rem;
+            color: var(--accent-light);
         }
         
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
             margin-bottom: 2rem;
         }
         
         .stat-card {
             background: white;
-            padding: 1rem;
-            border-radius: 8px;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-top: 4px solid var(--accent);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--accent);
         }
         
         .stat-number {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: bold;
-            color: var(--accent);
+            color: var(--primary);
+            margin-bottom: 0.5rem;
         }
         
         .stat-label {
-            color: #7f8c8d;
+            color: var(--secondary);
             font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .tabs-container {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
         }
         
         .tabs {
             display: flex;
-            background: white;
-            border-radius: 10px 10px 0 0;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--gray-light);
+            overflow-x: auto;
         }
         
         .tab {
             flex: 1;
-            padding: 1rem;
+            padding: 1.2rem;
             text-align: center;
             cursor: pointer;
             background: var(--secondary);
             color: white;
-            transition: all 0.3s;
+            transition: var(--transition);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 200px;
+        }
+        
+        .tab:hover {
+            background: var(--primary-light);
         }
         
         .tab.active {
             background: white;
             color: var(--primary);
-            font-weight: bold;
+            box-shadow: 0 -2px 0 0 var(--accent) inset;
         }
         
         .tab-content {
             display: none;
-            background: white;
-            padding: 2rem;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+            padding: 2.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .tab-content.active {
             display: block;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+        
+        .section-title i {
+            color: var(--accent);
+        }
+        
+        .form-container {
+            background: var(--gray-light);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
         }
         
         .form-group {
@@ -112,71 +223,126 @@
         
         label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.7rem;
             font-weight: 600;
             color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .required::after {
+            content: "*";
+            color: var(--danger);
+            margin-left: 4px;
         }
         
         input, select, textarea {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #bdc3c7;
-            border-radius: 6px;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
             font-size: 1rem;
-            transition: border-color 0.3s;
+            transition: var(--transition);
+            background: white;
         }
         
         input:focus, select:focus, textarea:focus {
             border-color: var(--accent);
             outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+        
+        .input-with-icon input {
+            padding-left: 45px;
         }
         
         button {
             background: var(--accent);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 14px 28px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
-            transition: all 0.3s;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(66, 153, 225, 0.3);
         }
         
         button:hover {
-            background: #2980b9;
+            background: var(--primary);
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(66, 153, 225, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
         }
         
         .btn-success {
             background: var(--success);
+            box-shadow: 0 2px 4px rgba(56, 161, 105, 0.3);
         }
         
         .btn-warning {
             background: var(--warning);
+            box-shadow: 0 2px 4px rgba(214, 158, 46, 0.3);
         }
         
         .btn-danger {
             background: var(--danger);
+            box-shadow: 0 2px 4px rgba(229, 62, 62, 0.3);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            box-shadow: none;
+        }
+        
+        .btn-outline:hover {
+            background: var(--accent);
+            color: white;
         }
         
         .units-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 1.5rem;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
         }
         
         .unit-card {
             background: white;
-            border-radius: 8px;
+            border-radius: var(--border-radius);
             padding: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
             border-left: 4px solid var(--accent);
-            transition: transform 0.3s;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
         }
         
         .unit-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         
         .unit-card.approved {
@@ -187,23 +353,66 @@
             border-left-color: var(--warning);
         }
         
+        .unit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .unit-id {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+        
+        .unit-nick {
+            color: var(--secondary);
+            font-style: italic;
+        }
+        
+        .unit-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        
+        .unit-detail {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
         .status {
-            display: inline-block;
-            padding: 4px 12px;
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: bold;
-            margin-left: 10px;
+            gap: 5px;
         }
         
         .status-approved {
-            background: #d4edda;
-            color: #155724;
+            background: #c6f6d5;
+            color: #22543d;
         }
         
         .status-pending {
-            background: #fff3cd;
-            color: #856404;
+            background: #fef5e7;
+            color: #744210;
         }
         
         .notification {
@@ -211,12 +420,17 @@
             top: 20px;
             right: 20px;
             padding: 1rem 1.5rem;
-            border-radius: 8px;
+            border-radius: var(--border-radius);
             color: white;
             font-weight: bold;
             z-index: 1000;
             transform: translateX(400px);
             transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow);
+            max-width: 400px;
         }
         
         .notification.show {
@@ -235,37 +449,143 @@
             background: var(--warning);
         }
         
+        .notification.info {
+            background: var(--accent);
+        }
+        
         .search-box {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+            background: var(--gray-light);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
         }
         
         .orders-list {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
         }
         
         .order-item {
-            background: #f8f9fa;
-            padding: 1rem;
-            margin: 0.5rem 0;
-            border-radius: 6px;
+            background: white;
+            padding: 1.5rem;
+            margin: 0.8rem 0;
+            border-radius: var(--border-radius);
             border-left: 4px solid var(--accent);
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 10px;
         }
         
         .loading {
             text-align: center;
+            padding: 3rem;
+            color: var(--secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--gray-light);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--secondary);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--gray);
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
             padding: 2rem;
-            color: #7f8c8d;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-title i {
+            color: var(--accent);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                min-width: 100%;
+            }
+            
+            .tab-content {
+                padding: 1.5rem;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .units-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .unit-details {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎯 Sistema Militare - Versione Funzionante</h1>
-            <button onclick="loadAllData()" class="btn-success">🔄 Aggiorna Dati</button>
+            <div class="header-content">
+                <div class="header-title">
+                    <i class="fas fa-crosshairs"></i>
+                    <h1>Sistema Militare - Dashboard</h1>
+                </div>
+                <button onclick="loadAllData()" class="btn-success">
+                    <i class="fas fa-sync-alt"></i> Aggiorna Dati
+                </button>
+            </div>
         </header>
 
         <div class="stats" id="statsContainer">
@@ -283,159 +603,466 @@
             </div>
         </div>
 
-        <div class="tabs">
-            <div class="tab active" data-tab="register">Registrazione Unità</div>
-            <div class="tab" data-tab="units">Unità Registrate</div>
-            <div class="tab" data-tab="orders">Invia Ordini</div>
-            <div class="tab" data-tab="manage">Gestione</div>
-        </div>
+        <div class="tabs-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="register">
+                    <i class="fas fa-user-plus"></i> Registrazione Unità
+                </div>
+                <div class="tab" data-tab="units">
+                    <i class="fas fa-users"></i> Unità Registrate
+                </div>
+                <div class="tab" data-tab="orders">
+                    <i class="fas fa-paper-plane"></i> Invia Ordini
+                </div>
+                <div class="tab" data-tab="manage">
+                    <i class="fas fa-cog"></i> Gestione Sistema
+                </div>
+            </div>
 
-        <!-- Registrazione Unità -->
-        <div id="register" class="tab-content active">
-            <h2>📝 Registra Nuova Unità</h2>
-            <form id="registrationForm">
-                <div class="form-group">
-                    <label for="matricola">Matricola *</label>
-                    <input type="text" id="matricola" pattern="[A-Z]{3}-[0-9]+" required>
-                    <small>Formato: ABC-123 (3 lettere maiuscole, trattino, numeri)</small>
+            <!-- Registrazione Unità -->
+            <div id="register" class="tab-content active">
+                <div class="section-title">
+                    <i class="fas fa-user-plus"></i>
+                    <h2>Registra Nuova Unità</h2>
                 </div>
                 
-                <div class="form-group">
-                    <label for="nick">Nickname (Discord) *</label>
-                    <input type="text" id="nick" required>
+                <div class="form-container">
+                    <form id="registrationForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="matricola" class="required">
+                                    <i class="fas fa-id-card"></i> Matricola
+                                </label>
+                                <input type="text" id="matricola" pattern="[A-Z]{3}-[0-9]+" required placeholder="ABC-123">
+                                <small>Formato: ABC-123 (3 lettere maiuscole, trattino, numeri)</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="nick" class="required">
+                                    <i class="fas fa-user-tag"></i> Nickname (Discord)
+                                </label>
+                                <input type="text" id="nick" required placeholder="Inserisci il nickname">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="tipo" class="required">
+                                    <i class="fas fa-tags"></i> Tipo Unità
+                                </label>
+                                <select id="tipo" required>
+                                    <option value="">Seleziona tipo</option>
+                                    <option value="Fanteria">Fanteria</option>
+                                    <option value="Motorizzata">Motorizzata</option>
+                                    <option value="Corazzata">Corazzata</option>
+                                    <option value="Artiglieria">Artiglieria</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="movimento" class="required">
+                                    <i class="fas fa-walking"></i> Movimento
+                                </label>
+                                <input type="number" id="movimento" min="1" required placeholder="1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="visione" class="required">
+                                    <i class="fas fa-eye"></i> Visione
+                                </label>
+                                <input type="number" id="visione" min="1" required placeholder="1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="armatura" class="required">
+                                    <i class="fas fa-shield-alt"></i> Armatura
+                                </label>
+                                <input type="number" id="armatura" min="1" required placeholder="1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rifornimenti" class="required">
+                                    <i class="fas fa-boxes"></i> Capacità Rifornimenti
+                                </label>
+                                <input type="number" id="rifornimenti" min="1" required placeholder="1">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="componenti">
+                                <i class="fas fa-cogs"></i> Componenti
+                            </label>
+                            <textarea id="componenti" rows="3" placeholder="Descrizione componenti..."></textarea>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="password" class="required">
+                                    <i class="fas fa-lock"></i> Password
+                                </label>
+                                <input type="password" id="password" required placeholder="Inserisci password">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="confirmPassword" class="required">
+                                    <i class="fas fa-lock"></i> Conferma Password
+                                </label>
+                                <input type="password" id="confirmPassword" required placeholder="Conferma password">
+                            </div>
+                        </div>
+                        
+                        <button type="submit">
+                            <i class="fas fa-user-plus"></i> Registra Unità
+                        </button>
+                    </form>
                 </div>
-                
-                <div class="form-group">
-                    <label for="tipo">Tipo Unità *</label>
-                    <select id="tipo" required>
-                        <option value="">Seleziona tipo</option>
-                        <option value="Fanteria">Fanteria</option>
-                        <option value="Motorizzata">Motorizzata</option>
-                        <option value="Corazzata">Corazzata</option>
-                        <option value="Artiglieria">Artiglieria</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="movimento">Movimento *</label>
-                    <input type="number" id="movimento" min="1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="visione">Visione *</label>
-                    <input type="number" id="visione" min="1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="armatura">Armatura *</label>
-                    <input type="number" id="armatura" min="1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="rifornimenti">Capacità Rifornimenti *</label>
-                    <input type="number" id="rifornimenti" min="1" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="componenti">Componenti</label>
-                    <textarea id="componenti" rows="3" placeholder="Descrizione componenti..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password *</label>
-                    <input type="password" id="password" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="confirmPassword">Conferma Password *</label>
-                    <input type="password" id="confirmPassword" required>
-                </div>
-                
-                <button type="submit">🎯 Registra Unità</button>
-            </form>
-        </div>
+            </div>
 
-        <!-- Unità Registrate -->
-        <div id="units" class="tab-content">
-            <h2>🏛️ Unità Registrate</h2>
-            <div class="search-box">
-                <input type="text" id="searchUnits" placeholder="🔍 Cerca per matricola o nick..." style="width: 100%;">
+            <!-- Unità Registrate -->
+            <div id="units" class="tab-content">
+                <div class="section-title">
+                    <i class="fas fa-users"></i>
+                    <h2>Unità Registrate</h2>
+                </div>
+                
+                <div class="search-box">
+                    <div class="input-with-icon">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchUnits" placeholder="Cerca per matricola o nick...">
+                    </div>
+                </div>
+                
+                <div id="unitsGrid" class="units-grid">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Caricamento unità in corso...</p>
+                    </div>
+                </div>
             </div>
-            <div id="unitsGrid" class="units-grid">
-                <div class="loading">Caricamento unità in corso...</div>
-            </div>
-        </div>
 
-        <!-- Invia Ordini -->
-        <div id="orders" class="tab-content">
-            <h2>📨 Invia Ordini</h2>
-            
-            <div class="form-group">
-                <label for="orderUnit">Seleziona Unitá *</label>
-                <select id="orderUnit" required>
-                    <option value="">Caricamento unità approvate...</option>
-                </select>
-            </div>
-            
-            <div class="form-group" id="passwordSection" style="display: none;">
-                <label for="unitPassword">Password Unitá *</label>
-                <input type="password" id="unitPassword">
-            </div>
-            
-            <div id="orderForm" style="display: none;">
-                <div class="form-group">
-                    <label for="orderType">Tipo Ordine *</label>
-                    <select id="orderType" required>
-                        <option value="">Seleziona tipo ordine</option>
-                        <option value="muoversi">Muoversi</option>
-                        <option value="salire">Salire su Mezzo</option>
-                        <option value="scendere">Scendere da Mezzo</option>
-                        <option value="attivare">Attivare Componenti</option>
-                        <option value="cura">Cura</option>
-                        <option value="ricaricare">Ricaricare Componente</option>
-                        <option value="consumare">Consumare Rifornimenti</option>
-                        <option value="cedere">Cedere Rifornimenti</option>
-                    </select>
+            <!-- Invia Ordini -->
+            <div id="orders" class="tab-content">
+                <div class="section-title">
+                    <i class="fas fa-paper-plane"></i>
+                    <h2>Invia Ordini</h2>
                 </div>
                 
-                <div id="orderDetails">
-                    <!-- Dettagli dinamici -->
-                </div>
-                
-                <button onclick="addOrderToChain()" class="btn-success">➕ Aggiungi alla Catena</button>
-                
-                <div class="orders-list" id="orderChain" style="display: none;">
-                    <h3>⛓️ Catena Ordini</h3>
-                    <div id="orderItems"></div>
-                    <button onclick="submitAllOrders()" class="btn-success">🚀 Invia Tutti gli Ordini</button>
+                <div class="card">
+                    <div class="form-group">
+                        <label for="orderUnit" class="required">
+                            <i class="fas fa-user"></i> Seleziona Unitá
+                        </label>
+                        <select id="orderUnit" required>
+                            <option value="">Caricamento unità approvate...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="passwordSection" style="display: none;">
+                        <label for="unitPassword" class="required">
+                            <i class="fas fa-lock"></i> Password Unitá
+                        </label>
+                        <input type="password" id="unitPassword" placeholder="Inserisci password unità">
+                    </div>
+                    
+                    <div id="orderForm" style="display: none;">
+                        <div class="form-group">
+                            <label for="orderType" class="required">
+                                <i class="fas fa-tasks"></i> Tipo Ordine
+                            </label>
+                            <select id="orderType" required>
+                                <option value="">Seleziona tipo ordine</option>
+                                <option value="muoversi">Muoversi</option>
+                                <option value="salire">Salire su Mezzo</option>
+                                <option value="scendere">Scendere da Mezzo</option>
+                                <option value="attivare">Attivare Componenti</option>
+                                <option value="cura">Cura</option>
+                                <option value="ricaricare">Ricaricare Componente</option>
+                                <option value="consumare">Consumare Rifornimenti</option>
+                                <option value="cedere">Cedere Rifornimenti</option>
+                            </select>
+                        </div>
+                        
+                        <div id="orderDetails">
+                            <!-- Dettagli dinamici -->
+                        </div>
+                        
+                        <button onclick="addOrderToChain()" class="btn-success">
+                            <i class="fas fa-plus"></i> Aggiungi alla Catena
+                        </button>
+                        
+                        <div class="orders-list" id="orderChain" style="display: none;">
+                            <h3 class="card-title">
+                                <i class="fas fa-link"></i> Catena Ordini
+                            </h3>
+                            <div id="orderItems"></div>
+                            <button onclick="submitAllOrders()" class="btn-success">
+                                <i class="fas fa-rocket"></i> Invia Tutti gli Ordini
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Gestione -->
-        <div id="manage" class="tab-content">
-            <h2>⚙️ Gestione Sistema</h2>
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalUnits">0</div>
-                    <div class="stat-label">Unitá Totali</div>
+            <!-- Gestione -->
+            <div id="manage" class="tab-content">
+                <div class="section-title">
+                    <i class="fas fa-cog"></i>
+                    <h2>Gestione Sistema</h2>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="approvedUnits">0</div>
-                    <div class="stat-label">Approvate</div>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalUnits">0</div>
+                        <div class="stat-label">Unitá Totali</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="approvedUnits">0</div>
+                        <div class="stat-label">Approvate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="pendingUnits">0</div>
+                        <div class="stat-label">In Attesa</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="pendingUnits">0</div>
-                    <div class="stat-label">In Attesa</div>
+                
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-tools"></i> Azioni di Sistema
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <button onclick="exportData()" class="btn-warning">
+                            <i class="fas fa-file-export"></i> Esporta Dati
+                        </button>
+                        <button onclick="showSystemInfo()" class="btn">
+                            <i class="fas fa-info-circle"></i> Info Sistema
+                        </button>
+                        <button class="btn-outline">
+                            <i class="fas fa-download"></i> Backup
+                        </button>
+                        <button class="btn-outline">
+                            <i class="fas fa-upload"></i> Ripristina
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-chart-bar"></i> Statistiche Avanzate
+                    </div>
+                    <p>Qui verranno visualizzate statistiche dettagliate e report del sistema.</p>
                 </div>
             </div>
-            
-            <button onclick="exportData()" class="btn-warning">📊 Esporta Dati</button>
-            <button onclick="showSystemInfo()" class="btn">ℹ️ Info Sistema</button>
         </div>
     </div>
 
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Operazione completata con successo!</span>
+    </div>
+
     <script>
+        // Funzione per mostrare notifiche
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            
+            notification.className = `notification ${type}`;
+            notificationText.textContent = message;
+            
+            // Icona in base al tipo
+            const icon = notification.querySelector('i');
+            icon.className = type === 'success' ? 'fas fa-check-circle' :
+                            type === 'error' ? 'fas fa-exclamation-circle' :
+                            type === 'warning' ? 'fas fa-exclamation-triangle' :
+                            'fas fa-info-circle';
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+        
+        // Gestione delle tab
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Rimuovi classe active da tutte le tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Aggiungi classe active alla tab cliccata
+                tab.classList.add('active');
+                
+                // Mostra il contenuto corrispondente
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+                
+                // Se è la tab delle unità, carica i dati
+                if (tabId === 'units') {
+                    loadUnits();
+                }
+            });
+        });
+        
+        // Simulazione caricamento dati
+        function loadAllData() {
+            showNotification('Dati aggiornati con successo', 'success');
+            
+            // Aggiorna statistiche
+            document.querySelectorAll('.stat-number').forEach((stat, index) => {
+                const numbers = [24, 18, 6];
+                animateValue(stat, 0, numbers[index], 1000);
+            });
+            
+            // Simula caricamento unità
+            setTimeout(() => {
+                loadUnits();
+            }, 500);
+        }
+        
+        // Animazione per i valori numerici
+        function animateValue(element, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                element.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+        
+        // Caricamento unità
+        function loadUnits() {
+            const unitsGrid = document.getElementById('unitsGrid');
+            unitsGrid.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Caricamento unità in corso...</p>
+                </div>
+            `;
+            
+            // Simula un ritardo di caricamento
+            setTimeout(() => {
+                const units = [
+                    { id: 'ABC-123', nick: 'Soldato1', tipo: 'Fanteria', movimento: 5, visione: 3, armatura: 2, rifornimenti: 10, status: 'approved' },
+                    { id: 'DEF-456', nick: 'Commando2', tipo: 'Motorizzata', movimento: 7, visione: 4, armatura: 3, rifornimenti: 15, status: 'approved' },
+                    { id: 'GHI-789', nick: 'TankDriver', tipo: 'Corazzata', movimento: 4, visione: 5, armatura: 8, rifornimenti: 20, status: 'pending' },
+                    { id: 'JKL-012', nick: 'Artigliere', tipo: 'Artiglieria', movimento: 3, visione: 6, armatura: 4, rifornimenti: 25, status: 'approved' },
+                ];
+                
+                displayUnits(units);
+            }, 1500);
+        }
+        
+        // Visualizza unità nella griglia
+        function displayUnits(units) {
+            const unitsGrid = document.getElementById('unitsGrid');
+            
+            if (units.length === 0) {
+                unitsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>Nessuna unità trovata</h3>
+                        <p>Non ci sono unità che corrispondono ai criteri di ricerca.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            unitsGrid.innerHTML = units.map(unit => `
+                <div class="unit-card ${unit.status === 'approved' ? 'approved' : 'pending'}">
+                    <div class="unit-header">
+                        <div class="unit-id">${unit.id}</div>
+                        <span class="status ${unit.status === 'approved' ? 'status-approved' : 'status-pending'}">
+                            <i class="fas ${unit.status === 'approved' ? 'fa-check' : 'fa-clock'}"></i>
+                            ${unit.status === 'approved' ? 'Approvata' : 'In Attesa'}
+                        </span>
+                    </div>
+                    <div class="unit-nick">${unit.nick}</div>
+                    <div class="unit-details">
+                        <div class="unit-detail">
+                            <span class="detail-label">Tipo</span>
+                            <span class="detail-value">${unit.tipo}</span>
+                        </div>
+                        <div class="unit-detail">
+                            <span class="detail-label">Movimento</span>
+                            <span class="detail-value">${unit.movimento}</span>
+                        </div>
+                        <div class="unit-detail">
+                            <span class="detail-label">Visione</span>
+                            <span class="detail-value">${unit.visione}</span>
+                        </div>
+                        <div class="unit-detail">
+                            <span class="detail-label">Armatura</span>
+                            <span class="detail-value">${unit.armatura}</span>
+                        </div>
+                        <div class="unit-detail">
+                            <span class="detail-label">Rifornimenti</span>
+                            <span class="detail-value">${unit.rifornimenti}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn-outline" style="padding: 8px 15px; font-size: 0.9rem;">
+                            <i class="fas fa-eye"></i> Dettagli
+                        </button>
+                        <button class="btn-outline" style="padding: 8px 15px; font-size: 0.9rem;">
+                            <i class="fas fa-edit"></i> Modifica
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Gestione del form di registrazione
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validazione password
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                showNotification('Le password non corrispondono', 'error');
+                return;
+            }
+            
+            // Simula registrazione
+            showNotification('Unità registrata con successo!', 'success');
+            this.reset();
+        });
+        
+        // Funzioni placeholder per altre azioni
+        function addOrderToChain() {
+            showNotification('Ordine aggiunto alla catena', 'info');
+            document.getElementById('orderChain').style.display = 'block';
+        }
+        
+        function submitAllOrders() {
+            showNotification('Ordini inviati con successo!', 'success');
+        }
+        
+        function exportData() {
+            showNotification('Dati esportati con successo', 'success');
+        }
+        
+        function showSystemInfo() {
+            showNotification('Informazioni di sistema caricate', 'info');
+        }
+        
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            
+            // Aggiungi funzionalità di ricerca
+            document.getElementById('searchUnits').addEventListener('input', function() {
+                // In un'implementazione reale, qui filtraremmo le unità
+                if (this.value.length > 2) {
+                    showNotification(`Ricerca per: ${this.value}`, 'info');
+                }
+            });
+        });
+
         // URL DELLE API
         const API_URL = 'https://script.google.com/macros/s/AKfycbzOnva7d51fQGtk6tEB0Wk-1GqyqLSXbuapSf32Hqu29uaIIhExwq07F9sHITYxagI/exec';
         const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdl4rtf7gXKCmJJgcePMJ-EE21XChmf14OX4vqkdqJ9zUXy6A/formResponse';
