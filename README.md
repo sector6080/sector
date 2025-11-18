@@ -22,7 +22,7 @@ mettere nella mappa un tempo in modo da non confondere con i fusi orari (es. tur
 implementare i link a: discord,doc google(regole),html(mappa),html(main),(youtube?)
 interfacccia utente migliore
 fare sicurezza(anti-spam,capire piu o meno chi/come si accede all api,le password sono sicure?,)
-
+(XSS,CSRF,Bruteforce,Session hijacking,Data injection)
 
 BASSA PRIORITA:
 Quando un campo è compilato correttamente appare un check ✓; errore → highlight rosso.
