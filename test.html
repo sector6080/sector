@@ -775,9 +775,6 @@
                 await loadDataWithJSONP();
             } catch (jsonpError) {
                 console.log('JSONP fallito:', jsonpError);
-                
-                console.log('Usando dati mock...');
-                loadMockData(); // ✅ Almeno è onesto che sono dati di test
             }
         }
         
