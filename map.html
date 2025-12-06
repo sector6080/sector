@@ -75,9 +75,6 @@
     <script>
         // Creazione della griglia 60x80
         function createGrid(x, y) {
-            if (typeof a !== "number" || typeof b !== "number") { 
-                throw new Error("Entrambi i parametri devono essere numeri! Gay");
-            }
             const gridContainer = document.getElementById('grid');
             const totalCells = x * y;
             
