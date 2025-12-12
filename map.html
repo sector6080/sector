@@ -119,9 +119,7 @@
 		});
 
 		// --- Google Sheet ---
-    // ID del tuo foglio (dalla URL: https://docs.google.com/spreadsheets/d/FOGLIO_ID/edit)
     const SHEET_ID = '1Uoz5xYisxmd7uUUIFrsAX-yZ4mckYSUdSopG2pNaL1k';
-    // Nome del sheet/tab
     const SHEET_NAME = 'mappa';
 
     async function loadSheetData() {
@@ -129,10 +127,16 @@
       try {
         const res = await fetch(url);
         const json = await res.json();
-				console.log(json)
+		console.log(json)
         const data = json.values;
+		console.log(data)
         const rows = data.length;
-        const cols = data[0] ? data[0].length : 0;
+        let cols = 0;
+		for (let r = 0; r < data.length; r++) { //serve per prendere la riga con più colonne
+		  if (Array.isArray(data[r]) && data[r].length > cols) {
+		    cols = data[r].length;
+		  }
+		}
         createGrid(rows, cols, data);
       } catch (err) {
         console.error('Errore caricamento Google Sheet', err);
