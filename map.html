@@ -81,14 +81,14 @@
             
             // creo la griglia in base alle dimensioni necessarie
             const grid = document.querySelector('.grid-container');
-            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-            grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+            grid.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
+            grid.style.gridTemplateRows = `repeat(${rows}, 40px)`;
             
-            for (let i = 0; i < totalCells; i++) {
+            for (let i = 1; i < totalCells+1; i++) {
                 const cell = document.createElement('div');
                 cell.className = 'grid-cell';
                 cell.setAttribute('data-index', i);
-                cell.textContent= `num: ${i}`;
+                cell.textContent= i;
                 
                 // Aggiungi un click handler per ogni cella (opzionale)
                 cell.addEventListener('click', function() {
