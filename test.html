@@ -205,7 +205,7 @@
                             <!-- Dettagli dinamici -->
                         </div>
                         
-                        <button onclick="addOrderToChain()" class="btn-success">
+                        <button type="button" onclick="addOrderToChain()" class="btn-success">
                             <i class="fas fa-plus"></i> Aggiungi alla Catena
                         </button>
                         
@@ -252,35 +252,10 @@
             });
         });
         
-        // Simulazione caricamento dati
+        // Caricamento dati
         async function loadAllData() {
             showNotification('🔄 Caricamento dati in corso...', 'warning');
-            
-            try {
-                console.log('Tentativo fetch diretto...');
-                const response = await fetch(API_URL, {
-                    method: 'GET',
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json',
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    processLoadedData(data);
-                    return;
-                }
-            } catch (fetchError) {
-                console.log('Fetch diretto fallito:', fetchError);
-            }
-            
-            try {
-                console.log('Tentativo JSONP...');
-                await loadDataWithJSONP();
-            } catch (jsonpError) {
-                console.log('JSONP fallito:', jsonpError);
-            }
+            // I dati vengono caricati tramite altri metodi (es. Google Sheets API)
         }
         
         // Visualizza unità nella griglia
@@ -425,37 +400,6 @@
             }
         }
         
-        function loadDataWithJSONP() {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'jsonpCallback_' + Date.now();
-                const timeoutId = setTimeout(() => {
-                    reject(new Error('Timeout JSONP'));
-                }, 10000);
-
-                window[callbackName] = function(data) {
-                    clearTimeout(timeoutId);
-                    try {
-                        processLoadedData(data);
-                        resolve(data);
-                    } catch (error) {
-                        reject(error);
-                    }
-                    delete window[callbackName];
-                    document.getElementById('jsonpScript')?.remove();
-                };
-
-                const script = document.createElement('script');
-                script.id = 'jsonpScript';
-                script.src = `${API_URL}?callback=${callbackName}`;
-                script.onerror = () => {
-                    clearTimeout(timeoutId);
-                    reject(new Error('Errore caricamento script JSONP'));
-                    delete window[callbackName];
-                };
-                
-                document.head.appendChild(script);
-            });
-        }
 
         // INVIO DATI con Google Forms - VERSIONE CORRETTA
         async function sendData(action, data, successMessage = 'Operazione completata') {
@@ -694,13 +638,17 @@
         }
 
         function addOrderToChain() {
-            const matricola = document.getElementById('orderUnit').value;
-            const tipoOrdine = document.getElementById('orderType').value;
-            
-            if (!matricola || !tipoOrdine) {
-                showNotification('Seleziona unità e tipo ordine', 'error');
-                return;
-            }
+            console.log('addOrderToChain called');
+            try {
+                const matricola = document.getElementById('orderUnit').value;
+                const tipoOrdine = document.getElementById('orderType').value;
+                
+                console.log('Matricola:', matricola, 'Tipo Ordine:', tipoOrdine);
+                
+                if (!matricola || !tipoOrdine) {
+                    showNotification('Seleziona unità e tipo ordine', 'error');
+                    return;
+                }
             
             const orderData = {
                 matricola: matricola,
@@ -786,6 +734,10 @@
             // Reset form
             document.getElementById('orderType').value = '';
             document.getElementById('orderDetails').innerHTML = '';
+            } catch (error) {
+                console.error('Errore in addOrderToChain:', error);
+                showNotification('Errore: ' + error.message, 'error');
+            }
         }
 
         function updateOrderChainDisplay() {
@@ -847,28 +799,37 @@
             const approved = allUnits.filter(u => u.approvata === 'SI').length;
             const pending = total - approved;
 
-            document.getElementById('totalUnits').textContent = total;
-            document.getElementById('approvedUnits').textContent = approved;
-            document.getElementById('pendingUnits').textContent = pending;
+            // Update elements only if they exist
+            const totalUnitsEl = document.getElementById('totalUnits');
+            if (totalUnitsEl) totalUnitsEl.textContent = total;
+            
+            const approvedUnitsEl = document.getElementById('approvedUnits');
+            if (approvedUnitsEl) approvedUnitsEl.textContent = approved;
+            
+            const pendingUnitsEl = document.getElementById('pendingUnits');
+            if (pendingUnitsEl) pendingUnitsEl.textContent = pending;
 
-            document.getElementById('statsContainer').innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-number">${total}</div>
-                    <div class="stat-label">Unitá Totali</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" style="color: #27ae60;">${approved}</div>
-                    <div class="stat-label">Approvate</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" style="color: #f39c12;">${pending}</div>
-                    <div class="stat-label">In Attesa</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" style="color: #3498db;">${currentOrders.length}</div>
-                    <div class="stat-label">Ordini in Coda</div>
-                </div>
-            `;
+            const statsContainer = document.getElementById('statsContainer');
+            if (statsContainer) {
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${total}</div>
+                        <div class="stat-label">Unitá Totali</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #27ae60;">${approved}</div>
+                        <div class="stat-label">Approvate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #f39c12;">${pending}</div>
+                        <div class="stat-label">In Attesa</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #3498db;">${currentOrders.length}</div>
+                        <div class="stat-label">Ordini in Coda</div>
+                    </div>
+                `;
+            }
         }
 
         function showNotification(message, type) {
