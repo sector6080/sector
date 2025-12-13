@@ -9,8 +9,8 @@ https://the-silver33.github.io/sector/test.html
 
 ## ALTA PRIORITA:
 * fare la mappa (mappa centrale+tendina a sinistra con le unita)
-* ce un bug dove al posto di mandare lunita giusta manda quella precedente (html)
-* fare cleaning di tutti i codici (input.html/map.html/appsscript) molte funzioni sono rindondanti o non servono (la funzione hash esiste ancora ma non fa niente)
+*~~ ce un bug dove al posto di mandare lunita giusta manda quella precedente (html)~~
+* fare cleaning di tutti i codici (input.html/map.html/appsscript) molte funzioni sono rindondanti o non servono (~~la funzione hash esiste ancora ma non fa niente~~)
 * staccare i codici .gs dal .html
 * ~~mancano dei field di dati da html->tabella~~
 * ~~html non legge piu le unita nella riga 2~~
@@ -23,6 +23,7 @@ https://the-silver33.github.io/sector/test.html
 * implementare i link a: discord,doc google(regole),html(mappa),html(main),(youtube?)
 * interfacccia utente migliore
 * fare sicurezza(anti-spam,capire piu o meno chi/come si accede all api,le password sono sicure?,) (XSS,CSRF,Bruteforce,Session hijacking,Data injection)
+* spostare CeckInvalidOrders() nel test.html non nell AS
 
 ## BASSA PRIORITA:
 * Quando un campo è compilato correttamente appare un check ✓; errore → highlight rosso.
@@ -30,13 +31,13 @@ https://the-silver33.github.io/sector/test.html
 * login/unita salvato nel locale
 
 ## Next
-* design sito piu carino con responsive per telefono e dark mode (adesso fa schifo)
+* dark mode
 * autosave della pagina (se la pagina viene chiusa)
-* skeleton UI durante il caricamento
+
 
 ## ???:
 * implementare l'opzione di cambiare la propria password?
 * tradurre TUTTO in inglese(fare che sia switchabile???)
 * implementare sistema di notifiche sul browser fuori html (es. ricevi notifica quando nuovo turno/unita approvata??)
 * negli html barra di ricerca per le unita sulla mappa/nel main??? 
-
+* skeleton UI durante il caricamento
