@@ -201,7 +201,7 @@ textarea:focus {
 
 button {
   background: var(--accent);
-  color: white;
+  color: rgb(47, 255, 0);
   border: none;
   padding: 14px 28px;
   border-radius: 8px;
