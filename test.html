@@ -349,24 +349,6 @@
             `).join('');
         }
         
-        // Gestione del form di registrazione
-        document.getElementById('registrationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Validazione password
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            if (password !== confirmPassword) {
-                showNotification('Le password non corrispondono', 'error');
-                return;
-            }
-            
-            // Simula registrazione
-            showNotification('Unità registrata con successo!', 'success');
-            this.reset();
-        });
-        
         // Funzioni placeholder per altre azioni
         function addOrderToChain() {
             showNotification('Ordine aggiunto alla catena', 'info');
@@ -548,37 +530,72 @@
 
         // REGISTRAZIONE UNITÀ
         async function handleRegistration() {
+            // Leggi tutti i valori dal form
+            const matricola = document.getElementById('matricola').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+            const nick = document.getElementById('nick').value.trim();
+            const tipo = document.getElementById('tipo').value;
+            const movimento = document.getElementById('movimento').value;
+            const visione = document.getElementById('visione').value;
+            const armatura = document.getElementById('armatura').value;
+            const rifornimenti = document.getElementById('rifornimenti').value;
+            const componenti = document.getElementById('componenti').value.trim();
             
+            // Validazione password
             if (password !== confirmPassword) {
-                showNotification('Le password non coincidono');
+                showNotification('Le password non coincidono', 'error');
+                return;
+            }
+            
+            if (!password) {
+                showNotification('La password è obbligatoria', 'error');
                 return;
             }
 
-            const matricola = document.getElementById('matricola').value;
+            // Validazione matricola
+            if (!matricola) {
+                showNotification('La matricola è obbligatoria', 'error');
+                return;
+            }
+            
             if (allUnits.some(unit => unit.matricola === matricola)) {
                 showNotification('Matricola già esistente!', 'error');
                 return;
             }
 
-            const nick = document.getElementById('nick').value;
+            // Validazione nick
+            if (!nick) {
+                showNotification('Il nickname è obbligatorio', 'error');
+                return;
+            }
+            
             if (allUnits.some(unit => unit.nick === nick)) {
                 showNotification('Nickname già registrato!', 'error');
                 return;
             }
             
+            // Validazione tipo
+            if (!tipo) {
+                showNotification('Il tipo unità è obbligatorio', 'error');
+                return;
+            }
+            
+            // Prepara i dati - usa valori effettivi o 'N/A' solo se vuoti
             const unitData = {
-                matricola: matricola || 'N/A',
-                password: password || 'N/A',
-                nick: nick || 'N/A',
-                tipo: document.getElementById('tipo').value || 'N/A',
-                movimento: parseInt(document.getElementById('movimento').value) || 'N/A',
-                visione: parseInt(document.getElementById('visione').value) || 'N/A',
-                armatura: parseInt(document.getElementById('armatura').value) || 'N/A',
-                rifornimenti: parseInt(document.getElementById('rifornimenti').value) || 'N/A',
-                componenti: document.getElementById('componenti').value || 'N/A'
+                matricola: matricola,
+                password: password,
+                nick: nick,
+                tipo: tipo,
+                movimento: movimento ? parseInt(movimento) : 'N/A',
+                visione: visione ? parseInt(visione) : 'N/A',
+                armatura: armatura ? parseInt(armatura) : 'N/A',
+                rifornimenti: rifornimenti ? parseInt(rifornimenti) : 'N/A',
+                componenti: componenti || 'N/A'
             };
+            
+            // Debug: mostra i valori che verranno inviati
+            console.log('Dati unità da inviare:', unitData);
             
             await sendData('register', unitData, 'Unità registrata con successo!');
             document.getElementById('registrationForm').reset();
