@@ -19,10 +19,11 @@ https://the-silver33.github.io/sector/test.html
 * ~~fixxare la cosaa delle virgola~~
 
 ## MEDIA PRIORITA:
-* mettere nella mappa un tempo in modo da non confondere con i fusi orari (es. turno:3 10h 23 min al nuovo turno)
+* mettere nella mappa e main un tempo in modo da non confondere con i fusi orari (es. turno:3 10h 23 min al nuovo turno)
 * implementare i link a: discord,doc google(regole),html(mappa),html(main),(youtube?)
 * interfacccia utente migliore
 * fare sicurezza(anti-spam,capire piu o meno chi/come si accede all api,le password sono sicure?,) (XSS,CSRF,Bruteforce,Session hijacking,Data injection)
+* rifare invia ordini (poco sicuro e brutto)
 * spostare CeckInvalidOrders() nel test.html non nell AS
 
 ## BASSA PRIORITA:
