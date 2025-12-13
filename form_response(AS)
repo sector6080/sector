@@ -1,0 +1,269 @@
+// Form response APP.SCRIPT(AS)
+
+const PRIMA_RIGA = 3;
+const MAIN_SHEET_NAME = 'Foglio1';
+const RESPONSE_SHEET_NAME = 'Risposte del modulo 1';
+const SHEET_ID = '1djpONz3rJtEce-bl4Wsy1q46NRl1jTMC3uKxN1hQMng';
+const COLUMNS = { APPROVATA: 1, MATRICOLA: 2, PASSWORD: 3, NICK: 4, TIPO: 5, POSIZIONE: 6, MOVIMENTO: 7, VISIONE: 8, ARMATURA: 9, RIFORNIMENTI: 10, TRASPORTATA: 11, COMPONENTI: 12 };
+
+function getSpreadsheet() {
+  try {
+    return SpreadsheetApp.openById(SHEET_ID);
+  } catch (error) {
+    throw new Error('Errore accesso al foglio. Verifica: 1) Autorizzazioni concesse 2) ID foglio corretto 3) Foglio condiviso: ' + error.toString());
+  }
+}
+
+function doPost(e) {
+  try {
+    var mainSheet = getSpreadsheet().getSheetByName(MAIN_SHEET_NAME);
+    if (!mainSheet) throw new Error('Foglio principale non trovato: ' + MAIN_SHEET_NAME);
+    if (mainSheet.getLastRow() < PRIMA_RIGA) return createResponse({success: true, data: [], message: 'Nessun dato da processare'});
+    
+    if (e.postData && e.postData.type === 'application/x-www-form-urlencoded') {
+      processAllFormResponsesAsync();
+      return processAllFormResponses();
+    }
+    
+    if (e.postData && e.postData.type === 'application/json') {
+      var data = JSON.parse(e.postData.contents);
+      if (data.action === 'register') return registerUnit(data.data);
+      if (data.action === 'submitOrder') return submitOrder(data.data);
+    }
+    
+    return createResponse({success: false, message: 'Richiesta non valida'});
+  } catch (error) {
+    return createResponse({success: false, message: error.toString()});
+  }
+}
+
+function processAllFormResponses() {
+  try {
+    var responseSheet = getSpreadsheet().getSheetByName(RESPONSE_SHEET_NAME);
+    var responses = responseSheet.getRange('B2:B' + responseSheet.getLastRow()).getValues();
+    var processedStatus = responseSheet.getRange('T2:T' + responseSheet.getLastRow()).getValues();
+    var processedCount = 0, errors = [], processedMarker = 'PROCESSATO', trackingCol = 20;
+    
+    for (var i = 0; i < responses.length; i++) {
+      var formText = responses[i][0];
+      if (!formText || formText === '' || processedStatus[i][0] === processedMarker) continue;
+      
+      try {
+        if (formText.includes('REGISTRAZIONE')) processRegistrationFromForm(formText);
+        else if (formText.includes('ORDINE')) processOrderFromForm(formText);
+        else saveRawFormData(formText);
+        
+        responseSheet.getRange(i + 2, trackingCol).setValue(processedMarker);
+        processedCount++;
+        if (processedCount % 10 === 0) Utilities.sleep(1000);
+      } catch (error) {
+        errors.push('Riga ' + (i + 2) + ': ' + error.toString());
+        responseSheet.getRange(i + 2, trackingCol).setValue('ERRORE: ' + error.toString().substring(0, 50));
+      }
+    }
+    
+    var msg = 'Processate ' + processedCount + ' nuove risposte' + (errors.length > 0 ? ' con ' + errors.length + ' errori' : '');
+    return createResponse({success: true, message: msg, processed: processedCount, errors: errors.length > 0 ? errors : null});
+  } catch (error) {
+    return createResponse({success: false, message: error.toString()});
+  }
+}
+
+function processAllFormResponsesAsync() {
+  try {
+    ScriptApp.newTrigger('processAllFormResponsesBackground').timeBased().after(1000).create();
+  } catch (error) {}
+}
+
+function processAllFormResponsesBackground() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'processAllFormResponsesBackground') ScriptApp.deleteTrigger(triggers[i]);
+  }
+  processAllFormResponses();
+}
+
+function onFormSubmit(e) {
+  try {
+    var responseSheet = getSpreadsheet().getSheetByName(RESPONSE_SHEET_NAME);
+    if (!responseSheet) return;
+    
+    var lastRow = responseSheet.getLastRow();
+    if (lastRow < 2) return;
+    
+    var formText = responseSheet.getRange(lastRow, 2).getValue();
+    if (!formText || formText === '') return;
+    
+    var processedStatus = responseSheet.getRange(lastRow, 20).getValue();
+    if (processedStatus === 'PROCESSATO') return;
+    
+    try {
+      if (formText.includes('REGISTRAZIONE')) {
+        processRegistrationFromForm(formText);
+        responseSheet.getRange(lastRow, 20).setValue('PROCESSATO');
+      } else if (formText.includes('ORDINE')) {
+        processOrderFromForm(formText);
+        responseSheet.getRange(lastRow, 20).setValue('PROCESSATO');
+      } else {
+        saveRawFormData(formText);
+        responseSheet.getRange(lastRow, 20).setValue('PROCESSATO');
+      }
+    } catch (error) {
+      responseSheet.getRange(lastRow, 20).setValue('ERRORE: ' + error.toString().substring(0, 50));
+      Logger.log('Errore processamento form: ' + error.toString());
+    }
+  } catch (error) {
+    Logger.log('Errore onFormSubmit: ' + error.toString());
+  }
+}
+
+function installFormSubmitTrigger() {
+  try {
+    var ss = getSpreadsheet();
+    var responseSheet = ss.getSheetByName(RESPONSE_SHEET_NAME);
+    if (!responseSheet) return 'Errore: Foglio "' + RESPONSE_SHEET_NAME + '" non trovato';
+    
+    var triggers = ScriptApp.getProjectTriggers();
+    for (var i = 0; i < triggers.length; i++) {
+      if (triggers[i].getHandlerFunction() === 'onFormSubmit') {
+        return 'Trigger già installato!';
+      }
+    }
+    
+    ScriptApp.newTrigger('onFormSubmit').onFormSubmit().create();
+    return '✓ Trigger installato con successo! Il form processerà automaticamente le risposte.';
+  } catch (error) {
+    return 'Errore installazione: ' + error.toString() + '\n\nCrea manualmente: Triggers (⏰) → Add Trigger → onFormSubmit → Event type: On form submit';
+  }
+}
+
+function testProcessResponses() { return processAllFormResponses(); }
+
+function testAuthorization() {
+  try {
+    var ss = getSpreadsheet();
+    var sheet = ss.getSheetByName(MAIN_SHEET_NAME);
+    if (sheet) {
+      Logger.log('✓ Autorizzazione OK - Foglio accessibile');
+      return 'Autorizzazione OK - Foglio accessibile';
+    } else {
+      Logger.log('✗ Foglio non trovato: ' + MAIN_SHEET_NAME);
+      return 'Foglio non trovato: ' + MAIN_SHEET_NAME;
+    }
+  } catch (error) {
+    Logger.log('✗ Errore: ' + error.toString());
+    return 'ERRORE: ' + error.toString();
+  }
+}
+
+function resetProcessingStatus() {
+  var sheet = getSpreadsheet().getSheetByName(RESPONSE_SHEET_NAME);
+  if (sheet.getLastRow() > 1) sheet.getRange('T2:T' + sheet.getLastRow()).clearContent();
+}
+
+function processRegistrationFromForm(formText) {
+  var data = extractFormData(formText, ['Matricola:', 'Password:', 'Nick:', 'Tipo:', 'Movimento:', 'Visione:', 'Armatura:', 'Rifornimenti:', 'Componenti:']);
+  var rifornimenti = data['Rifornimenti:'] || 'N/A';
+  return writeUnitRow(data['Matricola:'], data['Password:'] || 'N/A', data['Nick:'], data['Tipo:'], data['Movimento:'], data['Visione:'], data['Armatura:'], rifornimenti + '/' + rifornimenti, data['Componenti:'] || 'N/A');
+}
+
+function extractFormData(formText, keys) {
+  var result = {};
+  for (var i = 0; i < keys.length; i++) result[keys[i]] = extractValue(formText, keys[i]);
+  return result;
+}
+
+function processOrderFromForm(formText) {
+  var data = extractFormData(formText, ['Matricola:', 'Tipo:', 'Dettagli:', 'Target:', 'Quantità:']);
+  var order = processOrderType(data['Tipo:'], data['Dettagli:'], data['Quantità:'], data['Target:']);
+  return writeOrderRow(data['Matricola:'], order.movimento, order.salireScendere, order.componenti, order.rifornimenti);
+}
+
+function registerUnit(unitData) {
+  try {
+    var rifornimenti = unitData.rifornimenti || 'N/A';
+    writeUnitRow(unitData.matricola, unitData.password, unitData.nick, unitData.tipo, unitData.movimento, unitData.visione, unitData.armatura, rifornimenti + '/' + rifornimenti, unitData.componenti);
+    return createResponse({success: true, message: 'Unità registrata: ' + unitData.matricola});
+  } catch (error) {
+    return createResponse({success: false, message: error.toString()});
+  }
+}
+
+function submitOrder(orderData) {
+  try {
+    var order = processOrderType(orderData.tipoOrdine, orderData.dettagli, orderData.quantità, orderData.target);
+    writeOrderRow(orderData.matricola, order.movimento, order.salireScendere, order.componenti, order.rifornimenti);
+    return createResponse({success: true, message: 'Ordine inviato: ' + orderData.tipoOrdine});
+  } catch (error) {
+    return createResponse({success: false, message: error.toString()});
+  }
+}
+
+function extractValue(text, key) {
+  var idx = text.indexOf(key);
+  if (idx === -1) return null;
+  idx += key.length;
+  var end = text.indexOf(',', idx);
+  return text.substring(idx, end === -1 ? text.length : end).trim();
+}
+
+function saveRawFormData(formText) {
+  try {
+    var sheet = getSpreadsheet().getSheetByName('Foglio1');
+    var row = findEmptyRow(sheet, 17);
+    if (row !== -1) sheet.getRange(row + 1, 18).setValue(formText);
+  } catch (error) {}
+}
+
+function createResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function findEmptyRow(sheet, colIndex) {
+  var data = sheet.getDataRange().getValues();
+  for (var i = 2; i < data.length; i++) {
+    if (!data[i][colIndex] || data[i][colIndex] === '') return i;
+  }
+  return data.length;
+}
+
+function writeUnitRow(matricola, password, nick, tipo, movimento, visione, armatura, rifornimenti, componenti) {
+  try {
+    var sheet = getSpreadsheet().getSheetByName('Foglio1');
+    var row = findEmptyRow(sheet, 1);
+    sheet.getRange(row + 1, 1, 1, 12).setValues([['NO', matricola || 'N/A', password || 'N/A', nick || 'N/A', tipo || 'N/A', 'N/A', movimento || 'N/A', visione || 'N/A', armatura || 'N/A', rifornimenti || 'N/A', 'N/A', componenti || 'N/A']]);
+    return {success: true, message: 'Unità registrata: ' + matricola};
+  } catch (error) {
+    throw new Error('Errore registrazione: ' + error.toString());
+  }
+}
+
+function writeOrderRow(matricola, movimento, salireScendere, componenti, rifornimenti) {
+  try {
+    var sheet = getSpreadsheet().getSheetByName('Foglio1');
+    var row = findEmptyRow(sheet, 14);
+    sheet.getRange(row + 1, 15, 1, 6).setValues([['NO', matricola || 'N/A', movimento || 'N/A', salireScendere || 'N/A', componenti || 'N/A', rifornimenti || 'N/A']]);
+    return {success: true, message: 'Ordine inviato: ' + matricola};
+  } catch (error) {
+    throw new Error('Errore ordine: ' + error.toString());
+  }
+}
+
+function processOrderType(tipoOrdine, dettagli, quantità, target) {
+  var movimento = 'N/A', salireScendere = 'N/A', componenti = 'N/A', rifornimenti = 'N/A';
+  var det = dettagli || 'N/A', qty = quantità || 'N/A', tgt = target || 'N/A';
+  
+  switch (tipoOrdine) {
+    case 'muoversi': movimento = det; break;
+    case 'salire': salireScendere = 'salire(' + det + ')'; break;
+    case 'scendere': salireScendere = 'scendere(' + det + ')'; break;
+    case 'attivare': componenti = det; break;
+    case 'ricaricare': rifornimenti = 'ricarica(' + det + ')'; break;
+    case 'cura': rifornimenti = 'cura'; break;
+    case 'consumare': rifornimenti = 'consuma(' + qty + ')'; break;
+    case 'cedere': rifornimenti = 'cede(' + qty + ') a ' + tgt; break;
+  }
+  
+  return {movimento: movimento, salireScendere: salireScendere, componenti: componenti, rifornimenti: rifornimenti};
+}
+
