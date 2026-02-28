@@ -18,7 +18,6 @@ https://the-silver33.github.io/sector/test.html
 * trasportare/rifare/migliorare il backend (agg il cambio turno)
 * fare cleaning di tutti i codici (input.html/map.html/appsscript) molte funzioni sono rindondanti o non servono
 * staccare i codici .ts dal .html
-* ascoltare porcodio a ripetizione
 * ~~ce un bug dove al posto di mandare lunita giusta manda quella precedente (html)~~
 * ~~mancano dei field di dati da html->tabella~~
 * ~~html non legge piu le unita nella riga 2~~
