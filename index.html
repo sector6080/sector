@@ -229,11 +229,9 @@
     <script type="module">
         import supabase from './api_stuff/api.js';
         window.supabase = supabase; // Make supabase available globally
-        
         let allUnits = [];
         let approvedUnits = [];
         let currentOrders = [];
-        
         
         document.querySelectorAll('.tab').forEach(tab => {      // Gestione delle tab
             tab.addEventListener('click', () => {
@@ -374,21 +372,16 @@
                 await handleRegistration();
             });
         }
-
-        function processLoadedData(data) {
-            // TODO: process data fetched from backend
-            // Validate format and populate allUnits/approvedUnits
-            updateStats();
-            loadUnitsRegistered();
-            loadApprovedUnits();
-            showNotification(`✅ Dati caricati`, 'success');
-        }
         
         async function sendData(action, data) {
-            // TODO: implement API call to register unit or send order
-            // you can use fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, data }) })
-            console.log('sendData called with', action, data);
-            showNotification(`Richiesta inviata: ${action}`, 'info');
+            result = await supabase.from('orders').insert([data]);
+
+                if (result.error) {
+                    showNotification(result.error.message, 'error');
+                } else {
+                    showNotification(`✅ ${action} inviato`, 'success');
+                    loadAllData();
+                }
         }
 
         async function handleRegistration() {
