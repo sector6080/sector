@@ -226,9 +226,11 @@
         <i class="fas fa-check-circle"></i>
         <span id="notificationText">Operazione completata con successo!</span>
     </div>
-    <script type="module">
-        import supabase from './api_stuff/api.js';
-        window.supabase = supabase; // Make supabase available globally
+    <script>
+        // Temporaneamente disabilitato Supabase per test di caricamento pagina
+        // import supabase from './api_stuff/api.js';
+        // window.supabase = supabase; // Make supabase available globally
+        
         let allUnits = [];
         let approvedUnits = [];
         let currentOrders = [];
@@ -254,12 +256,8 @@
         });
         
         async function loadAllData() {
-            const { data, error } = await supabase.from('units').select('*');
-            if (error) {
-                showNotification(error, 'error');
-            } else {
-                showNotification(data, 'success');
-            }
+            // Temporaneamente disabilitato Supabase
+            showNotification('Sistema caricato senza Supabase', 'success');
             
         }
         
@@ -374,14 +372,9 @@
         }
         
         async function sendData(action, data) {
-            result = await supabase.from('orders').insert([data]);
-
-                if (result.error) {
-                    showNotification(result.error.message, 'error');
-                } else {
-                    showNotification(`✅ ${action} inviato`, 'success');
-                    loadAllData();
-                }
+            // Temporaneamente disabilitato Supabase
+            console.log('sendData called with', action, data);
+            showNotification(`Richiesta ${action} simulata`, 'info');
         }
 
         async function handleRegistration() {
