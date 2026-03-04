@@ -1,0 +1,177 @@
+        function CheckOrderValidity(order) {
+            const unit = allUnits.find(u => u.matricola === order.matricola);
+            let errorMessage = null;
+            
+            if (!unit) {
+                showNotification('❌ Unità non trovata', 'error');
+                return false;
+            }
+            
+            switch(order.tipoOrdine) {
+                case 'muoversi':
+                    if (!order.target) {
+                        errorMessage = 'Casella destinazione mancante per ordine muoversi';
+                    } else {
+                        const colMatch = order.target.match(/^([A-Z]+)(\d+)$/);
+                        if (!colMatch) {
+                            errorMessage = 'Formato casella non valido (es: A1, B2)';
+                        } else {
+                            const col = colMatch[1];
+                            const row = parseInt(colMatch[2]);
+                            const maxCol = String.fromCharCode(64 + MAP_WIDTH);
+                            if (col > maxCol || row < 1 || row > MAP_HEIGHT) {
+                                errorMessage = `Casella destinazione fuori mappa (A-${maxCol}, 1-${MAP_HEIGHT})`;
+                            } else if (order.target === unit.posizione) {
+                                errorMessage = 'La destinazione non può essere la stessa posizione attuale';
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'salire':
+                    if (!order.target) {
+                        errorMessage = 'Posizione mancante per ordine salire';
+                    } else {
+                        const colMatch = order.target.match(/^([A-Z]+)(\d+)$/);
+                        if (!colMatch) {
+                            errorMessage = 'Formato posizione non valido (es: A1, B2)';
+                        } else {
+                            const col = colMatch[1];
+                            const row = parseInt(colMatch[2]);
+                            const maxCol = String.fromCharCode(64 + MAP_WIDTH);
+                            if (col > maxCol || row < 1 || row > MAP_HEIGHT) {
+                                errorMessage = `Posizione fuori mappa (A-${maxCol}, 1-${MAP_HEIGHT})`;
+                            } else if (unit.trasportata && unit.trasportata !== "N/A") {
+                                errorMessage = 'Unità già trasportata, impossibile salire';
+                            } else if (order.target === unit.posizione) {
+                                errorMessage = 'Non puoi salire nella tua stessa posizione';
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'scendere':
+                    if (!order.target) {
+                        errorMessage = 'Posizione mancante per ordine scendere';
+                    } else {
+                        const colMatch = order.target.match(/^([A-Z]+)(\d+)$/);
+                        if (!colMatch) {
+                            errorMessage = 'Formato posizione non valido (es: A1, B2)';
+                        } else {
+                            const col = colMatch[1];
+                            const row = parseInt(colMatch[2]);
+                            const maxCol = String.fromCharCode(64 + MAP_WIDTH);
+                            if (col > maxCol || row < 1 || row > MAP_HEIGHT) {
+                                errorMessage = `Posizione fuori mappa (A-${maxCol}, 1-${MAP_HEIGHT})`;
+                            } else if (!unit.trasportata || unit.trasportata === "N/A") {
+                                errorMessage = 'Unità non trasportata, impossibile scendere';
+                            }
+                        }
+                    }
+                    break;
+                    
+                case 'attivare':
+                    if (!order.dettagli) {
+                        errorMessage = 'Nome componente mancante per ordine attivare';
+                    }
+                    break;
+                    
+                case 'ricaricare':
+                    if (!order.dettagli) {
+                        errorMessage = 'Nome componente mancante per ordine ricaricare';
+                    }
+                    break;
+                    
+                case 'cedere':
+                    if (!order.target) {
+                        errorMessage = 'Unità destinataria mancante per ordine cedere';
+                    } else if (!order.quantità || order.quantità <= 0) {
+                        errorMessage = 'Quantità non valida per ordine cedere';
+                    } else if (unit.rifornimenti && order.quantità > unit.rifornimenti) {
+                        errorMessage = 'Quantità superiore ai rifornimenti disponibili';
+                    } else if (order.target === unit.matricola) {
+                        errorMessage = 'Non puoi cedere rifornimenti a te stesso';
+                    }
+                    break;
+                    
+                case 'cura':
+                    // Nessuna validazione aggiuntiva per cura
+                    break;
+                    
+                default:
+                    errorMessage = 'Tipo ordine non riconosciuto';
+            }
+            
+            if (errorMessage) {
+                showNotification('❌ ' + errorMessage, 'info');
+                return false;
+            } else {
+                showNotification('✅ Ordine aggiunto alla catena!', 'success');
+                return true;
+            }
+        }
+
+**QUESTO PEZZO LHO TROVATO SPERDUTO IN MEZZO AL CODICE**
+
+            if (true) { // Sostituisci con validazione degli ordini lato server
+                showNotification('Errore: invalid order', 'error');
+                return;
+            }
+            try {
+                const matricola = document.getElementById('orderUnit').value;
+                const tipoOrdine = document.getElementById('orderType').value;
+                
+                console.log('Matricola:', matricola, 'Tipo Ordine:', tipoOrdine);
+                
+                if (!matricola || !tipoOrdine) {
+                    showNotification('Seleziona unità e tipo ordine', 'error');
+                    return;
+                }
+            
+            const orderData = {
+                matricola: matricola,
+                tipoOrdine: tipoOrdine,
+                dettagli: '',
+                target: '',
+                quantità: ''
+            };
+            
+            currentOrders.push(orderData);
+            updateOrderChainDisplay();
+            updateStats();
+            document.getElementById('orderChain').style.display = 'block';
+            
+            
+            
+            // Reset form
+            document.getElementById('orderType').value = '';
+            document.getElementById('orderDetails').innerHTML = '';
+            } catch (error) {
+                showNotification('Errore: ' + error.message, 'error');
+            }
+        }
+
+
+            const container = document.getElementById('orderItems');
+            container.innerHTML = '';
+            
+            currentOrders.forEach((order, index) => {
+                const item = document.createElement('div');
+                item.className = 'order-item';
+                item.innerHTML = `
+                    <strong>${order.tipoOrdine}</strong> - ${order.matricola}
+                    ${order.dettagli ? ` | ${order.dettagli}` : ''}
+                    ${order.target ? ` → ${order.target}` : ''}
+                    ${order.quantità ? ` (${order.quantità})` : ''}
+                    <button onclick="removeOrder(${index})" style="float: right; background: var(--danger); padding: 2px 8px; font-size: 0.8rem;">❌</button>
+                `;
+                container.appendChild(item);
+            });
+        
+            currentOrders.splice(index, 1);
+            updateOrderChainDisplay();
+            updateStats();
+            if (currentOrders.length === 0) {
+                document.getElementById('orderChain').style.display = 'none';
+            }
+        }
