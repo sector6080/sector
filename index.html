@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Militare - Dashboard</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="header-title">
+                    <i class="fas fa-crosshairs"></i>
+                    <h1>Sistema Militare - Dashboard</h1>
+                </div>
+                <button onclick="loadAllData()" class="btn-success">
+                    <i class="fas fa-sync-alt"></i> Aggiorna Dati
+                </button>
+            </div>
+        </header>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <div class="tab active" data-tab="register">
+                    <i class="fas fa-user-plus"></i> Registrazione Unità
+                </div>
+                <div class="tab" data-tab="units">
+                    <i class="fas fa-users"></i> Unità Registrate
+                </div>
+                <div class="tab" data-tab="orders">
+                    <i class="fas fa-paper-plane"></i> Invia Ordini
+                </div>
+            </div>
+
+            <!-- Registrazione Unità -->
+            <div id="register" class="tab-content active">
+                <div class="section-title">
+                    <i class="fas fa-user-plus"></i>
+                    <h2>Registra Nuova Unità</h2>
+                </div>
+                
+                <div class="form-container">
+                    <form id="registrationForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="matricola" class="required">
+                                    <i class="fas fa-id-card"></i> Matricola
+                                </label>
+                                <input type="text" id="matricola" pattern="[A-Z]{3}-[0-9]+" required placeholder="ABC-123">
+                                <small>Formato: ABC-123 (3 lettere maiuscole, trattino, numeri)</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="nick" class="required">
+                                    <i class="fas fa-user-tag"></i> Nickname (Discord)
+                                </label>
+                                <input type="text" id="nick" required placeholder="Inserisci il nickname">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="tipo" class="required">
+                                    <i class="fas fa-tags"></i> Tipo Unità
+                                </label>
+                                <select id="tipo" required>
+                                    <option value="">Seleziona tipo</option>
+                                    <option value="Fanteria">Fanteria</option>
+                                    <option value="Motorizzata">Motorizzata</option>
+                                    <option value="Corazzata">Corazzata</option>
+                                    <option value="Artiglieria">Artiglieria</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="movimento" class="required">
+                                    <i class="fas fa-walking"></i> Movimento
+                                </label>
+                                <input type="number" id="movimento" min="1" required placeholder="1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="visione" class="required">
+                                    <i class="fas fa-eye"></i> Visione
+                                </label>
+                                <input type="number" id="visione" min="1" required placeholder="1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="armatura" class="required">
+                                    <i class="fas fa-shield-alt"></i> Armatura
+                                </label>
+                                <input type="number" id="armatura" min="1" required placeholder="1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rifornimenti" class="required">
+                                    <i class="fas fa-boxes"></i> Capacità Rifornimenti
+                                </label>
+                                <input type="number" id="rifornimenti" min="1" required placeholder="1">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="componenti">
+                                <i class="fas fa-cogs"></i> Componenti
+                            </label>
+                            <textarea id="componenti" rows="3" placeholder="Descrizione componenti..."></textarea>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="password" class="required">
+                                    <i class="fas fa-lock"></i> Password
+                                </label>
+                                <input type="password" id="password" required placeholder="Inserisci password">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="confirmPassword" class="required">
+                                    <i class="fas fa-lock"></i> Conferma Password
+                                </label>
+                                <input type="password" id="confirmPassword" required placeholder="Conferma password">
+                            </div>
+                        </div>
+                        
+                        <button type="submit">
+                            <i class="fas fa-user-plus"></i> Registra Unità
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Unità Registrate -->
+            <div id="units" class="tab-content">
+                <div class="section-title">
+                    <i class="fas fa-users"></i>
+                    <h2>Unità Registrate</h2>
+                </div>
+                
+                <div class="units-stats">
+                    <div class="unit-stat">
+                        <div class="unit-stat-value" id="approvedCount">0</div>
+                        <div class="unit-stat-label">Approvate</div>
+                    </div>
+                    <div class="unit-stat">
+                        <div class="unit-stat-value" id="pendingCount">0</div>
+                        <div class="unit-stat-label">In Attesa</div>
+                    </div>
+                </div>
+                
+                <div id="unitsGrid" class="units-grid">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Caricamento unità in corso...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invia Ordini -->
+            <div id="orders" class="tab-content">
+                <div class="section-title">
+                    <i class="fas fa-paper-plane"></i>
+                    <h2>Invia Ordini</h2>
+                </div>
+                
+                <div class="card">
+                    <div class="form-group">
+                        <label for="orderUnit" class="required">
+                            <i class="fas fa-user"></i> Seleziona Unitá
+                        </label>
+                        <select id="orderUnit" required>
+                            <option value="">Caricamento unità approvate...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="passwordSection" style="display: none;">
+                        <label for="unitPassword" class="required">
+                            <i class="fas fa-lock"></i> Password Unitá
+                        </label>
+                        <input type="password" id="unitPassword" placeholder="Inserisci password unità">
+                    </div>
+                    
+                    <div id="orderForm" style="display: none;">
+                        <div class="form-group">
+                            <label for="orderType" class="required">
+                                <i class="fas fa-tasks"></i> Tipo Ordine
+                            </label>
+                            <select id="orderType" required>
+                                <option value="">Seleziona tipo ordine</option>
+                                <option value="muoversi">Muoversi</option>
+                                <option value="salire">Salire su Mezzo</option>
+                                <option value="scendere">Scendere da Mezzo</option>
+                                <option value="attivare">Attivare Componenti</option>
+                                <option value="cura">Cura</option>
+                                <option value="ricaricare">Ricaricare Componente</option>
+                                <option value="cedere">Cedere Rifornimenti</option>
+                            </select>
+                        </div>
+                        
+                        <div id="orderDetails">
+                            <!-- Dettagli dinamici -->
+                        </div>
+                        
+                        <button onclick="addOrderToChain()" class="btn-success">
+                            <i class="fas fa-plus"></i> Aggiungi alla Catena
+                        </button>
+                        
+                        <div class="orders-list" id="orderChain" style="display: none;">
+                            <h3 class="card-title">
+                                <i class="fas fa-link"></i> Catena Ordini
+                            </h3>
+                            <div id="orderItems"></div>
+                            <button onclick="submitAllOrders()" class="btn-success">
+                                <i class="fas fa-rocket"></i> Invia Tutti gli Ordini
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Operazione completata con successo!</span>
+    </div>
+    <script type="module">
+        import supabase from './api_stuff/api.js';
+        window.supabase = supabase; // Make supabase available globally
+        let allUnits = [];
+        let approvedUnits = [];
+        let currentOrders = [];
+        
+        document.querySelectorAll('.tab').forEach(tab => {      // Gestione delle tab
+            tab.addEventListener('click', () => {
+                // Rimuovi classe active da tutte le tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Aggiungi classe active alla tab cliccata
+                tab.classList.add('active');
+                
+                // Mostra il contenuto corrispondente
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+                
+                // Se è la tab delle unità, carica i dati
+                if (tabId === 'units') {
+                    loadUnitsRegistered();
+                }
+            });
+        });
+        
+        async function loadAllData() {
+            const { data, error } = await supabase.from('units').select('*');
+            if (error) {
+                showNotification(error, 'error');
+            } else {
+                showNotification(data, 'success');
+            }
+            
+        }
+        
+        function displayUnits(units) {
+            const unitsGrid = document.getElementById('unitsGrid');
+            
+            if (units.length === 0) {
+                unitsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <h3>Nessuna unità trovata</h3>
+                        <p>Non ci sono unità registrate nel sistema.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Calcola statistiche
+            const approvedCount = units.filter(unit => unit.status === 'approved').length;
+            const pendingCount = units.filter(unit => unit.status === 'pending').length;
+            
+            document.getElementById('approvedCount').textContent = approvedCount;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            
+            unitsGrid.innerHTML = units.map(unit => `
+                <div class="unit-card ${unit.status === 'approved' ? 'approved' : 'pending'}">
+                    <div class="unit-header">
+                        <div class="unit-id">${unit.id}</div>
+                        <span class="status ${unit.status === 'approved' ? 'status-approved' : 'status-pending'}">
+                            <i class="fas ${unit.status === 'approved' ? 'fa-check' : 'fa-clock'}"></i>
+                            ${unit.status === 'approved' ? 'Approvata' : 'In Attesa'}
+                        </span>
+                    </div>
+                    <div class="unit-nick">${unit.nick}</div>
+                    <div class="unit-details">
+                        <div class="unit-detail">
+                            <span class="detail-label">Tipo</span>
+                            <span class="detail-value">${unit.tipo}</span>
+                        </div>
+                        <div class="unit-detail">
+                            <span class="detail-label">Movimento</span>
+                            <span class="detail-value">${unit.movimento}</span>
+                        </div>
+                        <div class="unit-detail">
+                            <span class="detail-label">Visione</span>
+                            <span class="detail-value">${unit.visione}</span>
+                        </div>
+                        <div class="unit-detail">
+                            <span class="detail-label">Armatura</span>
+                            <span class="detail-value">${unit.armatura}</span>
+                        </div>
+                        <div class="unit-detail">
+                            <span class="detail-label">Rifornimenti</span>
+                            <span class="detail-value">${unit.rifornimenti}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn-success" style="padding: 8px 15px; font-size: 0.9rem;">
+                            <i class="fas fa-edit"></i> Modifica
+                        </button>
+                        <button class="btn-danger" style="padding: 8px 15px; font-size: 0.9rem;">
+                            <i class="fas fa-trash"></i> Elimina
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupEventListeners() {
+            // Gestione tab
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                    
+                    if (tab.dataset.tab === 'units') {
+                        loadUnitsRegistered();
+                    } else if (tab.dataset.tab === 'orders') {
+                        loadApprovedUnits();
+                    }
+                });
+            });
+
+            // Selezione unità per ordini
+            document.getElementById('orderUnit').addEventListener('change', function() {
+                if (this.value) {
+                    document.getElementById('passwordSection').style.display = 'block';
+                } else {
+                    document.getElementById('passwordSection').style.display = 'none';
+                    document.getElementById('orderForm').style.display = 'none';
+                }
+            });
+
+            // Verifica password
+            document.getElementById('unitPassword').addEventListener('input', function() {
+                if (this.value.length > 0) {
+                    verifyPassword();
+                }
+            });
+
+            // Cambio tipo ordine
+            document.getElementById('orderType').addEventListener('change', updateOrderDetails);
+
+            // Registrazione form
+            document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await handleRegistration();
+            });
+        }
+        
+        async function sendData(action, data) {
+            result = await supabase.from('orders').insert([data]);
+
+                if (result.error) {
+                    showNotification(result.error.message, 'error');
+                } else {
+                    showNotification(`✅ ${action} inviato`, 'success');
+                    loadAllData();
+                }
+        }
+
+        async function handleRegistration() {
+            // Leggi tutti i valori dal form
+            const matricola = document.getElementById('matricola').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const nick = document.getElementById('nick').value.trim();
+            const tipo = document.getElementById('tipo').value;
+            const movimento = document.getElementById('movimento').value;
+            const visione = document.getElementById('visione').value;
+            const armatura = document.getElementById('armatura').value;
+            const rifornimenti = document.getElementById('rifornimenti').value;
+            const componenti = document.getElementById('componenti').value.trim();
+            
+            // Validazione password
+            if (!verifyPassword()) {
+                showNotification('Le password non coincidono', 'error');
+                return;
+            }
+            
+            if (!password) {
+                showNotification('La password è obbligatoria', 'error');
+                return;
+            }
+
+            // Validazione matricola
+            if (!matricola) {
+                showNotification('La matricola è obbligatoria', 'error');
+                return;
+            }
+            
+            if (allUnits.some(unit => unit.matricola === matricola)) {
+                showNotification('Matricola già esistente!', 'error');
+                return;
+            }
+
+            // Validazione nick
+            if (!nick) {
+                showNotification('Il nickname è obbligatorio', 'error');
+                return;
+            }
+            
+            if (allUnits.some(unit => unit.nick === nick)) {
+                showNotification('Nickname già registrato!', 'error');
+                return;
+            }
+            
+            // Validazione tipo
+            if (!tipo) {
+                showNotification('Il tipo unità è obbligatorio', 'error');
+                return;
+            }
+            
+            // Prepara i dati da inviare
+            const unitData = {
+                matricola: matricola,
+                password: password,
+                nick: nick,
+                tipo: tipo,
+                movimento: movimento ? parseInt(movimento) : 'N/A',
+                visione: visione ? parseInt(visione) : 'N/A',
+                armatura: armatura ? parseInt(armatura) : 'N/A',
+                rifornimenti: rifornimenti ? parseInt(rifornimenti) : 'N/A',
+                componenti: componenti
+            };
+            
+            // Debug: mostra i valori che verranno inviati
+            console.log('Dati unità da inviare:', unitData);
+
+            await sendData('register', unitData);
+            document.getElementById('registrationForm').reset();
+        }
+
+        function loadUnitsRegistered() {
+            const grid = document.getElementById('unitsGrid');
+            
+            if (allUnits.length === 0) {
+                grid.innerHTML = '<div class="loading">Nessuna unità registrata</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            allUnits.forEach(unit => {
+                const card = document.createElement('div');
+                card.className = `unit-card ${unit.approvata === 'SI' ? 'approved' : 'pending'}`;
+                
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>${unit.matricola}</strong>
+                        <span class="status status-${unit.approvata === 'SI' ? 'approved' : 'pending'}">
+                            ${unit.approvata === 'SI' ? 'APPROVATA' : 'IN ATTESA'}
+                        </span>
+                    </div>
+                    <div>👤 ${unit.nick}</div>
+                    <div>🎯 ${unit.tipo} | 📍 ${unit.posizione}</div>
+                    <div>🚶 ${unit.movimento}m | 👁️ ${unit.visione}m | 🛡️ ${unit.armatura}</div>
+                    <div>📦 Rifornimenti: ${unit.rifornimenti}</div>
+                    <div>🔧 ${unit.componenti || 'Nessuno'}</div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function loadApprovedUnits() {
+            const select = document.getElementById('orderUnit');
+            select.innerHTML = '<option value="">Seleziona unità approvata...</option>';
+            
+            approvedUnits.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit.matricola;
+                option.textContent = `${unit.matricola} - ${unit.nick} (${unit.tipo})`;
+                select.appendChild(option);
+            });
+        }
+
+        async function verifyPassword() {
+            const matricole = []
+            const password = []
+            const inputted_password = ""
+            const inputtedMatricola = ""
+
+            for (const unit_matricola of matricole) {
+                for (const unit_password of password) {
+                    if (unit_matricola === inputtedMatricola) {
+                        if (unit_password === inputted_password) {
+                            return true;
+                    }
+                    
+                }
+            }
+            return false;
+
+        }
+
+
+
+            const detailsDiv = document.getElementById('orderDetails');
+            const type = document.getElementById('orderType').value;
+            
+            let html = '';
+            switch(type) {
+                case 'muoversi':
+                    html = `<div class="form-group"><label>Casella Destinazione *</label><input type="text" id="orderDestination" placeholder="Es: B2" required></div>`;
+                    break;
+                case 'salire':
+                case 'scendere':
+                    html = `<div class="form-group"><label>Posizione *</label><input type="text" id="orderPosition" placeholder="Es: C3" required></div>`;
+                    break;
+                case 'attivare':
+                case 'ricaricare':
+                    html = `<div class="form-group"><label>Nome Componente *</label><input type="text" id="orderComponent" placeholder="Es: Fucile" required></div>`;
+                    break;
+                case 'cedere':
+                    html = `
+                        <div class="form-group"><label>Unità Destinataria *</label>
+                        <select id="orderTarget" required>
+                            <option value="">Seleziona unità...</option>
+                            ${approvedUnits.filter(u => u.matricola !== document.getElementById('orderUnit').value)
+                                .map(u => `<option value="${u.matricola}">${u.matricola} - ${u.nick}</option>`).join('')}
+                        </select></div>
+                        <div class="form-group"><label>Quantità *</label><input type="number" id="orderQuantity" min="1" required></div>`;
+                    break;
+                case 'cura':
+                    html = '<div class="form-group"><p>💊 Ordine di cura - nessun dettaglio aggiuntivo</p></div>';
+                    break;
+            }
+            
+            detailsDiv.innerHTML = html;
+        }
+
+        function updateStats() {
+            const total = allUnits.length;
+            const approved = allUnits.filter(u => u.approvata === 'SI').length;
+            const pending = total - approved;
+
+            // Update elements only if they exist
+            const totalUnitsEl = document.getElementById('totalUnits');
+            if (totalUnitsEl) totalUnitsEl.textContent = total;
+            
+            const approvedUnitsEl = document.getElementById('approvedUnits');
+            if (approvedUnitsEl) approvedUnitsEl.textContent = approved;
+            
+            const pendingUnitsEl = document.getElementById('pendingUnits');
+            if (pendingUnitsEl) pendingUnitsEl.textContent = pending;
+
+            const statsContainer = document.getElementById('statsContainer');
+            if (statsContainer) {
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${total}</div>
+                        <div class="stat-label">Unitá Totali</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #27ae60;">${approved}</div>
+                        <div class="stat-label">Approvate</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #f39c12;">${pending}</div>
+                        <div class="stat-label">In Attesa</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" style="color: #3498db;">${currentOrders.length}</div>
+                        <div class="stat-label">Ordini in Coda</div>
+                    </div>
+                `;
+            }
+        }
+
+        function showNotification(message, type) {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            setupEventListeners();
+        });
+
+    </script>
+
+    <!-- IFRAME NECESSARIO -->
+    <iframe name="hiddenFrame" id="hiddenFrame" style="display: none;"></iframe>
+</body>
+</html>
