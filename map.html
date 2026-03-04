@@ -75,7 +75,7 @@ function createGrid(rows, cols, data) {
       BOTTONE DI TEST
 ----------------------------*/
 function handleButtonClick() {
-  window.location.href = 'https://the-silver33.github.io/sector/test.html';
+  window.location.href = 'https://sector6080.github.io/sector/';
 }
 
 /* ---------------------------
@@ -94,6 +94,7 @@ zoomContainer.addEventListener("wheel", e => {
 });
 
 document.addEventListener("keydown", (e) => {
+
   const step = 50;
 
   switch (e.key.toLowerCase()) {
@@ -113,37 +114,18 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ---------------------------
-       GOOGLE SHEET
+              API
 ----------------------------*/
 
-// ID del foglio
-const SHEET_ID = "1Uoz5xYisxmd7uUUIFrsAX-yZ4mckYSUdSopG2pNaL1k";
-const SHEET_NAME = "mappa";
-const API_KEY = "AIzaSyAjSe4WyZIJyGk5HLMMytZcm_s4xQJKNU4";
+
+const API_KEY = "sb_publishable_Lbh2m9zIjUCwEF6PVNbc4g_XkdJ7Gcz";
+const API_URL = "https://sector6080.supabase.co/rest/v1/map?select=*&apikey=" + API_KEY;
 
 async function loadSheetData() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
 
-  try {
-    const res = await fetch(url);
-    const json = await res.json();
 
-    const data = json.values || [];
-	  const mapData = data.slice(1).map(row => row.slice(1)) //toglie prima riga e prima colonna
-
-    // Calcolo dinamico righe/colonne
-    const rows = mapData.length;
-    const cols = Math.max(...mapData.map(r => r.length));
-
-    console.log("Righe:", rows, "Colonne:", cols);
-
-    // Crea e riempi
-    createGrid(rows, cols, mapData);
-
-  } catch (err) {
-    console.error("Errore caricamento Google Sheet:", err);
-  }
 }
+  
 
 // carica dati al caricamento pagina
 window.addEventListener('DOMContentLoaded', loadSheetData);

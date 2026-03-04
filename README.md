@@ -40,7 +40,6 @@ https://sector6080.github.io/sector/test.html
 * organizzare sistema di notifiche dentro lhtml (da verificare e setuppare)
 * login/unita salvato nel locale
 * sostituire in ordini salire/scendere da mezzo al posto di posizione->unita
-* the api key is safe to use in a browser if you have enabled Row Level Security (RLS) for your tables and configured policies. (that we dont have)
 
 ## Next
 * dark mode
