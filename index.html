@@ -222,16 +222,20 @@
             </div>
         </div>
     </div>
-
     <div id="notification" class="notification">
         <i class="fas fa-check-circle"></i>
         <span id="notificationText">Operazione completata con successo!</span>
     </div>
-
-    <script>
+    <script type="module">
+        import supabase from './api_stuff/api.js';
+        window.supabase = supabase; // Make supabase available globally
         
-        // Gestione delle tab
-        document.querySelectorAll('.tab').forEach(tab => {
+        let allUnits = [];
+        let approvedUnits = [];
+        let currentOrders = [];
+        
+        
+        document.querySelectorAll('.tab').forEach(tab => {      // Gestione delle tab
             tab.addEventListener('click', () => {
                 // Rimuovi classe active da tutte le tab
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -251,15 +255,16 @@
             });
         });
         
-        // Caricamento dati
         async function loadAllData() {
-            showNotification('🔄 Caricamento dati in corso...', 'warning');
-            const MAP_HEIGHT = 60;
-            const MAP_WIDTH = 80;
-            //aggiungere data loading con nuova api
+            const { data, error } = await supabase.from('units').select('*');
+            if (error) {
+                showNotification(error, 'error');
+            } else {
+                showNotification(data, 'success');
+            }
+            
         }
         
-        // Visualizza unità nella griglia
         function displayUnits(units) {
             const unitsGrid = document.getElementById('unitsGrid');
             
@@ -325,22 +330,6 @@
             `).join('');
         }
 
-        // URL DELLE API
-        const API_KEY = 'sb_publishable_Lbh2m9zIjUCwEF6PVNbc4g_XkdJ7Gcz';
-        const API_URL = "https://sector6080.supabase.co/rest/v1/map?select=*&apikey=" + API_KEY;
-
-        let allUnits = [];
-        let approvedUnits = [];
-        let currentOrders = [];
-
-
-        // INIZIALIZZAZIONE
-        document.addEventListener('DOMContentLoaded', function() {
-            loadAllData();
-            setupEventListeners();
-            showNotification('Sistema caricato! ID campo trovato: ' + FORM_FIELD_ID, 'success');
-        });
-
         function setupEventListeners() {
             // Gestione tab
             document.querySelectorAll('.tab').forEach(tab => {
@@ -387,30 +376,21 @@
         }
 
         function processLoadedData(data) {
-            if (true) { // Sostituisci con validazione reale del formato dati
-                updateStats();
-                loadUnitsRegistered();
-                loadApprovedUnits();
-                showNotification(`✅ Caricati ${allUnits.length} unità`, 'success');
-            } else {
-                throw new Error('Formato dati non valido');
-            }
+            // TODO: process data fetched from backend
+            // Validate format and populate allUnits/approvedUnits
+            updateStats();
+            loadUnitsRegistered();
+            loadApprovedUnits();
+            showNotification(`✅ Dati caricati`, 'success');
         }
         
-
-
         async function sendData(action, data) {
-            if (action === 'register') {
-                RegisterUnit(data);
-            }else if (action === 'order') {
-                SendOrder(data);
-            } else {
-                showNotification('Azione sconosciuta: ' + action, 'error');
-                return false;
-            }
-            //aggiungere settimeout per ricaricare i dati dopo linvio
+            // TODO: implement API call to register unit or send order
+            // you can use fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, data }) })
+            console.log('sendData called with', action, data);
+            showNotification(`Richiesta inviata: ${action}`, 'info');
         }
-       // REGISTRAZIONE UNITÀ
+
         async function handleRegistration() {
             // Leggi tutti i valori dal form
             const matricola = document.getElementById('matricola').value.trim();
@@ -425,7 +405,7 @@
             const componenti = document.getElementById('componenti').value.trim();
             
             // Validazione password
-            if (password !== confirmPassword) {
+            if (!verifyPassword()) {
                 showNotification('Le password non coincidono', 'error');
                 return;
             }
@@ -581,7 +561,6 @@
             detailsDiv.innerHTML = html;
         }
 
-
         function updateStats() {
             const total = allUnits.length;
             const approved = allUnits.filter(u => u.approvata === 'SI').length;
@@ -636,6 +615,10 @@
             }, 4000);
         }
 
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            setupEventListeners();
+        });
 
     </script>
 
