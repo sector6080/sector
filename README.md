@@ -14,6 +14,7 @@ https://sector6080.github.io/sector/test.html
 * implementare nelle unità un booleano per il cambio turno
 
 ## ALTA PRIORITA:
+* suppabase (backend) si pausa dopo x giorni di inattivita, scoprire se è un probblema
 * fare la mappa (mappa centrale+tendina a sinistra con le unita)
 * trasportare/rifare/migliorare il backend (agg il cambio turno)
 * fare cleaning di tutti i codici (input.html/map.html/appsscript) molte funzioni sono rindondanti o non servono
