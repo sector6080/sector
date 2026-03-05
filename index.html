@@ -400,13 +400,11 @@
         }
 
         async function getData() {
-            const { unit_data, unit_error } = await sb.from('units').select('*');
+            const {data, unit_error } = await sb.from('units').select('*');
             if (unit_error) {
                 console.error('Unit Error:', unit_error);
             }
-
-            window.unit_data = unit_data || [];
-            window.general_data = general_data || [];
+            unit_data = data;
         }
 
         async function sendData(table, data) {
