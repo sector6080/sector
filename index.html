@@ -397,7 +397,7 @@
             }
 
             grid.innerHTML = '';
-            allUnits.forEach(unit => {
+            unit_data.forEach(unit => {
                 const card = document.createElement('div');
                 card.className = `unit-card ${unit.approvata === 'SI' ? 'approved' : 'pending'}`;
                 
@@ -423,10 +423,10 @@
             const select = document.getElementById('orderUnit');
             select.innerHTML = '<option value="">Seleziona unità approvata...</option>';
             
-            approvedUnits.forEach(unit => {
+            unit_data.forEach(unit => {
                 const option = document.createElement('option');
                 option.value = unit.matricola;
-                option.textContent = `${unit.matricola} - ${unit.nick} (${unit.tipo})`;
+                option.textContent = `${unit.matricola}`;
                 select.appendChild(option);
             });
         }
@@ -571,18 +571,27 @@
 
             // Selezione unità per ordini
             document.getElementById('orderUnit').addEventListener('change', function() {
-                if (this.value) {
-                    document.getElementById('passwordSection').style.display = 'block';
-                } else {
-                    document.getElementById('passwordSection').style.display = 'none';
-                    document.getElementById('orderForm').style.display = 'none';
-                }
+                    if (this.value) {
+                        selectedUnit = this.value;
+                        document.getElementById('passwordSection').style.display = 'block';
+                        document.getElementById('passwordError').style.display = 'none';
+                        document.getElementById('unitPassword').value = '';
+                    } else {
+                        document.getElementById('passwordSection').style.display = 'none';
+                        document.getElementById('orderForm').style.display = 'none';
+                        selectedUnit = null;
+    }
             });
 
-            // Verifica password
-            document.getElementById('unitPassword').addEventListener('input', function() {
-                if (this.value.length > 0) {
-                    verifyPassword();
+            document.getElementById('submitPasswordBtn').addEventListener('click', function() {
+                const password = document.getElementById('unitPassword').value;
+                const errorElement = document.getElementById('passwordError');
+                
+                // Controlla se la password è stata inserita
+                if (!password) {
+                    errorElement.textContent = 'Inserisci una password!';
+                    errorElement.style.display = 'block';
+                    return;
                 }
             });
 
