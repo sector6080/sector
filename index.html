@@ -236,33 +236,6 @@
         const supabaseKey = 'sb_publishable_Lbh2m9zIjUCwEF6PVNbc4g_XkdJ7Gcz';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
         let unit_data = [];
-        
-        async function testSupabaseConnection() {
-            try {
-                // Test lettura
-                const { data, error } = await supabase
-                    .from('units')
-                    .select('count', { count: 'exact', head: true });
-                
-                if (error) {
-                    console.error('❌ Errore connessione Supabase:', error);
-                    console.log('Dettagli errore:', {
-                        message: error.message,
-                        status: error.status,
-                        statusText: error.statusText
-                    });
-                } else {
-                    console.log('✅ Connessione Supabase OK');
-                }
-                
-                // Controlla autenticazione
-                const { data: { user } } = await supabase.auth.getUser();
-                console.log('Utente autenticato:', user ? '✅ Sì' : '❌ No');
-                
-            } catch (e) {
-                console.error('❌ Eccezione:', e);
-            }
-        }
 
         function loadUnitsRegistered() {
             const grid = document.getElementById('unitsGrid');
@@ -517,8 +490,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
             getData();
-            // Esegui il test
-            testSupabaseConnection();
         });
 
         function showNotification(message, type) {
