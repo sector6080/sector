@@ -247,6 +247,10 @@
                 console.log(data);
             }
         }
+
+        function updateOrderDetails(){
+            return;
+        }
         
         function displayUnits(units) {
             const unitsGrid = document.getElementById('unitsGrid');
@@ -371,16 +375,16 @@
 
         async function handleRegistration() {
             // Leggi tutti i valori dal form
-            const matricola = document.getElementById('matricola').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const nick = document.getElementById('nick').value.trim();
-            const tipo = document.getElementById('tipo').value;
-            const movimento = document.getElementById('movimento').value;
-            const visione = document.getElementById('visione').value;
-            const armatura = document.getElementById('armatura').value;
-            const rifornimenti = document.getElementById('rifornimenti').value;
-            const componenti = document.getElementById('componenti').value.trim();
+            const matricola = "";
+            const password = "";
+            const confirmPassword = "";
+            const nick = "";
+            const tipo = "";
+            const movimento = "";
+            const visione = "";
+            const armatura = "";
+            const rifornimenti = "";
+            const componenti = "";
             
             // Validazione password
             if (!verifyPassword()) {
