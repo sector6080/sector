@@ -406,6 +406,8 @@
                 showNotification('Questo nickname è già registrato', 'error');
                 return false;
             }
+            unit_data.some(unit => console.log(unit.nick));
+            console.log('Nickname inserito:', prepared_data.nick);
             
             return true;
         }
