@@ -12,6 +12,7 @@
     <!-- Styles -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css?v=1.0.1">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="container">
@@ -237,28 +238,7 @@
         let approvedUnits = [];
         let currentOrders = [];
         
-        document.querySelectorAll('.tab').forEach(tab => {      // Gestione delle tab
-            tab.addEventListener('click', () => {
-                // Rimuovi classe active da tutte le tab
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                // Aggiungi classe active alla tab cliccata
-                tab.classList.add('active');
-                
-                // Mostra il contenuto corrispondente
-                const tabId = tab.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-                
-                // Se è la tab delle unità, carica i dati
-                if (tabId === 'units') {
-                    loadUnitsRegistered();
-                }
-            });
-        });
-        
         async function loadAllData() {
-            console.log('Caricamento dati...', 'info');
             const { data, error } = await supabase.from('units').select('*');
             if (error) {
                 console.log(error, 'error');
