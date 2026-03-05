@@ -273,8 +273,8 @@
         function loadUnitsSummary() {
             const approvedCountEl = document.getElementById('approvedCount');
             const pendingCountEl = document.getElementById('pendingCount');
-            const approvedCount = unit_data.filter(u => u.approvata === 'SI').length;
-            const pendingCount = unit_data.filter(u => u.approvata !== 'SI').length;
+            const approvedCount = unit_data.filter(u => u.approvata === true).length;
+            const pendingCount = unit_data.filter(u => u.approvata !== true).length;
             approvedCountEl.textContent = approvedCount;
             pendingCountEl.textContent = pendingCount;
         }
