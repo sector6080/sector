@@ -270,15 +270,6 @@
             });
         }
 
-        function loadUnitsSummary() {
-            const approvedCountEl = document.getElementById('approvedCount');
-            const pendingCountEl = document.getElementById('pendingCount');
-            const approvedCount = unit_data.filter(u => u.approvata === true).length;
-            const pendingCount = unit_data.filter(u => u.approvata !== true).length;
-            approvedCountEl.textContent = approvedCount;
-            pendingCountEl.textContent = pendingCount;
-        }
-
         function loadApprovedUnits() {
             const select = document.getElementById('orderUnit');
             select.innerHTML = '<option value="">Seleziona unità approvata...</option>';
@@ -291,10 +282,10 @@
             });
         }
 
-        function updateStats() {
-            const total = allUnits.length;
-            const approved = allUnits.filter(u => u.approvata === 'SI').length;
-            const pending = total - approved;
+        function loadUnitsSummary() {
+            const total = unit_data.length;
+            const approved = unit_data.filter(u => u.approvata === true).length;
+            const pending = unit_data.filter(u => u.approvata === false).length;
 
             // Update elements only if they exist
             const totalUnitsEl = document.getElementById('totalUnits');
