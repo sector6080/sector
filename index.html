@@ -270,6 +270,15 @@
             });
         }
 
+        function loadUnitsSummary() {
+            const approvedCountEl = document.getElementById('approvedCount');
+            const pendingCountEl = document.getElementById('pendingCount');
+            const approvedCount = unit_data.filter(u => u.approvata === 'SI').length;
+            const pendingCount = unit_data.filter(u => u.approvata !== 'SI').length;
+            approvedCountEl.textContent = approvedCount;
+            pendingCountEl.textContent = pendingCount;
+        }
+
         function loadApprovedUnits() {
             const select = document.getElementById('orderUnit');
             select.innerHTML = '<option value="">Seleziona unità approvata...</option>';
@@ -436,6 +445,7 @@
                     
                     if (tab.dataset.tab === 'units') {
                         loadUnitsRegistered();
+                        loadUnitsSummary();
                     } else if (tab.dataset.tab === 'orders') {
                         loadApprovedUnits();
                     }
