@@ -235,18 +235,6 @@
         const supabaseUrl = 'https://jnfqfowidqwrmmvxnvhe.supabase.co';
         const supabaseKey = 'sb_publishable_Lbh2m9zIjUCwEF6PVNbc4g_XkdJ7Gcz';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
-        let allUnits = [];
-        let approvedUnits = [];
-        let currentOrders = [];
-        
-        async function loadAllData() {
-            const { data, error } = await sb.from('units').select('*');
-            if (error) {
-                console.log(error);
-            } else {
-                console.log(data);
-            }
-        }
 
         function updateOrderDetails(){
             return;
@@ -315,51 +303,6 @@
                     </div>
                 </div>
             `).join('');
-        }
-
-        function setupEventListeners() {
-            // Gestione tab
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    document.getElementById(tab.dataset.tab).classList.add('active');
-                    
-                    if (tab.dataset.tab === 'units') {
-                        loadUnitsRegistered();
-                    } else if (tab.dataset.tab === 'orders') {
-                        loadApprovedUnits();
-                    }
-                });
-            });
-
-            // Selezione unità per ordini
-            document.getElementById('orderUnit').addEventListener('change', function() {
-                if (this.value) {
-                    document.getElementById('passwordSection').style.display = 'block';
-                } else {
-                    document.getElementById('passwordSection').style.display = 'none';
-                    document.getElementById('orderForm').style.display = 'none';
-                }
-            });
-
-            // Verifica password
-            document.getElementById('unitPassword').addEventListener('input', function() {
-                if (this.value.length > 0) {
-                    verifyPassword();
-                }
-            });
-
-            // Cambio tipo ordine
-            document.getElementById('orderType').addEventListener('change', updateOrderDetails);
-
-            // Registrazione form
-            document.getElementById('registrationForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                await handleRegistration();
-            });
         }
         
         async function sendData(action, data) {
@@ -446,10 +389,10 @@
         }
 
         function loadUnitsRegistered() {
-            const grid = document.getElementById('unitsGrid');
-            
-            if (allUnits.length === 0) {
+
+            if (!unit_data) {
                 grid.innerHTML = '<div class="loading">Nessuna unità registrata</div>';
+                console.log('Nessuna unità registrata');
                 return;
             }
 
@@ -597,8 +540,63 @@
             }, 4000);
         }
 
+        async function loadAllData() {
+            const { unit_data, unit_error } = await sb.from('units').select('*');
+            const { player_data, player_error } = await sb.from('player').select('*');
+            const { general_data, general_error } = await sb.from('units').select('*');
+            if (unit_error || player_error || general_error) {
+                console.error('Unit Error:', unit_error);
+                console.error('Player Error:', player_error);
+                console.error('General Error:', general_error);
+            }
+        }
+
+        function setupEventListeners() {
+            // Gestione tab
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    document.getElementById(tab.dataset.tab).classList.add('active');
+                    
+                    if (tab.dataset.tab === 'units') {
+                        loadUnitsRegistered();
+                    } else if (tab.dataset.tab === 'orders') {
+                        loadApprovedUnits();
+                    }
+                });
+            });
+
+            // Selezione unità per ordini
+            document.getElementById('orderUnit').addEventListener('change', function() {
+                if (this.value) {
+                    document.getElementById('passwordSection').style.display = 'block';
+                } else {
+                    document.getElementById('passwordSection').style.display = 'none';
+                    document.getElementById('orderForm').style.display = 'none';
+                }
+            });
+
+            // Verifica password
+            document.getElementById('unitPassword').addEventListener('input', function() {
+                if (this.value.length > 0) {
+                    verifyPassword();
+                }
+            });
+
+            // Cambio tipo ordine
+            document.getElementById('orderType').addEventListener('change', updateOrderDetails);
+
+            // Registrazione form
+            document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await handleRegistration();
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Inizializzazione...', 'info');
             setupEventListeners();
             loadAllData();
         });
