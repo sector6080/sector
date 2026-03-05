@@ -250,17 +250,17 @@
             grid.innerHTML = '';
             unit_data.forEach(unit => {
                 const card = document.createElement('div');
-                card.className = `unit-card ${unit.approvata === 'SI' ? 'approved' : 'pending'}`;
+                card.className = `unit-card ${unit.approvata === true}`;
                 
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong>${unit.matricola}</strong>
-                        <span class="status status-${unit.approvata === 'SI' ? 'approved' : 'pending'}">
-                            ${unit.approvata === 'SI' ? 'APPROVATA' : 'IN ATTESA'}
+                        <span class="status status-${unit.approvata === true}">
+                            ${unit.approvata === true}
                         </span>
                     </div>
                     <div>👤 ${unit.nick}</div>
-                    <div>🎯 ${unit.tipo} | 📍 ${unit.posizione}</div>
+                    <div>🎯 ${unit.tipo} | 📍 ${unit.posizione_x}, ${unit.posizione_y}</div>
                     <div>🚶 ${unit.movimento}m | 👁️ ${unit.visione}m | 🛡️ ${unit.armatura}</div>
                     <div>📦 Rifornimenti: ${unit.rifornimenti}</div>
                     <div>🔧 ${unit.componenti || 'Nessuno'}</div>
@@ -311,10 +311,6 @@
                     <div class="stat-card">
                         <div class="stat-number" style="color: #f39c12;">${pending}</div>
                         <div class="stat-label">In Attesa</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" style="color: #3498db;">${currentOrders.length}</div>
-                        <div class="stat-label">Ordini in Coda</div>
                     </div>
                 `;
             }
