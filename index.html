@@ -427,7 +427,10 @@
                     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                     
                     tab.classList.add('active');
-                    document.getElementById(tab.dataset.tab).classList.add('active');
+                    const tabContent = document.getElementById(tab.dataset.tab);
+                    if (tabContent) {
+                        tabContent.classList.add('active');
+                    }
                     
                     if (tab.dataset.tab === 'units') {
                         loadUnitsRegistered();
@@ -438,55 +441,48 @@
             });
 
             // Selezione unità per ordini
-            document.getElementById('orderUnit').addEventListener('change', function() {
+            const orderUnitSelect = document.getElementById('orderUnit');
+            if (orderUnitSelect) {
+                orderUnitSelect.addEventListener('change', function() {
                     if (this.value) {
                         selectedUnit = this.value;
-                        document.getElementById('passwordSection').style.display = 'block';
-                        document.getElementById('passwordError').style.display = 'none';
-                        document.getElementById('unitPassword').value = '';
+                        const pwdSection = document.getElementById('passwordSection');
+                        if (pwdSection) pwdSection.style.display = 'block';
+                        const pwdInput = document.getElementById('unitPassword');
+                        if (pwdInput) pwdInput.value = '';
                     } else {
-                        document.getElementById('passwordSection').style.display = 'none';
-                        document.getElementById('orderForm').style.display = 'none';
+                        const pwdSection = document.getElementById('passwordSection');
+                        if (pwdSection) pwdSection.style.display = 'none';
+                        const orderForm = document.getElementById('orderForm');
+                        if (orderForm) orderForm.style.display = 'none';
                         selectedUnit = null;
-    }
-            });
+                    }
+                });
+            }
 
-            // Verifica password unità
-            document.getElementById('submitPasswordBtn').addEventListener('click', function() {
-                const password = document.getElementById('unitPassword').value;
-                const errorElement = document.getElementById('passwordError');
-                
-                // Controlla se la password è stata inserita
-                if (!password) {
-                    errorElement.textContent = 'Inserisci una password!';
-                    errorElement.style.display = 'block';
-                    return;
-                }else {
-                    errorElement.style.display = 'none';
-                    errorElement.textContent = '';
-                }
-            });
-
-            // Registrazione
-            document.getElementById('registrationForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const prepared_data = {
-                    matricola: document.getElementById('matricola').value.toUpperCase(),
-                    password: document.getElementById('password').value,
-                    nick: document.getElementById('nick').value,
-                    tipo: document.getElementById('tipo').value,
-                    movimento: parseInt(document.getElementById('movimento').value),
-                    visione: parseInt(document.getElementById('visione').value),
-                    armatura: parseInt(document.getElementById('armatura').value),
-                    rifornimenti: parseInt(document.getElementById('rifornimenti').value),
-                    rifornimenti_max: parseInt(document.getElementById('rifornimenti').value),
-                    componenti: document.getElementById('componenti').value || null
-                };
-                // Valida i dati
-                if (verifyData(prepared_data)) {
-                    await sendData('units', prepared_data);
-                }
-            });
+            // Prepara dati unità
+            const registrationForm = document.getElementById('registrationForm');
+            if (registrationForm) {
+                registrationForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const prepared_data = {
+                        matricola: document.getElementById('matricola').value.toUpperCase(),
+                        password: document.getElementById('password').value,
+                        nick: document.getElementById('nick').value,
+                        tipo: document.getElementById('tipo').value,
+                        movimento: parseInt(document.getElementById('movimento').value),
+                        visione: parseInt(document.getElementById('visione').value),
+                        armatura: parseInt(document.getElementById('armatura').value),
+                        rifornimenti: parseInt(document.getElementById('rifornimenti').value),
+                        rifornimenti_max: parseInt(document.getElementById('rifornimenti').value),
+                        componenti: document.getElementById('componenti').value || null
+                    };
+                    // Valida i dati
+                    if (verifyData(prepared_data)) {
+                        await sendData('units', prepared_data);
+                    }
+                });
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
