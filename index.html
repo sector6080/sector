@@ -583,6 +583,7 @@
     }
             });
 
+            // Verifica password unità
             document.getElementById('submitPasswordBtn').addEventListener('click', function() {
                 const password = document.getElementById('unitPassword').value;
                 const errorElement = document.getElementById('passwordError');
@@ -592,6 +593,9 @@
                     errorElement.textContent = 'Inserisci una password!';
                     errorElement.style.display = 'block';
                     return;
+                }else {
+                    errorElement.style.display = 'none';
+                    errorElement.textContent = '';
                 }
             });
 
