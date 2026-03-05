@@ -401,7 +401,7 @@
         async function getData() {
             const { unit_data, unit_error } = await sb.from('units').select('*');
             const { general_data, general_error } = await sb.from('units').select('*');
-            if (unit_error || player_error || general_error) {
+            if (unit_error || general_error) {
                 console.error('Unit Error:', unit_error);
                 console.error('General Error:', general_error);
             }
