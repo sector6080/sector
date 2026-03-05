@@ -410,7 +410,7 @@
         async function sendData(table, data) {
             const { error } = await sb.from(table).insert([data]);
             if (error) {
-                showNotification('Errore nell\'invio dei dati: ' + error.message, 'error');
+                showNotification('Errore invio dati: ' + error.message, 'error');
                 console.error('Errore invio dati:', error);
             } else {
                 showNotification('Unità registrata con successo!', 'success');
@@ -479,7 +479,7 @@
                     };
                     // Valida i dati
                     if (verifyData(prepared_data)) {
-                        await sendData('units', prepared_data);
+                        await sendData('new_units', prepared_data);
                     }
                 });
             }
