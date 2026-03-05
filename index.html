@@ -317,6 +317,87 @@
             }
         }
 
+        function verifyData(prepared_data) {
+            // Validazione matricola: esattamente 6 caratteri (ABC-123)
+            if (!prepared_data.matricola || !/^[A-Z]{3}-[0-9]{3}$/.test(prepared_data.matricola)) {
+                showNotification('Matricola deve essere nel formato ABC-123 (esattamente 6 caratteri)', 'error');
+                return false;
+            }
+            
+            // Validazione password - min 4 caratteri
+            if (!prepared_data.password || prepared_data.password.length < 4) {
+                showNotification('La password deve essere lunga almeno 4 caratteri', 'error');
+                return false;
+            }
+            
+            // Verifica password e conferma
+            if (prepared_data.password !== document.getElementById('confirmPassword').value) {
+                showNotification('Le password non corrispondono!', 'error');
+                return false;
+            }
+            
+            // Validazione nick: min 4, max 50 caratteri
+            if (!prepared_data.nick || prepared_data.nick.length < 4 || prepared_data.nick.length > 50) {
+                showNotification('Il nickname deve essere tra 4 e 50 caratteri', 'error');
+                return false;
+            }
+            
+            if (!prepared_data.tipo) {
+                showNotification('Il tipo è obbligatorio', 'error');
+                return false;
+            }
+            
+            // Validazione movimento: 0-49
+            if (isNaN(prepared_data.movimento) || prepared_data.movimento < 0 || prepared_data.movimento >= 50) {
+                showNotification('Movimento deve essere tra 0 e 49', 'error');
+                return false;
+            }
+            
+            // Validazione visione: 0-49
+            if (isNaN(prepared_data.visione) || prepared_data.visione < 0 || prepared_data.visione >= 50) {
+                showNotification('Visione deve essere tra 0 e 49', 'error');
+                return false;
+            }
+            
+            // Validazione armatura: 0-49
+            if (isNaN(prepared_data.armatura) || prepared_data.armatura < 0 || prepared_data.armatura >= 50) {
+                showNotification('Armatura deve essere tra 0 e 49', 'error');
+                return false;
+            }
+            
+            // Validazione rifornimenti: 0-49
+            if (isNaN(prepared_data.rifornimenti) || prepared_data.rifornimenti < 0 || prepared_data.rifornimenti >= 50) {
+                showNotification('Rifornimenti deve essere tra 0 e 49', 'error');
+                return false;
+            }
+            
+            // Validazione rifornimenti_max: 0-49
+            if (isNaN(prepared_data.rifornimenti_max) || prepared_data.rifornimenti_max < 0 || prepared_data.rifornimenti_max >= 50) {
+                showNotification('Rifornimenti massimi deve essere tra 0 e 49', 'error');
+                return false;
+            }
+            
+            // Validazione componenti: max 500 caratteri
+            if (prepared_data.componenti && prepared_data.componenti.length > 500) {
+                showNotification('Componenti non può superare 500 caratteri', 'error');
+                return false;
+            }
+            
+            // Verifica duplicati di matricola
+            if (unit_data && unit_data.some(unit => unit.matricola === prepared_data.matricola)) {
+                showNotification('Questa matricola è già registrata', 'error');
+                return false;
+            }
+            
+            // Verifica duplicati di nick
+            if (unit_data && unit_data.some(unit => unit.nick === prepared_data.nick)) {
+                showNotification('Questo nickname è già registrato', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+
         async function getData() {
             const { unit_data, unit_error } = await sb.from('units').select('*');
             const { general_data, general_error } = await sb.from('units').select('*');
@@ -329,12 +410,13 @@
         async function sendData(table, data) {
             const { error } = await sb.from(table).insert([data]);
             if (error) {
+                showNotification('Errore nell\'invio dei dati: ' + error.message, 'error');
                 console.error('Errore invio dati:', error);
             } else {
-                showNotification('Dati inviati con successo!', 'success');
-                getData();
+                showNotification('Unità registrata con successo!', 'success');
+                document.getElementById('registrationForm').reset();
+                await getData();
             }
-            
         }
 
         function setupEventListeners() {
@@ -388,8 +470,8 @@
             // Registrazione
             document.getElementById('registrationForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                await sendData('units', {
-                    matricola: document.getElementById('matricola').value,
+                const prepared_data = {
+                    matricola: document.getElementById('matricola').value.toUpperCase(),
                     password: document.getElementById('password').value,
                     nick: document.getElementById('nick').value,
                     tipo: document.getElementById('tipo').value,
@@ -397,8 +479,13 @@
                     visione: parseInt(document.getElementById('visione').value),
                     armatura: parseInt(document.getElementById('armatura').value),
                     rifornimenti: parseInt(document.getElementById('rifornimenti').value),
-                    componenti: document.getElementById('componenti').value
-                });
+                    rifornimenti_max: parseInt(document.getElementById('rifornimenti').value),
+                    componenti: document.getElementById('componenti').value || null
+                };
+                // Valida i dati
+                if (verifyData(prepared_data)) {
+                    await sendData('units', prepared_data);
+                }
             });
         }
 
