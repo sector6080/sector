@@ -22,7 +22,7 @@
                     <i class="fas fa-crosshairs"></i>
                     <h1>Sistema Militare - Dashboard</h1>
                 </div>
-                <button onclick="loadAllData()" class="btn-success">
+                <button onclick="getData()" class="btn-success">
                     <i class="fas fa-sync-alt"></i> Aggiorna Dati
                 </button>
             </div>
@@ -235,159 +235,7 @@
         const supabaseUrl = 'https://jnfqfowidqwrmmvxnvhe.supabase.co';
         const supabaseKey = 'sb_publishable_Lbh2m9zIjUCwEF6PVNbc4g_XkdJ7Gcz';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-        function updateOrderDetails(){
-            return;
-        }
         
-        function displayUnits(units) {
-            const unitsGrid = document.getElementById('unitsGrid');
-            
-            if (units.length === 0) {
-                unitsGrid.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-users"></i>
-                        <h3>Nessuna unità trovata</h3>
-                        <p>Non ci sono unità registrate nel sistema.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Calcola statistiche
-            const approvedCount = units.filter(unit => unit.status === 'approved').length;
-            const pendingCount = units.filter(unit => unit.status === 'pending').length;
-            
-            document.getElementById('approvedCount').textContent = approvedCount;
-            document.getElementById('pendingCount').textContent = pendingCount;
-            
-            unitsGrid.innerHTML = units.map(unit => `
-                <div class="unit-card ${unit.status === 'approved' ? 'approved' : 'pending'}">
-                    <div class="unit-header">
-                        <div class="unit-id">${unit.id}</div>
-                        <span class="status ${unit.status === 'approved' ? 'status-approved' : 'status-pending'}">
-                            <i class="fas ${unit.status === 'approved' ? 'fa-check' : 'fa-clock'}"></i>
-                            ${unit.status === 'approved' ? 'Approvata' : 'In Attesa'}
-                        </span>
-                    </div>
-                    <div class="unit-nick">${unit.nick}</div>
-                    <div class="unit-details">
-                        <div class="unit-detail">
-                            <span class="detail-label">Tipo</span>
-                            <span class="detail-value">${unit.tipo}</span>
-                        </div>
-                        <div class="unit-detail">
-                            <span class="detail-label">Movimento</span>
-                            <span class="detail-value">${unit.movimento}</span>
-                        </div>
-                        <div class="unit-detail">
-                            <span class="detail-label">Visione</span>
-                            <span class="detail-value">${unit.visione}</span>
-                        </div>
-                        <div class="unit-detail">
-                            <span class="detail-label">Armatura</span>
-                            <span class="detail-value">${unit.armatura}</span>
-                        </div>
-                        <div class="unit-detail">
-                            <span class="detail-label">Rifornimenti</span>
-                            <span class="detail-value">${unit.rifornimenti}</span>
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px; display: flex; gap: 10px;">
-                        <button class="btn-success" style="padding: 8px 15px; font-size: 0.9rem;">
-                            <i class="fas fa-edit"></i> Modifica
-                        </button>
-                        <button class="btn-danger" style="padding: 8px 15px; font-size: 0.9rem;">
-                            <i class="fas fa-trash"></i> Elimina
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        async function sendData(action, data) {
-            result = await db.from('orders').insert([data]);
-
-                if (result.error) {
-                    showNotification(result.error.message, 'error');
-                } else {
-                    showNotification(`✅ ${action} inviato`, 'success');
-                    loadAllData();
-                }
-        }
-
-        async function handleRegistration() {
-            // Leggi tutti i valori dal form
-            const matricola = "";
-            const password = "";
-            const confirmPassword = "";
-            const nick = "";
-            const tipo = "";
-            const movimento = "";
-            const visione = "";
-            const armatura = "";
-            const rifornimenti = "";
-            const componenti = "";
-            
-            // Validazione password
-            if (!verifyPassword()) {
-                showNotification('Le password non coincidono', 'error');
-                return;
-            }
-            
-            if (!password) {
-                showNotification('La password è obbligatoria', 'error');
-                return;
-            }
-
-            // Validazione matricola
-            if (!matricola) {
-                showNotification('La matricola è obbligatoria', 'error');
-                return;
-            }
-            
-            if (allUnits.some(unit => unit.matricola === matricola)) {
-                showNotification('Matricola già esistente!', 'error');
-                return;
-            }
-
-            // Validazione nick
-            if (!nick) {
-                showNotification('Il nickname è obbligatorio', 'error');
-                return;
-            }
-            
-            if (allUnits.some(unit => unit.nick === nick)) {
-                showNotification('Nickname già registrato!', 'error');
-                return;
-            }
-            
-            // Validazione tipo
-            if (!tipo) {
-                showNotification('Il tipo unità è obbligatorio', 'error');
-                return;
-            }
-            
-            // Prepara i dati da inviare
-            const unitData = {
-                matricola: matricola,
-                password: password,
-                nick: nick,
-                tipo: tipo,
-                movimento: movimento ? parseInt(movimento) : 'N/A',
-                visione: visione ? parseInt(visione) : 'N/A',
-                armatura: armatura ? parseInt(armatura) : 'N/A',
-                rifornimenti: rifornimenti ? parseInt(rifornimenti) : 'N/A',
-                componenti: componenti
-            };
-            
-            // Debug: mostra i valori che verranno inviati
-            console.log('Dati unità da inviare:', unitData);
-
-            await sendData('register', unitData);
-            document.getElementById('registrationForm').reset();
-        }
-
         function loadUnitsRegistered() {
 
             if (!unit_data) {
@@ -431,61 +279,6 @@
             });
         }
 
-        async function verifyPassword() {
-            const matricole = []
-            const password = []
-            const inputted_password = ""
-            const inputtedMatricola = ""
-
-            for (const unit_matricola of matricole) {
-                for (const unit_password of password) {
-                    if (unit_matricola === inputtedMatricola) {
-                        if (unit_password === inputted_password) {
-                            return true;
-                    }
-                    
-                }
-            }
-            return false;
-
-        }
-
-
-
-            const detailsDiv = document.getElementById('orderDetails');
-            const type = document.getElementById('orderType').value;
-            
-            let html = '';
-            switch(type) {
-                case 'muoversi':
-                    html = `<div class="form-group"><label>Casella Destinazione *</label><input type="text" id="orderDestination" placeholder="Es: B2" required></div>`;
-                    break;
-                case 'salire':
-                case 'scendere':
-                    html = `<div class="form-group"><label>Posizione *</label><input type="text" id="orderPosition" placeholder="Es: C3" required></div>`;
-                    break;
-                case 'attivare':
-                case 'ricaricare':
-                    html = `<div class="form-group"><label>Nome Componente *</label><input type="text" id="orderComponent" placeholder="Es: Fucile" required></div>`;
-                    break;
-                case 'cedere':
-                    html = `
-                        <div class="form-group"><label>Unità Destinataria *</label>
-                        <select id="orderTarget" required>
-                            <option value="">Seleziona unità...</option>
-                            ${approvedUnits.filter(u => u.matricola !== document.getElementById('orderUnit').value)
-                                .map(u => `<option value="${u.matricola}">${u.matricola} - ${u.nick}</option>`).join('')}
-                        </select></div>
-                        <div class="form-group"><label>Quantità *</label><input type="number" id="orderQuantity" min="1" required></div>`;
-                    break;
-                case 'cura':
-                    html = '<div class="form-group"><p>💊 Ordine di cura - nessun dettaglio aggiuntivo</p></div>';
-                    break;
-            }
-            
-            detailsDiv.innerHTML = html;
-        }
-
         function updateStats() {
             const total = allUnits.length;
             const approved = allUnits.filter(u => u.approvata === 'SI').length;
@@ -524,31 +317,24 @@
             }
         }
 
-        function showNotification(message, type) {
-            const existing = document.querySelector('.notification');
-            if (existing) existing.remove();
-            
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => notification.classList.add('show'), 100);
-            setTimeout(() => {
-                notification.classList.remove('show');
-                setTimeout(() => notification.remove(), 300);
-            }, 4000);
-        }
-
-        async function loadAllData() {
+        async function getData() {
             const { unit_data, unit_error } = await sb.from('units').select('*');
-            const { player_data, player_error } = await sb.from('player').select('*');
             const { general_data, general_error } = await sb.from('units').select('*');
             if (unit_error || player_error || general_error) {
                 console.error('Unit Error:', unit_error);
-                console.error('Player Error:', player_error);
                 console.error('General Error:', general_error);
             }
+        }
+
+        async function sendData(table, data) {
+            const { error } = await sb.from(table).insert([data]);
+            if (error) {
+                console.error('Errore invio dati:', error);
+            } else {
+                showNotification('Dati inviati con successo!', 'success');
+                getData();
+            }
+            
         }
 
         function setupEventListeners() {
@@ -599,20 +385,43 @@
                 }
             });
 
-            // Cambio tipo ordine
-            document.getElementById('orderType').addEventListener('change', updateOrderDetails);
-
-            // Registrazione form
+            // Registrazione
             document.getElementById('registrationForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                await handleRegistration();
+                await sendData('units', {
+                    matricola: document.getElementById('matricola').value,
+                    password: document.getElementById('password').value,
+                    nick: document.getElementById('nick').value,
+                    tipo: document.getElementById('tipo').value,
+                    movimento: parseInt(document.getElementById('movimento').value),
+                    visione: parseInt(document.getElementById('visione').value),
+                    armatura: parseInt(document.getElementById('armatura').value),
+                    rifornimenti: parseInt(document.getElementById('rifornimenti').value),
+                    componenti: document.getElementById('componenti').value
+                });
             });
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
-            loadAllData();
+            getData();
         });
+
+        function showNotification(message, type) {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
 
     </script>
 
