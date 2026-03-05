@@ -484,6 +484,7 @@
                         componenti: document.getElementById('componenti').value || null
                     };
                     // Valida i dati
+                    console.log('Dati preparati per invio:');
                     if (verifyData(prepared_data)) {
                         await sendData('new_units', prepared_data);
                     }
