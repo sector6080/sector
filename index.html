@@ -683,7 +683,7 @@
                     if (this.value && selectedUnit) {
                         // Verifica la password rispetto alla unità selezionata
                         console.log('Verifica password per unità:', unitPasswordInput.value, 'Unità:', selectedUnit);
-                        const response = await sendData('verify_unit', { matricola: selectedUnit, password: this.value });
+                        const response = await sendData('verify_unit', { matricola: String(selectedUnit), password: String(unitPasswordInput.value) });
                         console.log('Risposta verifica password:', response);
                         
                         if (response && response.valid) {
