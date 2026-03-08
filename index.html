@@ -579,7 +579,9 @@
                     if (this.value && selectedUnit) {
                         // Verifica la password rispetto alla unità selezionata
                         sendData('verify_unit', { matricola: selectedUnit, password: this.value })
-                            .then(response => {                                
+                        console.log('Verifica password per unità:', selectedUnit)
+                            .then(response => {   
+                                console.log('Risposta verifica password:', response);                             
                                 if (response && response.valid) {
                                     showNotification('Password corretta! Puoi ora inserire gli ordini.', 'success');
                                     const orderForm = document.getElementById('orderForm');
@@ -592,6 +594,7 @@
                                 }
                             }).catch(error => {
                                 showNotification('Errore durante la verifica della password', 'error');
+                                console.error('Errore verifica password:', error);
                             });
                     }
                 });
