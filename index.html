@@ -485,19 +485,40 @@
         async function sendData(endpoint, data) {
             try {
                 if (endpoint === 'verify_unit') {
-                    const { data: result, error } = await sb
-                        .from('units')
-                        .select('password')
-                        .eq('matricola', data.matricola)
-                        .single();
-                    
-                    if (error || !result) {
-                        return { valid: false };
+                    // Try to find the unit in the 'player' table first, then in 'units'
+                    try {
+                        const { data: result, error } = await sb
+                            .from('player')
+                            .select('password')
+                            .eq('matricola', data.matricola)
+                            .maybeSingle();
+                        
+                        if (result && result.password) {
+                            const isValid = (result.password === data.password);
+                            return { valid: isValid };
+                        }
+                    } catch (e) {
+                        console.log('Player table query error:', e);
                     }
                     
-                    const isValid = (result.password === data.password);
+                    // Fallback: try 'units' table
+                    try {
+                        const { data: result, error } = await sb
+                            .from('units')
+                            .select('password')
+                            .eq('matricola', data.matricola)
+                            .maybeSingle();
+                        
+                        if (result && result.password) {
+                            const isValid = (result.password === data.password);
+                            return { valid: isValid };
+                        }
+                    } catch (e) {
+                        console.log('Units table query error:', e);
+                    }
                     
-                    return { valid: isValid };
+                    // If no unit found in either table
+                    return { valid: false };
                 } else {
                     // Per altri endpoint (new_units, orders), inserisci i dati
                     const { error } = await sb.from(endpoint).insert([data]);
