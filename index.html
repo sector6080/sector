@@ -113,6 +113,13 @@
                                 </label>
                                 <input type="number" id="hp" min="1" required placeholder="1">
                             </div>
+                            
+                            <div class="form-group">
+                                <label for="pu_rimasti" class="required">
+                                    <i class="fas fa-bolt"></i> PU Rimasti
+                                </label>
+                                <input type="number" id="pu_rimasti" min="1" required placeholder="1">
+                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -120,6 +127,13 @@
                                 <i class="fas fa-cogs"></i> Componenti
                             </label>
                             <textarea id="componenti" rows="3" placeholder="Descrizione componenti..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="lore">
+                                <i class="fas fa-book"></i> Lore (Storia Unità)
+                            </label>
+                            <textarea id="lore" rows="4" placeholder="Racconta la storia e il background della tua unità..."></textarea>
                         </div>
                         
                         <div class="form-grid">
@@ -269,8 +283,9 @@
                     <div>👤 ${unit.nick}</div>
                     <div>🎯 ${unit.tipo} | 📍 ${unit.posizione_x}, ${unit.posizione_y}</div>
                     <div>🚶 ${unit.movimento}m | 👁️ ${unit.visione}m | 🛡️ ${unit.armatura}</div>
-                    <div>❤️ HP: ${unit.hp} | 📦 Rifornimenti: ${unit.rifornimenti}</div>
+                    <div>❤️ HP: ${unit.hp} | ⚡ PU: ${unit.pu_rimasti} | 📦 Rifornimenti: ${unit.rifornimenti}</div>
                     <div>🔧 ${unit.componenti || 'Nessuno'}</div>
+                    ${unit.lore ? `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; font-style: italic; font-size: 0.9em;">📖 ${unit.lore}</div>` : ''}
                 `;
                 
                 grid.appendChild(card);
@@ -389,9 +404,21 @@
                 return false;
             }
             
+            // Validazione PU Rimasti: 0-49
+            if (isNaN(prepared_data.pu_rimasti) || prepared_data.pu_rimasti < 0 || prepared_data.pu_rimasti >= 50) {
+                showNotification('PU Rimasti deve essere tra 0 e 49', 'error');
+                return false;
+            }
+            
             // Validazione componenti: max 500 caratteri
             if (prepared_data.componenti && prepared_data.componenti.length > 500) {
                 showNotification('Componenti non può superare 500 caratteri', 'error');
+                return false;
+            }
+            
+            // Validazione lore: max 1000 caratteri
+            if (prepared_data.lore && prepared_data.lore.length > 1000) {
+                showNotification('Lore non può superare 1000 caratteri', 'error');
                 return false;
             }
             
@@ -494,7 +521,9 @@
                         rifornimenti: parseInt(document.getElementById('rifornimenti').value),
                         rifornimenti_max: parseInt(document.getElementById('rifornimenti').value),
                         hp: parseInt(document.getElementById('hp').value),
-                        componenti: document.getElementById('componenti').value || null
+                        pu_rimasti: parseInt(document.getElementById('pu_rimasti').value),
+                        componenti: document.getElementById('componenti').value || null,
+                        lore: document.getElementById('lore').value || null
                     };
                     // Valida i dati
                     console.log('Dati preparati per invio:');
