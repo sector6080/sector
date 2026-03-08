@@ -55,7 +55,7 @@
                                 <label for="matricola" class="required">
                                     <i class="fas fa-id-card"></i> Matricola
                                 </label>
-                                <input type="text" id="matricola" required placeholder="ABC-123">
+                                <input type="text" id="matricola" placeholder="ABC-123">
                                 <small>Formato: ABC-123 (3 lettere maiuscole, trattino, numeri)</small>
                             </div>
                             
@@ -63,14 +63,14 @@
                                 <label for="nick" class="required">
                                     <i class="fas fa-user-tag"></i> Nickname (Discord)
                                 </label>
-                                <input type="text" id="nick" required placeholder="Inserisci il nickname">
+                                <input type="text" id="nick" placeholder="Inserisci il nickname">
                             </div>
                             
                             <div class="form-group">
                                 <label for="tipo" class="required">
                                     <i class="fas fa-tags"></i> Tipo Unità
                                 </label>
-                                <select id="tipo" required>
+                                <select id="tipo">
                                     <option value="">Seleziona tipo</option>
                                     <option value="Fanteria">Fanteria</option>
                                     <option value="Motorizzata">Motorizzata</option>
@@ -83,42 +83,42 @@
                                 <label for="movimento" class="required">
                                     <i class="fas fa-walking"></i> Movimento
                                 </label>
-                                <input type="number" id="movimento" required placeholder="1">
+                                <input type="number" id="movimento" placeholder="1">
                             </div>
                             
                             <div class="form-group">
                                 <label for="visione" class="required">
                                     <i class="fas fa-eye"></i> Visione
                                 </label>
-                                <input type="number" id="visione" required placeholder="1">
+                                <input type="number" id="visione" placeholder="1">
                             </div>
                             
                             <div class="form-group">
                                 <label for="armatura" class="required">
                                     <i class="fas fa-shield-alt"></i> Armatura
                                 </label>
-                                <input type="number" id="armatura" required placeholder="1">
+                                <input type="number" id="armatura" placeholder="1">
                             </div>
                             
                             <div class="form-group">
                                 <label for="rifornimenti" class="required">
                                     <i class="fas fa-boxes"></i> Capacità Rifornimenti
                                 </label>
-                                <input type="number" id="rifornimenti" required placeholder="1">
+                                <input type="number" id="rifornimenti" placeholder="1">
                             </div>
                             
                             <div class="form-group">
                                 <label for="hp" class="required">
                                     <i class="fas fa-heart"></i> HP (Punti Vita)
                                 </label>
-                                <input type="number" id="hp" required placeholder="1">
+                                <input type="number" id="hp" placeholder="1">
                             </div>
                             
                             <div class="form-group">
                                 <label for="pu_rimasti" class="required">
                                     <i class="fas fa-bolt"></i> PU Rimasti
                                 </label>
-                                <input type="number" id="pu_rimasti" required placeholder="1">
+                                <input type="number" id="pu_rimasti" placeholder="1">
                             </div>
                         </div>
                         
@@ -141,14 +141,14 @@
                                 <label for="password" class="required">
                                     <i class="fas fa-lock"></i> Password
                                 </label>
-                                <input type="password" id="password" required placeholder="Inserisci password">
+                                <input type="password" id="password" placeholder="Inserisci password">
                             </div>
                             
                             <div class="form-group">
                                 <label for="confirmPassword" class="required">
                                     <i class="fas fa-lock"></i> Conferma Password
                                 </label>
-                                <input type="password" id="confirmPassword" required placeholder="Conferma password">
+                                <input type="password" id="confirmPassword" placeholder="Conferma password">
                             </div>
                         </div>
                         
@@ -197,7 +197,7 @@
                         <label for="orderUnit" class="required">
                             <i class="fas fa-user"></i> Seleziona Unitá
                         </label>
-                        <select id="orderUnit" required>
+                        <select id="orderUnit">
                             <option value="">Caricamento unità approvate...</option>
                         </select>
                     </div>
@@ -214,7 +214,7 @@
                             <label for="orderType" class="required">
                                 <i class="fas fa-tasks"></i> Tipo Ordine
                             </label>
-                            <select id="orderType" required>
+                            <select id="orderType">
                                 <option value="">Seleziona tipo ordine</option>
                                 <option value="muoversi">Muoversi</option>
                                 <option value="salire">Salire su Mezzo</option>
@@ -319,8 +319,59 @@
         }
 
         async function verifyData(prepared_data) {
+            // Validazione campi obbligatori
+            if (!prepared_data.matricola) {
+                showNotification('Matricola è obbligatoria', 'error');
+                return false;
+            }
+            
+            if (!prepared_data.nick) {
+                showNotification('Nickname è obbligatorio', 'error');
+                return false;
+            }
+            
+            if (!prepared_data.tipo) {
+                showNotification('Tipo unità è obbligatorio', 'error');
+                return false;
+            }
+            
+            if (prepared_data.movimento === null || prepared_data.movimento === undefined || prepared_data.movimento === '') {
+                showNotification('Movimento è obbligatorio', 'error');
+                return false;
+            }
+            
+            if (prepared_data.visione === null || prepared_data.visione === undefined || prepared_data.visione === '') {
+                showNotification('Visione è obbligatoria', 'error');
+                return false;
+            }
+            
+            if (prepared_data.armatura === null || prepared_data.armatura === undefined || prepared_data.armatura === '') {
+                showNotification('Armatura è obbligatoria', 'error');
+                return false;
+            }
+            
+            if (prepared_data.rifornimenti === null || prepared_data.rifornimenti === undefined || prepared_data.rifornimenti === '') {
+                showNotification('Capacità Rifornimenti è obbligatoria', 'error');
+                return false;
+            }
+            
+            if (prepared_data.hp === null || prepared_data.hp === undefined || prepared_data.hp === '') {
+                showNotification('HP è obbligatorio', 'error');
+                return false;
+            }
+            
+            if (prepared_data.pu_rimasti === null || prepared_data.pu_rimasti === undefined || prepared_data.pu_rimasti === '') {
+                showNotification('PU Rimasti è obbligatorio', 'error');
+                return false;
+            }
+            
+            if (!prepared_data.password) {
+                showNotification('Password è obbligatoria', 'error');
+                return false;
+            }
+            
             // Validazione matricola: esattamente 6 caratteri (ABC-123)
-            if (!prepared_data.matricola || !/^[A-Z]{3}-[0-9]{3}$/.test(prepared_data.matricola)) {
+            if (!/^[A-Z]{3}-[0-9]{3}$/.test(prepared_data.matricola)) {
                 showNotification('Matricola deve essere nel formato ABC-123 (esattamente 6 caratteri)', 'error');
                 return false;
             }
@@ -448,8 +499,8 @@
                     
                     return { valid: isValid };
                 } else {
-                    // Per altri endpoint, comportamento di default (INSERT)
-                    const { error } = await sb.from(endpoint).insert([data]);
+                    // Per altri endpoint, comportamento di default (select)
+                    const { error } = await sb.from(endpoint).select([data]);
                     
                     if (error) {
                         showNotification('Errore invio dati: ' + error.message, 'error');
@@ -469,12 +520,33 @@
             }
         }
 
-        function addOrderToChain() {
+        function validateOrderForm() {
+            if (!selectedUnit) {
+                showNotification('Seleziona una unità', 'error');
+                return false;
+            }
+
+            const unitPassword = document.getElementById('unitPassword').value;
+            if (!unitPassword) {
+                showNotification('Inserisci la password dell\'unità', 'error');
+                return false;
+            }
+
             const orderType = document.getElementById('orderType').value;
             if (!orderType) {
                 showNotification('Seleziona un tipo di ordine', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        function addOrderToChain() {
+            if (!validateOrderForm()) {
                 return;
             }
+
+            const orderType = document.getElementById('orderType').value;
 
             const orderObj = {
                 tipo: orderType,
@@ -527,6 +599,10 @@
         }
 
         async function submitAllOrders() {
+            if (!validateOrderForm()) {
+                return;
+            }
+
             if (orderChainArray.length === 0) {
                 showNotification('Aggiungi almeno un ordine', 'error');
                 return;
@@ -538,7 +614,7 @@
                 timestamp: new Date().toISOString()
             };
 
-            const { error } = await sb.from('orders').insert([ordersData]);
+            const { error } = await sb.from('orders').select([ordersData]);
             if (error) {
                 showNotification('Errore invio ordini: ' + error.message, 'error');
                 console.error('Errore invio ordini:', error);
