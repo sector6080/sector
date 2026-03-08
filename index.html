@@ -431,15 +431,40 @@
             console.log('Unit Data:', unit_data);
         }
 
-        async function sendData(table, data) {
-            const { error } = await sb.from(table).insert([data]);
-            if (error) {
-                showNotification('Errore invio dati: ' + error.message, 'error');
-                console.error('Errore invio dati:', error);
-            } else {
-                showNotification('Unità registrata con successo!', 'success');
-                document.getElementById('registrationForm').reset();
-                await getData();
+        async function sendData(endpoint, data) {
+            try {
+                if (endpoint === 'verify_unit') {
+                    const { data: result, error } = await sb
+                        .from('player')
+                        .select('password')
+                        .eq('matricola', data.matricola)
+                        .single();
+                    
+                    if (error || !result) {
+                        return { valid: false };
+                    }
+                    
+                    const isValid = (result.password === data.password);
+                    
+                    return { valid: isValid };
+                } else {
+                    // Per altri endpoint, comportamento di default (INSERT)
+                    const { error } = await sb.from(endpoint).insert([data]);
+                    
+                    if (error) {
+                        showNotification('Errore invio dati: ' + error.message, 'error');
+                        console.error('Errore invio dati:', error);
+                        throw error; // Rilancia per gestirlo nella Promise
+                    } else {
+                        showNotification('Dati inviati con successo!', 'success');
+                        document.getElementById('registrationForm').reset();
+                        getData();
+                        return { success: true };
+                    }
+                }
+            } catch (error) {
+                console.error('Errore in sendData:', error);
+                return { valid: false, error: error.message };
             }
         }
 
