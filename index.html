@@ -486,7 +486,7 @@
             try {
                 if (endpoint === 'verify_unit') {
                     const { data: result, error } = await sb
-                        .from('player')
+                        .from('units')
                         .select('password')
                         .eq('matricola', data.matricola)
                         .single();
@@ -499,17 +499,19 @@
                     
                     return { valid: isValid };
                 } else {
-                    // Per altri endpoint, comportamento di default (select)
-                    const { error } = await sb.from(endpoint).select([data]);
+                    // Per altri endpoint (new_units, orders), inserisci i dati
+                    const { error } = await sb.from(endpoint).insert([data]);
                     
                     if (error) {
                         showNotification('Errore invio dati: ' + error.message, 'error');
                         console.error('Errore invio dati:', error);
-                        throw error; // Rilancia per gestirlo nella Promise
+                        throw error;
                     } else {
                         showNotification('Dati inviati con successo!', 'success');
-                        document.getElementById('registrationForm').reset();
-                        getData();
+                        if (document.getElementById('registrationForm')) {
+                            document.getElementById('registrationForm').reset();
+                        }
+                        await getData();
                         return { success: true };
                     }
                 }
@@ -614,7 +616,7 @@
                 timestamp: new Date().toISOString()
             };
 
-            const { error } = await sb.from('orders').select([ordersData]);
+            const { error } = await sb.from('orders').insert([ordersData]);
             if (error) {
                 showNotification('Errore invio ordini: ' + error.message, 'error');
                 console.error('Errore invio ordini:', error);
@@ -680,24 +682,20 @@
                 unitPasswordInput.addEventListener('change', async function() {
                     if (this.value && selectedUnit) {
                         // Verifica la password rispetto alla unità selezionata
-                        sendData('verify_unit', { matricola: selectedUnit, password: this.value })
-                        console.log('Verifica password per unità:', selectedUnit)
-                            .then(response => {   
-                                console.log('Risposta verifica password:', response);                             
-                                if (response && response.valid) {
-                                    showNotification('Password corretta! Puoi ora inserire gli ordini.', 'success');
-                                    const orderForm = document.getElementById('orderForm');
-                                    if (orderForm) orderForm.style.display = 'block';
-                                } else {
-                                    showNotification('Password errata! Riprova.', 'error');
-                                    this.value = '';
-                                    const orderForm = document.getElementById('orderForm');
-                                    if (orderForm) orderForm.style.display = 'none';
-                                }
-                            }).catch(error => {
-                                showNotification('Errore durante la verifica della password', 'error');
-                                console.error('Errore verifica password:', error);
-                            });
+                        console.log('Verifica password per unità:', selectedUnit);
+                        const response = await sendData('verify_unit', { matricola: selectedUnit, password: this.value });
+                        console.log('Risposta verifica password:', response);
+                        
+                        if (response && response.valid) {
+                            showNotification('Password corretta! Puoi ora inserire gli ordini.', 'success');
+                            const orderForm = document.getElementById('orderForm');
+                            if (orderForm) orderForm.style.display = 'block';
+                        } else {
+                            showNotification('Password errata! Riprova.', 'error');
+                            this.value = '';
+                            const orderForm = document.getElementById('orderForm');
+                            if (orderForm) orderForm.style.display = 'none';
+                        }
                     }
                 });
             }
