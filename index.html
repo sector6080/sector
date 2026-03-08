@@ -316,7 +316,7 @@
             }
         }
 
-        function verifyData(prepared_data) {
+        async function verifyData(prepared_data) {
             // Validazione matricola: esattamente 6 caratteri (ABC-123)
             if (!prepared_data.matricola || !/^[A-Z]{3}-[0-9]{3}$/.test(prepared_data.matricola)) {
                 showNotification('Matricola deve essere nel formato ABC-123 (esattamente 6 caratteri)', 'error');
@@ -382,19 +382,22 @@
                 return false;
             }
             
+            // Fetch fresh data to check for duplicates against both tables
+            const { data: allUnits } = await sb.from('units').select('matricola, nick');
+            const { data: newUnits } = await sb.from('new_units').select('matricola, nick');
+            const allData = [...(allUnits || []), ...(newUnits || [])];
+            
             // Verifica duplicati di matricola
-            if (unit_data && unit_data.some(unit => unit.matricola === prepared_data.matricola)) {
+            if (allData && allData.some(unit => unit.matricola === prepared_data.matricola)) {
                 showNotification('Questa matricola è già registrata', 'error');
                 return false;
             }
             
             // Verifica duplicati di nick
-            if (unit_data && unit_data.some(unit => unit.nick === prepared_data.nick)) {
+            if (allData && allData.some(unit => unit.nick === prepared_data.nick)) {
                 showNotification('Questo nickname è già registrato', 'error');
                 return false;
             }
-            unit_data.some(unit => console.log(unit.nick));
-            console.log('cekc passato'); // Debug
             
             return true;
         }
@@ -481,16 +484,16 @@
                     };
                     // Valida i dati
                     console.log('Dati preparati per invio:');
-                    if (verifyData(prepared_data)) {
+                    if (await verifyData(prepared_data)) {
                         await sendData('new_units', prepared_data);
                     }
                 });
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            await getData();
             setupEventListeners();
-            getData();
         });
 
         function showNotification(message, type) {
