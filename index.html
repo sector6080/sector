@@ -257,6 +257,8 @@
         const supabaseKey = 'sb_publishable_Lbh2m9zIjUCwEF6PVNbc4g_XkdJ7Gcz';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
         let unit_data = [];
+        let selectedUnit = null;
+        let orderChainArray = [];
 
         function loadUnitsRegistered() {
             const grid = document.getElementById('unitsGrid');
@@ -441,6 +443,91 @@
             }
         }
 
+        function addOrderToChain() {
+            const orderType = document.getElementById('orderType').value;
+            if (!orderType) {
+                showNotification('Seleziona un tipo di ordine', 'error');
+                return;
+            }
+
+            const orderObj = {
+                tipo: orderType,
+                dettagli: {}
+            };
+
+            // Raccogli i dettagli in base al tipo di ordine
+            const inputs = document.getElementById('orderDetails').querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if (input.value) {
+                    orderObj.dettagli[input.id] = input.value;
+                }
+            });
+
+            orderChainArray.push(orderObj);
+            displayOrderChain();
+            showNotification('Ordine aggiunto alla catena', 'success');
+        }
+
+        function displayOrderChain() {
+            const orderItems = document.getElementById('orderItems');
+            const orderChain = document.getElementById('orderChain');
+            
+            if (orderChainArray.length === 0) {
+                orderChain.style.display = 'none';
+                return;
+            }
+
+            orderChain.style.display = 'block';
+            orderItems.innerHTML = '';
+
+            orderChainArray.forEach((order, index) => {
+                const orderItem = document.createElement('div');
+                orderItem.className = 'order-item';
+                orderItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>${index + 1}. ${order.tipo}</span>
+                        <button onclick="removeOrder(${index})" class="btn-danger" style="padding: 5px 10px; font-size: 0.8em;">
+                            <i class="fas fa-trash"></i> Rimuovi
+                        </button>
+                    </div>
+                `;
+                orderItems.appendChild(orderItem);
+            });
+        }
+
+        function removeOrder(index) {
+            orderChainArray.splice(index, 1);
+            displayOrderChain();
+        }
+
+        async function submitAllOrders() {
+            if (orderChainArray.length === 0) {
+                showNotification('Aggiungi almeno un ordine', 'error');
+                return;
+            }
+
+            const ordersData = {
+                matricola: selectedUnit,
+                ordini: orderChainArray,
+                timestamp: new Date().toISOString()
+            };
+
+            const { error } = await sb.from('orders').insert([ordersData]);
+            if (error) {
+                showNotification('Errore invio ordini: ' + error.message, 'error');
+                console.error('Errore invio ordini:', error);
+            } else {
+                showNotification('Ordini inviati con successo!', 'success');
+                orderChainArray = [];
+                displayOrderChain();
+                document.getElementById('orderType').value = '';
+                document.getElementById('orderDetails').innerHTML = '';
+                document.getElementById('orderUnit').value = '';
+                const orderForm = document.getElementById('orderForm');
+                if (orderForm) orderForm.style.display = 'none';
+            }
+        }
+
         function setupEventListeners() {
             // Gestione tab
             document.querySelectorAll('.tab').forEach(tab => {
@@ -473,12 +560,110 @@
                         if (pwdSection) pwdSection.style.display = 'block';
                         const pwdInput = document.getElementById('unitPassword');
                         if (pwdInput) pwdInput.value = '';
+                        const orderForm = document.getElementById('orderForm');
+                        if (orderForm) orderForm.style.display = 'none';
                     } else {
                         const pwdSection = document.getElementById('passwordSection');
                         if (pwdSection) pwdSection.style.display = 'none';
                         const orderForm = document.getElementById('orderForm');
                         if (orderForm) orderForm.style.display = 'none';
                         selectedUnit = null;
+                    }
+                });
+            }
+
+            // Verifica password unità
+            const unitPasswordInput = document.getElementById('unitPassword');
+            if (unitPasswordInput) {
+                unitPasswordInput.addEventListener('change', async function() {
+                    if (this.value && selectedUnit) {
+                        // Verifica la password rispetto alla unità selezionata
+                        sendData('verify_unit', { matricola: selectedUnit, password: this.value })
+                            .then(response => {                                
+                                if (response && response.valid) {
+                                    showNotification('Password corretta! Puoi ora inserire gli ordini.', 'success');
+                                    const orderForm = document.getElementById('orderForm');
+                                    if (orderForm) orderForm.style.display = 'block';
+                                } else {
+                                    showNotification('Password errata! Riprova.', 'error');
+                                    this.value = '';
+                                    const orderForm = document.getElementById('orderForm');
+                                    if (orderForm) orderForm.style.display = 'none';
+                                }
+                    }
+                });
+            }
+
+            // Tipo ordine - popola dettagli dinamici
+            const orderTypeSelect = document.getElementById('orderType');
+            if (orderTypeSelect) {
+                orderTypeSelect.addEventListener('change', function() {
+                    const orderDetails = document.getElementById('orderDetails');
+                    orderDetails.innerHTML = '';
+
+                    const orderType = this.value;
+                    
+                    if (orderType === 'muoversi') {
+                        orderDetails.innerHTML = `
+                            <div class="form-group">
+                                <label for="destinazione_x">Destinazione X</label>
+                                <input type="number" id="destinazione_x" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="destinazione_y">Destinazione Y</label>
+                                <input type="number" id="destinazione_y" placeholder="0">
+                            </div>
+                        `;
+                    } else if (orderType === 'salire') {
+                        orderDetails.innerHTML = `
+                            <div class="form-group">
+                                <label for="mezzo_tipo">Tipo Mezzo</label>
+                                <input type="text" id="mezzo_tipo" placeholder="Es. Jeep, Tank...">
+                            </div>
+                        `;
+                    } else if (orderType === 'scendere') {
+                        orderDetails.innerHTML = `
+                            <div class="form-group">
+                                <label for="mezzo_id">ID Mezzo</label>
+                                <input type="text" id="mezzo_id" placeholder="ID del mezzo">
+                            </div>
+                        `;
+                    } else if (orderType === 'attivare') {
+                        orderDetails.innerHTML = `
+                            <div class="form-group">
+                                <label for="componente_nome">Nome Componente</label>
+                                <input type="text" id="componente_nome" placeholder="Nome del componente">
+                            </div>
+                        `;
+                    } else if (orderType === 'cura') {
+                        orderDetails.innerHTML = `
+                            <div class="form-group">
+                                <label for="hp_curati">HP da Curare</label>
+                                <input type="number" id="hp_curati" placeholder="0">
+                            </div>
+                        `;
+                    } else if (orderType === 'ricaricare') {
+                        orderDetails.innerHTML = `
+                            <div class="form-group">
+                                <label for="componente_ricarica">Nome Componente</label>
+                                <input type="text" id="componente_ricarica" placeholder="Nome del componente">
+                            </div>
+                            <div class="form-group">
+                                <label for="quantita_ricarica">Quantità</label>
+                                <input type="number" id="quantita_ricarica" placeholder="0">
+                            </div>
+                        `;
+                    } else if (orderType === 'cedere') {
+                        orderDetails.innerHTML = `
+                            <div class="form-group">
+                                <label for="unita_destinataria">Matric. Unità Destinataria</label>
+                                <input type="text" id="unita_destinataria" placeholder="ABC-123">
+                            </div>
+                            <div class="form-group">
+                                <label for="quantita_cedere">Quantità Rifornimenti</label>
+                                <input type="number" id="quantita_cedere" placeholder="0">
+                            </div>
+                        `;
                     }
                 });
             }
