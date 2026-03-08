@@ -682,7 +682,7 @@
                 unitPasswordInput.addEventListener('change', async function() {
                     if (this.value && selectedUnit) {
                         // Verifica la password rispetto alla unità selezionata
-                        console.log('Verifica password per unità:', selectedUnit);
+                        console.log('Verifica password per unità:', unitPasswordInput.value, 'Unità:', selectedUnit);
                         const response = await sendData('verify_unit', { matricola: selectedUnit, password: this.value });
                         console.log('Risposta verifica password:', response);
                         
