@@ -590,6 +590,9 @@
                                     const orderForm = document.getElementById('orderForm');
                                     if (orderForm) orderForm.style.display = 'none';
                                 }
+                            }).catch(error => {
+                                showNotification('Errore durante la verifica della password', 'error');
+                            });
                     }
                 });
             }
