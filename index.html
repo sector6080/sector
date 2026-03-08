@@ -621,6 +621,27 @@
             displayOrderChain();
         }
 
+        async function verifyPassword(matricola, password) {
+        try {
+            const response = await fetch('https://jnfqfowidqwrmmvxnvhe.supabase.co/functions/v1/verify-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                matricola: matricola,
+                password: password
+            })
+            });
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Verification error:', error);
+            return { valid: false, error: error.message };
+        }
+        }
+
         async function submitAllOrders() {
             if (!validateOrderForm()) {
                 return;
@@ -698,28 +719,22 @@
             }
 
             // Verifica password unità
-            const unitPasswordInput = document.getElementById('unitPassword');
-            if (unitPasswordInput) {
-                unitPasswordInput.addEventListener('change', async function() {
-                    if (this.value && selectedUnit) {
-                        // Verifica la password rispetto alla unità selezionata
-                        console.log('Verifica password per unità:', unitPasswordInput.value, 'Unità:', selectedUnit);
-                        const response = await sendData('verify_unit', { matricola: String(selectedUnit), password: String(unitPasswordInput.value) });
-                        console.log('Risposta verifica password:', response);
-                        
-                        if (response && response.valid) {
-                            showNotification('Password corretta! Puoi ora inserire gli ordini.', 'success');
-                            const orderForm = document.getElementById('orderForm');
-                            if (orderForm) orderForm.style.display = 'block';
-                        } else {
-                            showNotification('Password errata! Riprova.', 'error');
-                            this.value = '';
-                            const orderForm = document.getElementById('orderForm');
-                            if (orderForm) orderForm.style.display = 'none';
-                        }
-                    }
-                });
+            unitPasswordInput.addEventListener('change', async function() {
+            if (this.value && selectedUnit) {
+                const response = await verifyPassword(selectedUnit, this.value);
+                
+                if (response.valid) {
+                showNotification('Password corretta! Puoi ora inserire gli ordini.', 'success');
+                const orderForm = document.getElementById('orderForm');
+                if (orderForm) orderForm.style.display = 'block';
+                } else {
+                showNotification('Password errata! Riprova.', 'error');
+                this.value = '';
+                const orderForm = document.getElementById('orderForm');
+                if (orderForm) orderForm.style.display = 'none';
+                }
             }
+            });
 
             // Tipo ordine - popola dettagli dinamici
             const orderTypeSelect = document.getElementById('orderType');
