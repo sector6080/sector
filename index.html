@@ -305,37 +305,15 @@
         }
 
         function loadUnitsSummary() {
-            const total = unit_data.length;
             const approved = unit_data.filter(u => u.approvata === true).length;
             const pending = unit_data.filter(u => u.approvata === false).length;
 
             // Update elements only if they exist
-            const totalUnitsEl = document.getElementById('totalUnits');
-            if (totalUnitsEl) totalUnitsEl.textContent = total;
+            const approvedCount = document.getElementById('approvedCount');
+            if (approvedCount) approvedCount.textContent = approved;
             
-            const approvedUnitsEl = document.getElementById('approvedUnits');
-            if (approvedUnitsEl) approvedUnitsEl.textContent = approved;
-            
-            const pendingUnitsEl = document.getElementById('pendingUnits');
-            if (pendingUnitsEl) pendingUnitsEl.textContent = pending;
-
-            const statsContainer = document.getElementById('statsContainer');
-            if (statsContainer) {
-                statsContainer.innerHTML = `
-                    <div class="stat-card">
-                        <div class="stat-number">${total}</div>
-                        <div class="stat-label">Unitá Totali</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" style="color: #27ae60;">${approved}</div>
-                        <div class="stat-label">Approvate</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" style="color: #f39c12;">${pending}</div>
-                        <div class="stat-label">In Attesa</div>
-                    </div>
-                `;
-            }
+            const pendingCount = document.getElementById('pendingCount');
+            if (pendingCount) pendingCount.textContent = pending;
         }
 
         async function verifyData(prepared_data) {
