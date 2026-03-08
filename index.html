@@ -719,6 +719,7 @@
             }
 
             // Verifica password unità
+            const unitPasswordInput = document.getElementById('unitPassword');
             unitPasswordInput.addEventListener('change', async function() {
             if (this.value && selectedUnit) {
                 const response = await verifyPassword(selectedUnit, this.value);
