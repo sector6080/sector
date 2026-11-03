@@ -15,9 +15,9 @@ Le caselle valide vengono calcolate provando ogni casella con le stesse regole d
 ## Tipi di ordine
 | Ordine | Si sceglie | Regole controllate |
 |---|---|---|
-| **Muoversi** | casella sulla mappa | entro il movimento, senza diagonali, max 1 per turno, non da trasportata |
-| **Salire su mezzo** | casella adiacente | non già a bordo |
-| **Scendere da mezzo** | casella adiacente | solo se a bordo |
+| **Muoversi** | casella sulla mappa | percorso entro il movimento, senza diagonali e senza acqua, max 1 per turno, non da trasportata |
+| **Salire su mezzo** | casella adiacente | non già a bordo, non in acqua |
+| **Scendere da mezzo** | casella adiacente | solo se a bordo, non in acqua |
 | **Attivare componente** | componente, poi casella se ha un range | utilizzi rimasti, max 1 per componente, range, non attacca da trasportata, armi pesanti non dopo un movimento |
 | **Ricaricare componente** | componente | costa 1 rifornimento (2–3 per alcuni), non se già carico |
 | **Curarsi** | — | costa 1 rifornimento, riporta gli HP al massimo |

@@ -7,16 +7,16 @@
   → riassunto in [[DEV note]] (le liste complete dei componenti di aerei, ingegneri ed élite sono rimaste nel doc)
 - Importati il 03/11/2026. Se i doc cambiano, questo vault va riallineato.
 
+- **Sector 6080 (master)**: https://docs.google.com/spreadsheets/d/1ctlfdvK6odFCzDs92NkyKFm1TU8vKce5uW72_gvTXKU/edit
+  → scheda `mappa` importata in [[Mappa]] e nell'app. La scheda `dati` non è stata letta. Foglio privato, importato il 03/11/2026.
+
 ## Community
 - Server Discord (facoltativo): https://discord.gg/Ah3TTPEcsR
 
 ## Sito e repo
-- Sito: https://the-silver33.github.io/sector/test.html
-- Mappa: `map.html` sullo stesso sito
-- Repo: https://github.com/the-silver33/sector
+- Sito: https://sector6080.github.io/sector/ (dal README)
+- Repo: https://github.com/sector6080/sector (spostato da `the-silver33/sector`)
 
 ## Backend
-- Apps Script Web App (API_URL): vedi `test.html`
-- Google Form per le scritture: vedi `FORM_URL` in `test.html`
-- ID degli spreadsheet: vedi `form_response(AS)` (principale) e `map.html` (mappa)
-- Le chiavi API non vengono copiate qui di proposito, vedi [[Problemi noti e sicurezza]].
+- Supabase: URL e chiave sono in `index.html` e nel README.
+- Le chiavi non vengono copiate qui di proposito, vedi [[Problemi noti e sicurezza]].

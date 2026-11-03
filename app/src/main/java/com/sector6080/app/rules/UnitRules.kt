@@ -2,8 +2,8 @@ package com.sector6080.app.rules
 
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Component
+import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameUnit
-import com.sector6080.app.model.START_CELL
 import com.sector6080.app.model.Stats
 import com.sector6080.app.model.UnitType
 
@@ -69,7 +69,7 @@ object UnitRules {
             hp = max.hp,
             supplies = max.supplies,
             uses = components.filter { it.isUsable }.associate { it.name to it.maxUses!! },
-            position = START_CELL,
+            position = GameMap.spawnCell(matricola),
         )
     }
 }

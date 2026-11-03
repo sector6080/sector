@@ -45,7 +45,7 @@ Dopo la creazione la scheda è **in sola lettura**: approvazioni e modifiche spe
 - **Un'unità per giocatore**.
 - Quando l'unità arriva a 0 HP viene distrutta e tolta dalla mappa. Il giocatore **mantiene grado e PU** e può crearne subito un'altra.
 - La nuova unità viene schierata in **uno dei tre porti** il turno dopo la morte.
-- I porti non hanno ancora coordinate: nel prototipo ogni unità parte dalla casella provvisoria **40,30**.
+- I tre porti sono sulla [[Mappa]]: alla creazione l'app assegna un porto, sempre lo stesso per la stessa matricola.
 - Idea nelle [[DEV note]]: una "lista morti".
 
 ## Esempio

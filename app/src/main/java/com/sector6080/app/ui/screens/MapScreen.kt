@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
@@ -33,7 +34,9 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sector6080.app.model.Cell
+import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.MAP_HEIGHT
 import com.sector6080.app.model.MAP_WIDTH
@@ -47,12 +50,14 @@ import com.sector6080.app.ui.theme.Danger
 import com.sector6080.app.ui.theme.Fog
 import com.sector6080.app.ui.theme.Navy
 import com.sector6080.app.ui.theme.Warning
+import kotlin.math.abs
 
 private const val CELL = 24f
+private val Target = Color(0xFF5CF08A)
 
 /**
- * Griglia 80×60 con zoom (pizzico) e spostamento (trascinamento).
- * La nebbia di guerra copre le caselle oltre la visione dell'unità (senza diagonali).
+ * Mappa con zoom (pizzico) e spostamento (trascinamento).
+ * La nebbia di guerra scurisce le caselle oltre la visione dell'unità (senza diagonali).
  * Parte con tutta la mappa in vista. Con [picking] si avvicina all'unità, evidenzia
  * le caselle valide e permette di confermare solo quelle.
  */
@@ -65,6 +70,7 @@ fun MapScreen(
     onCancel: () -> Unit,
 ) {
     val unit = state.unit
+    val mapImage by vm.mapImage.collectAsStateWithLifecycle()
     val sim = unit?.let { OrderRules.simulate(vm.catalog, it, state.orders).finalUnit }
     val vision = unit?.let { UnitRules.maxStats(vm.catalog, it).vision } ?: 0
     val here = unit?.position
@@ -130,23 +136,53 @@ fun MapScreen(
                 scale(mapScale, mapScale, pivot = Offset.Zero)
             }) {
                 val cellSize = Size(CELL, CELL)
-                for (x in 1..MAP_WIDTH) for (y in 1..MAP_HEIGHT) {
-                    val c = Cell(x, y)
-                    val visible = here != null && here.distance(c) <= vision
-                    val tl = Offset((x - 1) * CELL, (y - 1) * CELL)
-                    drawRect(if (visible || here == null) Navy else Fog, tl, cellSize)
-                    drawRect(Color(0x33FFFFFF), tl, cellSize, style = Stroke(0.5f))
+                val mapSize = Size(MAP_WIDTH * CELL, MAP_HEIGHT * CELL)
+                val image = mapImage
+                if (image != null) {
+                    drawImage(
+                        image,
+                        dstSize = IntSize(mapSize.width.toInt(), mapSize.height.toInt()),
+                        // pixel netti da vicino, immagine morbida quando è rimpicciolita
+                        filterQuality = if (mapScale >= 1f) FilterQuality.None else FilterQuality.Low,
+                    )
+                } else {
+                    drawRect(Navy, Offset.Zero, mapSize)
+                }
+                // Nebbia di guerra: il terreno resta visibile, solo più scuro.
+                // Per ogni riga si scuriscono le caselle fuori dal rombo della visione.
+                if (here != null) {
+                    for (y in 1..MAP_HEIGHT) {
+                        val top = (y - 1) * CELL
+                        val span = vision - abs(y - here.y)
+                        val left = if (span >= 0) ((here.x - span - 1).coerceAtLeast(0)) * CELL else mapSize.width
+                        val right = if (span >= 0) (here.x + span).coerceAtMost(MAP_WIDTH) * CELL else mapSize.width
+                        drawRect(Fog.copy(alpha = 0.5f), Offset(0f, top), Size(left, CELL))
+                        drawRect(Fog.copy(alpha = 0.5f), Offset(right, top), Size(mapSize.width - right, CELL))
+                    }
+                }
+                // Griglia: compare solo quando si avvicina la mappa
+                val gridAlpha = ((mapScale - 0.7f) * 0.5f).coerceIn(0f, 0.3f)
+                if (gridAlpha > 0f) {
+                    val line = Color.White.copy(alpha = gridAlpha)
+                    val width = 1f / mapScale
+                    for (x in 0..MAP_WIDTH) drawLine(line, Offset(x * CELL, 0f), Offset(x * CELL, mapSize.height), width)
+                    for (y in 0..MAP_HEIGHT) drawLine(line, Offset(0f, y * CELL), Offset(mapSize.width, y * CELL), width)
                 }
                 valid.forEach {
-                    drawRect(Accent.copy(alpha = 0.4f), Offset((it.x - 1) * CELL, (it.y - 1) * CELL), cellSize)
+                    val tl = Offset((it.x - 1) * CELL, (it.y - 1) * CELL)
+                    drawRect(Target.copy(alpha = 0.35f), tl, cellSize)
+                    drawRect(Target, tl, cellSize, style = Stroke(1.5f))
                 }
                 fun mark(c: Cell, color: Color, inset: Float) = drawRect(
                     color,
                     Offset((c.x - 1) * CELL + inset, (c.y - 1) * CELL + inset),
                     Size(CELL - 2 * inset, CELL - 2 * inset),
                 )
-                if (planned != null && planned != here) mark(planned, Warning.copy(alpha = 0.7f), 4f)
-                if (here != null) mark(here, Accent, 3f)
+                if (planned != null && planned != here) mark(planned, Warning.copy(alpha = 0.8f), 4f)
+                if (here != null) {
+                    mark(here, Color.White, 2f)
+                    mark(here, Accent, 4f)
+                }
                 selected?.let {
                     drawRect(AccentLight, Offset((it.x - 1) * CELL, (it.y - 1) * CELL), cellSize, style = Stroke(3f))
                 }
@@ -182,7 +218,7 @@ fun MapScreen(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (sel != null) {
-                        Text("Casella $sel" + (here?.let { " · distanza ${it.distance(sel)}" } ?: ""))
+                        Text("Casella $sel · ${GameMap.describe(sel)}" + (here?.let { " · distanza ${it.distance(sel)}" } ?: ""))
                     }
                 }
             }

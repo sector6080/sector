@@ -36,6 +36,7 @@ fun LinksScreen() {
         listOf(
             "Sector 6080 è PvE: tutti i player collaborano contro i nemici gestiti dai Game Master.",
             "Movimento e range solo orizzontale/verticale, max 1 movimento per turno.",
+            "Non si entra in acqua: i fiumi si attraversano sui ponti.",
             "Ogni componente si attiva max 1 volta per turno.",
             "Un rifornimento: tutti gli HP oppure tutti gli utilizzi di un componente.",
             "Se l'armatura del bersaglio è maggiore della perforazione, l'attacco fallisce.",

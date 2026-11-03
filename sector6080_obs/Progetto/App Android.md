@@ -9,12 +9,12 @@ Trasformare Sector6080 **da sito web/discord ad app Android pubblicata sul Googl
   - il catalogo dei componenti è letto **direttamente dalle note** [[Fanteria]], [[Motorizzata]], [[Corazzata]], [[Artiglieria]]: se modifichi le note, l'app si aggiorna al build successivo. Va mantenuto il formato `- Nome – Perf. X | Range Y | Z danni | (n/n)`;
   - scheda Unità: conferma di aver letto il regolamento, creazione con 5 PU, statistiche calcolate, prerequisiti ("richiede ..."), scheda in sola lettura;
   - scheda Ordini: nessun testo libero, opzioni impossibili disattivate, caselle scelte dalla mappa, invio al [[Game Master]] (si può ritirare), timer del turno;
-  - scheda Mappa: griglia 80×60 rimpicciolita all'avvio, zoom, nebbia di guerra, selezione delle caselle valide;
+  - scheda Mappa: mappa reale 80×59 con texture, rimpicciolita all'avvio, zoom, nebbia di guerra, selezione delle caselle valide, acqua e ponti;
   - scheda Chat: solo interfaccia, i messaggi restano sul telefono finché non c'è il server;
   - scheda Link: regolamento e server Discord facoltativo;
   - test JVM delle regole in `app/src/test`.
 - **Solo interfaccia player:** approvazioni e modifiche alle unità spettano ai [[Game Master]], che avranno una sezione a parte non ancora sviluppata. Nel prototipo le unità restano in attesa di approvazione, il turno resta 0 e non si può ricreare l'unità senza cancellare i dati dell'app.
-- **Ultimo prototipo condivisibile:** v0.2.0 in `dist/` (cartella non inclusa in git). È una build di debug, da installare a mano.
+- **Ultimo prototipo condivisibile:** v0.3.0 in `dist/` (cartella non inclusa in git), con la mappa reale. È una build di debug, da installare a mano.
 - **Build verificata (03/11/2026):** AGP 9.5.0, Gradle 9.6.0, Kotlin 2.4.21, compileSdk/targetSdk 37. Test, lint e APK di debug passano, e l'app gira sull'emulatore. Da riga di comando: `gradlew.bat :app:assembleDebug` con `JAVA_HOME` sul JBR di Android Studio.
 - Il piano originale del README ("tradurre tutto in Angular") è superato. Il piano per il gioco condiviso è in [[Multiplayer]].
 
@@ -33,11 +33,11 @@ Trasformare Sector6080 **da sito web/discord ad app Android pubblicata sul Googl
 - Notifica del nuovo turno (durata: 2 giorni o 24 ore, da decidere, vedi [[Turni e meccaniche]])
 
 ## Decisioni aperte
-- **Backend e login**: consigliato Firebase, vedi [[Multiplayer]].
+- **Backend e login**: il sito usa già Supabase, quindi il consiglio è restarci. Vedi [[Multiplayer]].
 - **Sezione GM**: nella stessa app o separata, vedi [[Game Master]].
 - **Notifiche push**: nuovo turno, unità approvata (FCM).
 - **Lingua**: italiano / inglese selezionabile.
-- **Coordinate di porti e depositi**: oggi le unità partono dalla casella provvisoria 40,30.
+- **Mappa**: confermare significato dei colori, blocco dell'acqua e riga mancante (59 invece di 60). Vedi [[Mappa]].
 
 ## Requisiti Play Store
 - Account sviluppatore Google Play (25 $ una tantum).

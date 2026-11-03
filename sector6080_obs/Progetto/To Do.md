@@ -3,13 +3,17 @@
 ## App (prossimi passi)
 - [x] Aggiungere nell'app il link del server Discord (costante `DISCORD_URL` in `App.kt`)
 - [ ] Aggiornare il Google Doc: budget di creazione 5 PU invece di 10, "Player" al posto del nick Discord, Discord facoltativo
-- [ ] Definire le coordinate dei tre porti e dei depositi
+- [x] Definire le coordinate dei tre porti e dei depositi (dalla [[Mappa]])
+- [ ] Confermare i dubbi sulla [[Mappa]]: colori, acqua invalicabile, riga mancante
 - [ ] Rendere il regolamento leggibile da tutti ("Chiunque abbia il link")
 - [ ] Decidere la durata del turno: 2 giorni o 24 ore
-- [ ] Iniziare il [[Multiplayer]]: login Firebase e sezione [[Game Master]] minima
+- [ ] Decidere il backend: Supabase (già usato dal sito) o Firebase
+- [ ] Controllare le regole di sicurezza RLS di Supabase
+- [ ] Iniziare il [[Multiplayer]]: login e sezione [[Game Master]] minima
+- [ ] Aggiornare `origin` di git al nuovo indirizzo `github.com/sector6080/sector`
 
 ## Vecchia lista del sito
-Copiata dal `README.md` del repo (aggiornata dopo la riunione del comando supremo del 13/12/2025). Le voci già completate sono barrate.
+Copiata dal `README.md` di dicembre 2025 (aggiornata dopo la riunione del comando supremo del 13/12/2025). Il README attuale ne ha una versione più recente. Le voci già completate sono barrate.
 
 ## Essenziale
 - [ ] Tradurre tutto in Angular → da rivalutare per l'[[App Android]]

@@ -39,6 +39,7 @@
 
 ## Movimento e visione
 - Movimento solo orizzontale/verticale; non si esce dalla mappa e non ci si sovrappone ad altre unità.
+- Nell'app non si entra in mare o nei fiumi: si attraversano solo i ponti (scelta da confermare, vedi [[Mappa]]).
 - **Nebbia di guerra**: Visione N = vedi N caselle in tutte le direzioni, senza diagonali.
 
 ## Effetti speciali citati

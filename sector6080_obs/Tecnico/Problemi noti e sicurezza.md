@@ -19,6 +19,6 @@ Problemi trovati leggendo il codice del sito. Vanno risolti in ogni caso nell'[[
 - `sendData` riceve un 4° parametro che la funzione non usa.
 
 ## Lezioni per l'app
-- Autenticazione vera (es. Firebase Auth / login Discord), password mai inviate al client.
+- Autenticazione vera (Supabase Auth o simile), password mai inviate al client.
 - Validazione degli ordini **lato server**.
 - Database strutturato (es. Firestore) al posto del parsing di testo da Google Form.

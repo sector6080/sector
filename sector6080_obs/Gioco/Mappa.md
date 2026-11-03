@@ -1,30 +1,57 @@
 # Mappa
 
-- Griglia **60 × 80**, da cui il nome "Sector 6080". Nel codice: `MAP_WIDTH = 80` colonne, `MAP_HEIGHT = 60` righe.
+Fonte: foglio Google "Sector 6080 (master)", scheda `mappa` (vedi [[Fonti e link]]). L'app ne contiene una copia in `GameMap.kt`: se il foglio cambia, la copia va aggiornata.
+
+## Dimensioni
+- **80 colonne × 59 righe** dentro il bordo nero del foglio.
+- ⚠️ Il regolamento parla di griglia 60×80: nel foglio manca una riga. Va deciso se aggiungerla.
 - Ambientazione: la **Gran Bretagna** invasa, da riconquistare settore per settore (vedi [[Lore]]).
-- Elementi citati nelle regole: **tre porti** (punti di schieramento delle nuove unità), **depositi** (ricarica continua dei rifornimenti), edifici/strutture, ponti, coperture.
-- **Nebbia di guerra** in base alla visione delle unità.
-- Movimento e range senza diagonali.
 
-## Coordinate
-- Il regolamento e l'app usano `X,Y` numerici. Il player non le scrive mai: le sceglie toccando la mappa.
-- Il vecchio sito usava lettera + numero (`B2`), che con 80 colonne non funzionava.
+## Terreni
+| Colore nel foglio | Terreno | Caselle | Si attraversa |
+|---|---|---|---|
+| Verde | Prato | 3174 | sì |
+| Giallo | Sabbia | 785 | sì |
+| Blu | Mare | 582 | no |
+| Azzurro | Fiume | 138 | no |
+| Arancione scuro | Ponte | 8 | sì |
+| Arancione chiaro | Porto | 18 | sì |
+| Bianco | Edificio | 15 | sì |
 
-## Nell'app
-- All'apertura la mappa è **rimpicciolita**, con tutta la griglia in vista.
+I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: vanno confermati.
+
+## Strutture (coordinate X,Y dell'angolo in alto a sinistra)
+| Struttura | Posizione | Dimensione |
+|---|---|---|
+| Porto 1 | 18,8 | 2×3 |
+| Porto 2 | 50,4 | 2×3 |
+| Porto 3 | 70,7 | 2×3 |
+| Raffineria carburante | 37,10 | 2×2 |
+| Raffineria carburante | 78,11 | 2×2 |
+| Raffineria carburante | 3,14 | 2×2 |
+| Magazzino | 61,15 | 1×1 |
+| Magazzino | 25,16 | 1×1 |
+| Magazzino | 13,17 | 1×1 |
+
+- Le **nuove unità** partono da un porto, sempre lo stesso per la stessa matricola.
+- I **magazzini** sono probabilmente i "depositi" del regolamento, da confermare.
+- Le **raffinerie** non hanno ancora regole.
+
+## Regole della mappa nell'app
+- Non si entra in acqua. Il percorso si calcola casella per casella senza diagonali, quindi un fiume si attraversa solo su un ponte.
+- Vale anche per salire e scendere dai mezzi. I range delle armi invece ignorano l'acqua.
+- Il regolamento non parla dell'acqua: è una scelta dell'app, da confermare. Vedi anche [[Turni e meccaniche]].
+- Sugli edifici si può camminare, in attesa di una regola.
+
+## Grafica
+- Le texture sono **generate dal codice** (`MapRenderer.kt`), senza file di immagine: terreni con rumore casuale ma sempre uguale, coste irregolari con schiuma, onde, ponti in legno, porti con gru, raffinerie con serbatoi e fiamma, magazzini.
+- All'apertura la mappa è **rimpicciolita**, con tutta la griglia in vista. La griglia compare quando ci si avvicina.
 - Zoom con il pizzico, spostamento con il trascinamento.
-- Nebbia di guerra in base alla visione dell'unità.
-- Quando un ordine richiede una casella, la mappa si avvicina all'unità, evidenzia le caselle valide e consente di confermare solo quelle (vedi [[Ordini]]).
-- Nessuno schieramento manuale: le posizioni le decidono i [[Game Master]].
-
-## Vecchio sito
-- I dati stanno nel foglio `mappa` di un Google Sheet separato, letto con la Sheets API v4 (vedi [[Architettura sito web]]).
-- `map.html` genera la griglia (celle da 20px) e scrive in ogni cella il valore del foglio.
-- Controlli: zoom con Ctrl + rotella (1×–3×), spostamento con WASD o frecce.
-- Nelle [[DEV note]]: una "**mappa master con nemici**", copia del foglio riservata ai master.
+- **Nebbia di guerra**: il terreno resta visibile ma più scuro, oltre la visione dell'unità (senza diagonali). I nemici, quando ci saranno, non dovranno mai arrivare al telefono dei player (vedi [[Multiplayer]]).
+- Quando un ordine richiede una casella, la mappa si avvicina all'unità ed evidenzia in verde le caselle valide (vedi [[Ordini]]).
+- Toccando una casella si leggono coordinate, terreno e struttura.
 
 ## Da fare
-- Coordinate dei tre porti e dei depositi, oggi non definite.
-- Alleati e nemici sulla mappa, vedi [[Multiplayer]] (i nemici non devono mai arrivare al telefono dei player).
+- Alleati e nemici sulla mappa.
 - Ricerca delle unità.
 - "Terreni" e "Costruire" sono archiviati, vedi [[DEV note]].

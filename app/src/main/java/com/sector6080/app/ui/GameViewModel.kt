@@ -1,6 +1,8 @@
 package com.sector6080.app.ui
 
 import android.app.Application
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sector6080.app.data.CatalogLoader
@@ -8,10 +10,11 @@ import com.sector6080.app.data.GameRepository
 import com.sector6080.app.data.LocalGameRepository
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.ChatMessage
+import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.Order
-import com.sector6080.app.model.START_CELL
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,12 +36,21 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val _loaded = MutableStateFlow(false)
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
+    /** Immagine della mappa con le texture: si disegna una volta sola, in background. */
+    private val _mapImage = MutableStateFlow<ImageBitmap?>(null)
+    val mapImage: StateFlow<ImageBitmap?> = _mapImage.asStateFlow()
+
     init {
         viewModelScope.launch {
             val saved = repo.load()
             // i salvataggi vecchi possono avere unità mai schierate
-            _state.value = saved.copy(unit = saved.unit?.let { it.copy(position = it.position ?: START_CELL) })
+            _state.value = saved.copy(
+                unit = saved.unit?.let { it.copy(position = it.position ?: GameMap.spawnCell(it.matricola)) },
+            )
             _loaded.value = true
+        }
+        viewModelScope.launch(Dispatchers.Default) {
+            _mapImage.value = MapRenderer.render().asImageBitmap()
         }
     }
 

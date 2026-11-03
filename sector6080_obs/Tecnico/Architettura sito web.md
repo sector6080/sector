@@ -1,6 +1,9 @@
-# Architettura del sito web (versione attuale)
+# Architettura del sito web
 
-Sviluppata tra novembre e dicembre 2025. Repo: `github.com/the-silver33/sector`, pubblicato su GitHub Pages.
+> [!warning] Nota superata in parte
+> Questa nota descrive il sito di dicembre 2025. Da marzo 2026 il sito su GitHub è `index.html` e usa **Supabase** al posto di Apps Script, Google Form e Sheets. Rimane `trasferire_in_backend.txt`, con il codice da spostare nel backend. La parte sotto è storia: l'analisi del nuovo sito è ancora da fare. Vedi [[Multiplayer]].
+
+Sviluppata tra novembre e dicembre 2025. Il repo ora è `github.com/sector6080/sector`, pubblicato su GitHub Pages.
 
 ```
 [test.html su GitHub Pages]

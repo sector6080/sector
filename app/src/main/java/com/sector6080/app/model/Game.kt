@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlin.math.abs
 
 const val MAP_WIDTH = 80
-const val MAP_HEIGHT = 60
+const val MAP_HEIGHT = 59
 const val STARTING_BUDGET = 5
 const val DEFAULT_TURN_HOURS = 48
 
@@ -18,9 +18,6 @@ data class Cell(val x: Int, val y: Int) {
 
     override fun toString() = "$x,$y"
 }
-
-/** Punto di partenza provvisorio: i tre porti del regolamento non hanno ancora coordinate. */
-val START_CELL = Cell(40, 30)
 
 @Serializable
 data class GameUnit(

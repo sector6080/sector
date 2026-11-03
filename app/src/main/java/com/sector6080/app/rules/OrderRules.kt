@@ -2,6 +2,7 @@ package com.sector6080.app.rules
 
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Cell
+import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.OrderType
@@ -41,8 +42,9 @@ object OrderRules {
                         moved -> "Massimo 1 movimento per turno"
                         usedStationary -> "Hai usato un'arma che richiede di restare fermi"
                         t == pos -> "La destinazione è la posizione attuale"
-                        pos.distance(t) > max.movement ->
-                            "Troppo lontano: ${pos.distance(t)} caselle, movimento ${max.movement}"
+                        !GameMap.terrainAt(t).walkable -> "Non si può entrare in acqua"
+                        GameMap.steps(pos, t, max.movement) == null ->
+                            "Troppo lontano o percorso bloccato: movimento ${max.movement}"
                         else -> {
                             unit = unit.copy(position = t); moved = true; null
                         }
@@ -55,6 +57,7 @@ object OrderRules {
                         pos == null -> "L'unità non è ancora schierata sulla mappa"
                         unit.transported -> "L'unità è già a bordo di un mezzo"
                         t == null || !t.inBounds -> "Posizione del mezzo fuori mappa"
+                        !GameMap.terrainAt(t).walkable -> "Non si può salire su un mezzo in acqua"
                         pos.distance(t) != 1 -> "Il mezzo deve essere su una casella adiacente"
                         else -> {
                             unit = unit.copy(position = t, transported = true); null
@@ -68,6 +71,7 @@ object OrderRules {
                         pos == null -> "L'unità non è ancora schierata sulla mappa"
                         !unit.transported -> "L'unità non è a bordo di un mezzo"
                         t == null || !t.inBounds -> "Casella fuori mappa"
+                        !GameMap.terrainAt(t).walkable -> "Non si può scendere in acqua"
                         pos.distance(t) != 1 -> "Si scende solo su caselle adiacenti libere"
                         else -> {
                             unit = unit.copy(position = t, transported = false); null

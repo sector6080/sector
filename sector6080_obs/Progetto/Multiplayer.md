@@ -5,17 +5,27 @@ Piano per passare dal prototipo offline al gioco condiviso. Oggi ogni telefono h
 ## Perché è più semplice di quanto sembra
 Sector 6080 è **PvE, a turni lunghi e con [[Game Master]] umani**: i player non si affrontano e un turno dura giorni. Quindi non serve un server in tempo reale: basta un **database condiviso con permessi** e una notifica quando cambia il turno.
 
-## Scelta consigliata: Firebase
-È già l'idea nella [[To Do]] e copre tutto ciò che serve:
-- **Firebase Auth**: account del player (email o Google). Un account = un player = una [[Unità]].
-- **Firestore**: database condiviso con regole di sicurezza. Può aggiornare la chat in tempo reale.
-- **Cloud Messaging (FCM)**: notifiche di nuovo turno, unità approvata, messaggi.
-- **Cloud Functions**: solo quando serviranno automatismi (es. invio notifiche). Richiedono il piano a consumo Blaze, quindi vanno rimandate il più possibile.
+## Scelta consigliata: restare su Supabase
+> [!warning] Correzione del 03/11/2026
+> Inizialmente qui era consigliato Firebase. Ma dal repo su GitHub è emerso che **il sito usa già Supabase** da marzo 2026, mentre il README cita ancora "fare il server su firebase". Il consiglio è cambiato: **decisione da confermare**.
+
+Supabase copre le stesse esigenze e c'è già un progetto attivo, quindi evita di ripartire da zero:
+- **Auth**: account del player. Un account = un player = una [[Unità]].
+- **Database Postgres con Row Level Security**: dati condivisi e permessi lato server.
+- **Realtime**: chat aggiornata in tempo reale.
+- **Firebase Cloud Messaging**: servirà comunque per le notifiche push su Android, anche con Supabase.
+
+Attenzioni:
+- Il README segnala che il progetto gratuito **si mette in pausa dopo giorni di inattività**: va capito se è un problema, perché a una partita a turni serve sempre attivo.
+- Supabase non ha un client Kotlin ufficiale, solo uno della community (da valutare).
+- La chiave del sito è pubblica, quindi la sicurezza dipende tutta dalle regole RLS. Non le ho ancora controllate.
 
 Nell'app basta aggiungere una nuova implementazione di `GameRepository`: la UI resta com'è.
 
 ## Struttura dei dati
-| Collezione | Contenuto | Chi scrive | Chi legge |
+Vale per qualsiasi database. Le tabelle reali del progetto Supabase attuale sono ancora da confrontare con questa proposta.
+
+| Tabella | Contenuto | Chi scrive | Chi legge |
 |---|---|---|---|
 | `players/{uid}` | nome, grado, PU, ruolo | GM (il player solo il nome) | il player stesso, GM |
 | `game/current` | turno, scadenza | GM | tutti |
@@ -26,7 +36,7 @@ Nell'app basta aggiungere una nuova implementazione di `GameRepository`: la UI r
 | `chat/{id}` | messaggi | tutti gli autenticati | tutti gli autenticati |
 
 ## Le due regole chiave
-1. **I permessi stanno sul server.** Le regole di sicurezza di Firestore garantiscono che solo i GM approvino e modifichino le unità. Nascondere i pulsanti nell'app non basta.
+1. **I permessi stanno sul server.** Le regole del database garantiscono che solo i GM approvino e modifichino le unità. Nascondere i pulsanti nell'app non basta.
 2. **La nebbia di guerra non si fa sul telefono.** Se i nemici arrivassero al client, basterebbe ispezionare l'app per vederli. La sezione GM calcola cosa vede ogni unità e scrive solo quello in `vision`.
 
 ## Un turno
@@ -38,7 +48,7 @@ Nell'app basta aggiungere una nuova implementazione di `GameRepository`: la UI r
 6. Parte il turno dopo, con una notifica.
 
 ## Ordine di lavoro consigliato
-1. Progetto Firebase, login, salvataggio dell'unità online.
+1. Confermare il backend, poi login e salvataggio dell'unità online.
 2. Approvazione: **sezione GM minima** (senza, nessuna unità può entrare in gioco).
 3. Invio ordini reale e turno condiviso.
 4. Chat reale.
@@ -50,6 +60,6 @@ Nell'app basta aggiungere una nuova implementazione di `GameRepository`: la UI r
 - **Account**: serve una funzione per eliminare l'account dall'app.
 - **Privacy policy**: obbligatoria, perché si raccolgono account e messaggi.
 
-Da ricontrollare al momento della pubblicazione, insieme ai costi di Firebase: sono regole e listini che cambiano.
+Da ricontrollare al momento della pubblicazione, insieme ai costi del backend: sono regole e listini che cambiano.
 
 Vedi: [[Game Master]] · [[App Android]] · [[Problemi noti e sicurezza]]
