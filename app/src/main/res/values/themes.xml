@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.Sector6080" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+    </style>
+    <color name="bg">#0F1B2D</color>
+    <color name="launcher_bg">#1A365D</color>
+</resources>
