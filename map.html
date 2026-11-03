@@ -5,50 +5,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Griglia 60x80</title>
-	<style>
-		
-		body {
-			margin: 0;
-			font-family: Arial, sans-serif;
-		}
-
-		.grid-button {
-			padding: 10px 20px;
-			background-color: #4CAF50;
-			color: white;
-			border: none;
-			border-radius: 5px;
-			cursor: pointer;
-			font-size: 16px;
-			transition: background-color 0.3s;
-		}
-
-		.grid-button:hover {
-			background-color: #45a049;
-		}
-
-		.grid-container {
-			display: grid;
-			margin: 10px auto;
-			border: 1px solid #ccc;
-			background-color: #f0f0f0;
-			transform-origin: 0 0;
-			width: max-content;
-			height: max-content;
-		}
-
-		.grid-cell {
-			background-color: white;
-			border: 1px solid #e0e0e0;
-			transition: background-color 0.2s;
-			aspect-ratio: 1 / 1;
-			width: max-content;
-		}
-
-		#zoom-container {
-			overflow: auto;
-		}
-	</style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -70,41 +27,55 @@ let zoom = 1;
 /* ---------------------------
     CREA LA GRIGLIA DINAMICA
 ----------------------------*/
-function createGrid(rows, cols) {
+function createGrid(rows, cols, data) {
   gridContainer.innerHTML = "";
 
-  const CELL_SIZE = 20; // celle quadrate
-
+  const CELL_SIZE = 20;
   gridContainer.style.gridTemplateColumns = `repeat(${cols}, ${CELL_SIZE}px)`;
   gridContainer.style.gridAutoRows = `${CELL_SIZE}px`;
 
-  for (let i = 0; i < rows * cols; i++) {
-    const cell = document.createElement("div");
-    cell.className = "grid-cell";
-    gridContainer.appendChild(cell);
-  }
-}
-
-/* ---------------------------
-      RIEMPI LA GRIGLIA
-----------------------------*/
-function fillGrid(data, rows, cols) {
-  const cells = gridContainer.children;
-
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const index = r * cols + c;
+      const cell = document.createElement("div");
+      cell.className = "grid-cell";
+
       const value = data[r] && data[r][c] ? data[r][c] : "";
-      cells[index].textContent = value;
+      switch(value) { //in caso che ti dimentichi
+        case "p": // pianura
+          cell.style.backgroundColor = "#7ec850";
+          break;
+        case "ma": // mare
+          cell.style.backgroundColor = "#1e90ff";
+          break;
+        case "s": // spiaggia
+          cell.style.backgroundColor = "#e0c36f";
+          break;
+        case "f": // fiume
+          cell.style.backgroundColor = "#00bfff";
+          break;
+        case "raf": case "mag": // raffineria e magazzino
+          cell.style.backgroundColor = "#a9a9a9";
+          break;
+        case "ponte": case "har": // ponte (crazy eh) e porto
+          cell.style.backgroundColor = "#c48755";
+          break;
+
+        default:
+          cell.style.backgroundColor = "#222222";
+      }
+
+
+      gridContainer.appendChild(cell);
     }
   }
 }
+
 
 /* ---------------------------
       BOTTONE DI TEST
 ----------------------------*/
 function handleButtonClick() {
-  window.location.href = 'https://the-silver33.github.io/sector/test.html';
+  window.location.href = 'https://sector6080.github.io/sector/';
 }
 
 /* ---------------------------
@@ -123,6 +94,7 @@ zoomContainer.addEventListener("wheel", e => {
 });
 
 document.addEventListener("keydown", (e) => {
+
   const step = 50;
 
   switch (e.key.toLowerCase()) {
@@ -142,37 +114,17 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* ---------------------------
-       GOOGLE SHEET
+              API
 ----------------------------*/
 
-// ID del foglio
-const SHEET_ID = "1Uoz5xYisxmd7uUUIFrsAX-yZ4mckYSUdSopG2pNaL1k";
-const SHEET_NAME = "mappa";
-const API_KEY = "AIzaSyAjSe4WyZIJyGk5HLMMytZcm_s4xQJKNU4";
+// API configuration placeholders
+const API_KEY = ''; // insert your API key
+const API_URL = ''; // set the API endpoint URL here
 
 async function loadSheetData() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
-
-  try {
-    const res = await fetch(url);
-    const json = await res.json();
-
-    const data = json.values || [];
-
-    // Calcolo dinamico righe/colonne
-    const rows = data.length;
-    const cols = Math.max(...data.map(r => r.length));
-
-    console.log("Righe:", rows, "Colonne:", cols);
-
-    // Crea e riempi
-    createGrid(rows, cols);
-    fillGrid(data, rows, cols);
-
-  } catch (err) {
-    console.error("Errore caricamento Google Sheet:", err);
-  }
+    // TODO: fetch grid data from backend and call createGrid(rows, cols, data)
 }
+  
 
 // carica dati al caricamento pagina
 window.addEventListener('DOMContentLoaded', loadSheetData);

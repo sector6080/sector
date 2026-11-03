@@ -466,6 +466,42 @@ button:active {
   letter-spacing: 0.5px;
 }
 
+/* Map */
+.grid-button {
+	padding: 10px 20px;
+	background-color: #4CAF50;
+	color: white;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: 16px;
+	transition: background-color 0.3s;
+}
+
+.grid-button:hover {
+	background-color: #45a049;
+}
+
+.grid-container {
+	display: grid;
+	margin: 10px auto;
+	border: 1px solid #7c7c7c;
+	transform-origin: 0 0;
+	width: max-content;
+	height: max-content;
+  gap: 1px;
+}
+
+.grid-cell {
+	transition: background-color 0.2s;
+	aspect-ratio: 1 / 1;
+	width: max-content;
+}
+
+#zoom-container {
+	overflow: auto;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header-content {
