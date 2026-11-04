@@ -1,7 +1,6 @@
 package com.sector6080.app.data
 
 import android.content.Context
-import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.GameState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,7 +18,7 @@ interface GameRepository {
 
 class LocalGameRepository(context: Context) : GameRepository {
     private val file = File(context.filesDir, "game_state.json")
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; allowStructuredMapKeys = true }
 
     override suspend fun load(): GameState = withContext(Dispatchers.IO) {
         runCatching { json.decodeFromString(GameState.serializer(), file.readText()) }.getOrDefault(GameState())
@@ -31,15 +30,4 @@ class LocalGameRepository(context: Context) : GameRepository {
         tmp.renameTo(file)
         Unit
     }
-}
-
-object CatalogLoader {
-    val TYPE_FILES = listOf("Fanteria", "Motorizzata", "Corazzata", "Artiglieria")
-
-    fun load(context: Context): Catalog = Catalog(
-        TYPE_FILES.map { name ->
-            val text = context.assets.open("$name.md").bufferedReader(Charsets.UTF_8).use { it.readText() }
-            CatalogParser.parse(name, text)
-        },
-    )
 }

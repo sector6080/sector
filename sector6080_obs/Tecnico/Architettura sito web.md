@@ -1,7 +1,7 @@
 # Architettura del sito web
 
 > [!warning] Sito abbandonato
-> Il 03/11/2026 il sito è stato abbandonato per l'[[App Android]]. Questa nota descrive il sito di dicembre 2025 ed è solo storia. Da marzo 2026 il sito era `index.html` con **Supabase** al posto di Apps Script, Google Form e Sheets (vedi [[Database Supabase]]).
+> Il 03/11/2026 il sito è stato abbandonato per l'[[App Android]]. Questa nota descrive il sito di dicembre 2025 ed è solo storia: il codice è stato tolto dal repository il 04/11/2026 e resta nella storia di git. Da marzo 2026 il sito era `index.html` con **Supabase** al posto di Apps Script, Google Form e Sheets (vedi [[Database Supabase]]).
 
 Sviluppata tra novembre e dicembre 2025. Il repo ora è `github.com/sector6080/sector`, pubblicato su GitHub Pages.
 

@@ -1,8 +1,9 @@
 # Turni e meccaniche
 
 ## Ciclo dei turni
-- Un turno dura **2 giorni reali**: in questo tempo ogni giocatore invia gli ordini della sua unità.
-  - ⚠️ La guida Discord nelle [[DEV note]] dice invece "attiva la tua unità **ogni 24 ore**". Va deciso quale vale.
+- Un turno dura **24 ore** (decisione del 04/11/2026: il Google Doc dice ancora 2 giorni).
+- Il cambio turno è **automatico**: il server controlla ogni minuto, aumenta il turno e paga gli stipendi, anche con tutti i telefoni spenti.
+- Gli stipendi vanno ai player con un'unità attiva, in base al grado (vedi [[Gerarchia e Costituzione]]).
 - In un turno si possono dare questi ordini **quante volte si vuole e in qualsiasi ordine**, con i limiti indicati:
   - Attivare componenti: **max 1 volta per componente**
   - Salire / scendere da un mezzo
@@ -31,15 +32,15 @@
 
 ## Combattimento
 - **Perforazione vs armatura**: se l'armatura del bersaglio è **maggiore** della perforazione dell'attacco, l'attacco fallisce.
-- **Range**: distanza massima del componente, **senza diagonali** (distanza di Manhattan). Si può sparare anche sopra e dentro l'acqua.
+- **Range**: distanza massima del componente, **senza diagonali** (distanza di Manhattan). Si può sparare anche sopra e dentro l'acqua, ma non attraverso un'altra unità.
 - **Utilizzi** `(x/y)`: usi rimasti/massimi; quando finiscono serve un rifornimento per ricaricare.
 - Danni `AxB` (es. `3x2`): A attacchi separati da B danni ciascuno.
 - Area `NxM`: colpisce il bersaglio e le caselle intorno (es. una granata 3x3 colpisce il bersaglio + 8 caselle).
 - A **0 HP** l'unità viene distrutta e tolta dalla mappa.
 
 ## Movimento e visione
-- Movimento solo orizzontale/verticale; non si esce dalla mappa e non ci si sovrappone ad altre unità.
-- Nell'app non si entra in mare o nei fiumi: si attraversano solo i ponti (scelta da confermare, vedi [[Mappa]]).
+- Movimento solo orizzontale/verticale; non si esce dalla mappa e non ci si ferma su altre unità né le si attraversa.
+- Non si entra in mare o nei fiumi: si attraversano solo i ponti (vedi [[Mappa]]).
 - **Nebbia di guerra**: Visione N = vedi N caselle in tutte le direzioni, senza diagonali. La visione è **condivisa**: tutti i player vedono ciò che vede almeno un'unità della squadra.
 
 ## Effetti speciali citati

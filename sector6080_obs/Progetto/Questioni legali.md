@@ -26,7 +26,7 @@ Tutto ciò che riguarda leggi, regole del Play Store, dati personali e diritti s
 - La **privacy policy è obbligatoria** per compilare il modulo Data safety.
 - Il modulo serve per ogni app pubblicata, compresi i test chiusi e aperti. Sono esentate le app attive solo nel test interno.
 - Vanno dichiarati i dati raccolti o condivisi e il loro scopo, compresi quelli raccolti da librerie di terzi.
-- Per noi: identificativo dell'account, email (con Google), nome del player, messaggi della chat, unità e ordini.
+- Per noi: identificativo dell'account, email (con Google), messaggi della chat, unità e ordini.
 
 ### Eliminazione dell'account ✅
 - Chi può creare un account nell'app deve poter chiedere di eliminarlo. Vale anche se parte dell'app funziona senza account.
@@ -61,7 +61,7 @@ I [[Game Master]] sono i moderatori naturali: servono strumenti per bloccare un 
 - **Dove stanno i dati:** preferire un server in Unione Europea, altrimenti valutare il trasferimento.
 - **Conservazione:** decidere quanto tenere chat e unità perse, compresa un'eventuale "lista morti".
 - **Account anonimi:** identificativi e messaggi possono comunque essere dati personali.
-- **Schede pubbliche:** nome del player, grado, PU, statistiche, lore e posizione delle unità approvate sono visibili a tutti, anche senza account. Va detto nella privacy policy, e il campo Player non dovrebbe contenere il nome reale.
+- **Schede pubbliche:** matricola, grado, PU, statistiche, lore e posizione delle unità approvate e in attesa sono visibili a tutti, anche senza account. Va detto nella privacy policy.
 - **Bonus Google:** +1 PU premia il collegamento dell'account. La privacy policy deve spiegare chiaramente cosa cambia, e va verificato che il bonus non crei problemi.
 
 ### Minori

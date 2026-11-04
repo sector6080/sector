@@ -21,38 +21,43 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.OrderType
+import com.sector6080.app.model.occupiedCells
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.ui.GameViewModel
 import com.sector6080.app.ui.theme.Danger
 import com.sector6080.app.ui.theme.Success
 import com.sector6080.app.ui.theme.Warning
-import kotlinx.coroutines.delay
 
 @Composable
 fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Unit) {
     val unit = state.unit
     if (unit == null) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            Text("Crea prima la tua unità nella scheda Unità.")
+            Text(
+                if (state.isGm) {
+                    "Il Comando Supremo non dà ordini: gli ordini dei player sono nella scheda GM."
+                } else {
+                    "Crea prima la tua unità nella scheda Unità."
+                },
+            )
         }
         return
     }
-    val result = OrderRules.simulate(vm.catalog, unit, state.orders)
+    val result = OrderRules.simulate(vm.catalog, unit, state.orders, state.occupiedCells())
 
     LazyColumn(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -60,7 +65,6 @@ fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Un
     ) {
         item {
             Spacer(Modifier.padding(top = 8.dp))
-            TurnHeader(state)
             if (!unit.approved) {
                 Text("Unità in attesa di approvazione: un Game Master deve approvarla.", color = Warning)
             }
@@ -110,7 +114,7 @@ fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Un
                 Button(
                     onClick = vm::sendOrders,
                     enabled = unit.approved && state.orders.isNotEmpty() && result.isValid,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 ) {
                     Text(
                         when {
@@ -120,59 +124,39 @@ fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Un
                         },
                     )
                 }
-                OutlinedButton(onClick = vm::clearOrders, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                    Text("Svuota")
-                }
             }
-        }
-    }
-}
-
-@Composable
-private fun TurnHeader(state: GameState) {
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(Unit) {
-        while (true) { delay(30_000); now = System.currentTimeMillis() }
-    }
-    Text("Turno ${state.turn}", style = MaterialTheme.typography.headlineSmall)
-    if (state.turnStartedAt > 0) {
-        val left = state.turnStartedAt + state.turnHours * 3_600_000L - now
-        if (left > 0) {
-            val h = left / 3_600_000
-            val m = left / 60_000 % 60
-            Text("Mancano ${h}h ${m}min alla fine del turno", color = Success)
-        } else {
-            Text("Turno scaduto: in attesa del prossimo", color = Danger)
         }
     }
 }
 
 /**
- * Niente testo libero: si sceglie tra opzioni possibili in questo momento,
- * e le caselle si scelgono toccandole sulla mappa.
+ * Niente testo libero: le scelte fattibili stanno a sinistra, le altre restano visibili
+ * con il motivo, e le caselle si scelgono toccandole sulla mappa.
  */
 @Composable
 private fun NewOrderForm(vm: GameViewModel, state: GameState, unit: GameUnit, onPickOnMap: (Order) -> Unit) {
     val catalog = vm.catalog
+    val occupied = state.occupiedCells()
     var type by remember { mutableStateOf<OrderType?>(null) }
     var component by remember { mutableStateOf<String?>(null) }
     var quantity by remember { mutableIntStateOf(1) }
 
     val usable = unit.components.filter { catalog.component(unit.type, it)?.isUsable == true }
-    val available = remember(unit, state.orders) {
+    val possible = remember(unit, state.orders, state.team, state.catalog) {
         OrderType.entries.associateWith { t ->
             when (t) {
-                OrderType.ACTIVATE, OrderType.RELOAD -> usable.filter {
-                    OrderRules.isPossible(catalog, unit, state.orders, Order(t, component = it))
-                }.isNotEmpty()
-                OrderType.GIVE -> OrderRules.isPossible(catalog, unit, state.orders, Order(t, quantity = 1))
-                else -> OrderRules.isPossible(catalog, unit, state.orders, Order(t))
+                OrderType.ACTIVATE, OrderType.RELOAD -> usable.any {
+                    OrderRules.isPossible(catalog, unit, state.orders, Order(t, component = it), occupied)
+                }
+                OrderType.GIVE -> OrderRules.isPossible(catalog, unit, state.orders, Order(t, quantity = 1), occupied)
+                else -> OrderRules.isPossible(catalog, unit, state.orders, Order(t), occupied)
             }
         }
     }
-    val current = type?.takeIf { available[it] == true }
+    val current = type
+    val canDo = current != null && possible[current] == true
     val needsComponent = current == OrderType.ACTIVATE || current == OrderType.RELOAD
-    val suppliesLeft = OrderRules.simulate(catalog, unit, state.orders).finalUnit.supplies
+    val simulated = OrderRules.simulate(catalog, unit, state.orders, occupied).finalUnit
 
     fun reset() {
         type = null
@@ -184,36 +168,51 @@ private fun NewOrderForm(vm: GameViewModel, state: GameState, unit: GameUnit, on
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Nuovo ordine", style = MaterialTheme.typography.titleMedium)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                OrderType.entries.forEach { t ->
+                OrderType.entries.sortedByDescending { possible[it] == true }.forEach { t ->
                     FilterChip(
                         selected = t == current,
                         onClick = { type = t; component = null; quantity = 1 },
-                        enabled = available[t] == true,
                         label = { Text(t.label) },
+                        modifier = Modifier.alpha(if (possible[t] == true) 1f else 0.5f),
                     )
                 }
             }
             if (needsComponent) {
+                if (usable.isEmpty()) Text("Non hai componenti utilizzabili.")
+                val options = usable.map { name ->
+                    name to OrderRules.isPossible(catalog, unit, state.orders, Order(current, component = name), occupied)
+                }
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    usable.forEach { name ->
-                        val max = catalog.component(unit.type, name)?.maxUses
+                    options.sortedByDescending { it.second }.forEach { (name, enabled) ->
+                        val max = catalog.component(unit.type, name)?.maxUses ?: 0
+                        val left = simulated.uses[name] ?: 0
+                        val status = when {
+                            enabled -> ""
+                            current == OrderType.ACTIVATE && left <= 0 -> " · scarico"
+                            current == OrderType.RELOAD && left >= max -> " · carico"
+                            current == OrderType.RELOAD -> " · mancano rifornimenti"
+                            else -> " · non disponibile"
+                        }
                         FilterChip(
                             selected = component == name,
                             onClick = { component = name },
-                            enabled = OrderRules.isPossible(catalog, unit, state.orders, Order(current, component = name)),
-                            label = { Text("$name (${unit.uses[name] ?: 0}/$max)") },
+                            enabled = enabled,
+                            label = { Text("$name ($left/$max)$status") },
                         )
                     }
                 }
+            } else if (current != null && !canDo) {
+                val draft = Order(current, quantity = 1.takeIf { current == OrderType.GIVE })
+                Text(OrderRules.whyNot(catalog, unit, state.orders, draft, occupied), color = Warning)
             }
-            if (current == OrderType.GIVE) {
+            if (current == OrderType.GIVE && canDo) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(onClick = { quantity-- }, enabled = quantity > 1) { Text("−") }
                     Text("$quantity rifornimenti", fontWeight = FontWeight.SemiBold)
-                    OutlinedButton(onClick = { quantity++ }, enabled = quantity < suppliesLeft) { Text("+") }
+                    OutlinedButton(onClick = { quantity++ }, enabled = quantity < simulated.supplies) { Text("+") }
                 }
             }
-            if (current != null && (!needsComponent || component != null)) {
+            if (current != null && canDo && (!needsComponent || component != null)) {
                 val draft = Order(
                     type = current,
                     component = if (needsComponent) component else null,

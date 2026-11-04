@@ -4,8 +4,8 @@ Ogni turno il player invia gli ordini della sua [[Unità]]. Limiti e regole sono
 
 ## Come funziona nell'app
 **Niente testo libero**, così il player non può sbagliare a scrivere le coordinate:
-1. Sceglie il tipo di ordine. Gli ordini impossibili in quel momento sono disattivati.
-2. Se serve, sceglie il componente o la quantità di rifornimenti (pulsanti − e +).
+1. Sceglie il tipo di ordine. Quelli fattibili stanno a sinistra; gli altri restano visibili, più chiari, e spiegano perché non si possono dare.
+2. Se serve, sceglie il componente o la quantità di rifornimenti (pulsanti − e +). Anche i componenti non usabili restano visibili, per esempio "Pistola (0/2) · scarico".
 3. Se serve una casella, si apre la **[[Mappa]]**: si avvicina all'unità ed evidenzia solo le caselle valide.
 4. Tocca la casella e conferma. L'ordine entra nella catena.
 5. Con "Invia ordini" la catena passa al [[Game Master]]. Si può ritirare e modificare.
@@ -24,8 +24,7 @@ Le caselle valide vengono calcolate provando ogni casella con le stesse regole d
 | **Cedere rifornimenti** | quantità, poi casella | entro 1 casella (2 con Scarico Avanzato), non più di quelli posseduti |
 
 ## Limiti del prototipo
-- Senza server gli ordini inviati restano sul telefono.
-- Mancano le altre unità: non vengono controllate caselle occupate, presenza di un mezzo su cui salire o di un destinatario per i rifornimenti.
+- Le altre unità bloccano movimento e tiro, ma non viene ancora controllata la presenza di un mezzo su cui salire o di un destinatario per i rifornimenti.
 - Salire su un mezzo richiede una casella adiacente: il regolamento non lo dice esplicitamente, è una scelta dell'app da confermare.
 - Se rimuovi un ordine, quelli successivi possono diventare non validi: vengono segnati in rosso e bloccano l'invio.
 

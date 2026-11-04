@@ -5,7 +5,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// Palette ripresa da style.css del sito
 val Navy = Color(0xFF1A365D)
 val NavyLight = Color(0xFF2D4A80)
 val Accent = Color(0xFF4299E1)

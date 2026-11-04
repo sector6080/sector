@@ -9,19 +9,23 @@ Sector 6080 è **PvE**: i player collaborano e i nemici sono gestiti dai Game Ma
 - Gestire i nemici e far avanzare il turno.
 - Moderare la chat (da definire).
 
-I player possono solo creare la propria unità, inviare ordini e usare la chat.
- GM coincidono con il comando supremo
-## Sezione GM
-- I GM avranno una **sezione a parte**.
-- **Per ora si sviluppa solo l'interfaccia del player**: la sezione GM non esiste ancora.
-- Nel frattempo i GM lavorano dalla **dashboard di Supabase**, nel Table Editor:
-  - **Approvare un'unità:** in `game_units`, controllare statistiche e costo, poi impostare `status` su `active`.
-  - **Rifiutarla:** impostare `status` su `rejected`. Oggi i PU non vengono restituiti da soli.
-  - **Unità persa:** impostare `status` su `lost`.
-  - **Modificare un'unità:** cambiare direttamente `hp`, `supplies`, `pos_x`, `pos_y`.
-  - **Nuovo turno:** in `game_turn`, aumentare `turn` e impostare `started_at`.
+I player possono solo creare la propria unità, comprare componenti, inviare ordini e usare la chat. I GM coincidono con il Comando Supremo.
 
-## Da decidere
-- Sezione dentro la stessa app (visibile solo con ruolo GM) o pannello separato.
+## Sezione GM
+- Nell'app c'è una scheda **GM**, visibile solo a chi ha il ruolo.
+- **Si diventa GM solo dalla console di Supabase**, impostando `players.rank` a `Comando Supremo`. Nessuna funzione dell'app può farlo.
+- **Il Comando Supremo non può avere unità.** Il server rifiuta la creazione, e chi riceve il grado perde l'unità che ha.
+- In chat i GM scrivono firmando `Comando Supremo`.
+- Ogni azione viene ricontrollata dal server, quindi nascondere la scheda non è l'unica protezione.
+
+Dalla scheda GM si può:
+- **Approvare** un'unità: entra in gioco e la recluta diventa soldato.
+- **Rifiutare** un'unità: tornano tutti i PU spesi, componenti compresi.
+- **Applicare gli ordini** inviati, con le stesse regole dei player.
+- **Cambiare HP e rifornimenti** di un'unità.
+- **Segnare un'unità come persa**: il player tiene i PU, perde componenti e grado e torna Recluta.
+- **Passare subito al turno successivo**, oltre al cambio automatico.
+
+Nemici e moderazione della chat non sono ancora nella scheda.
 
 Vedi [[Multiplayer]].

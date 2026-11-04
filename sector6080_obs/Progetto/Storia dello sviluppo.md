@@ -11,5 +11,6 @@ Ricostruita dal log git (autore: the-silver33).
 | 13 dic 2025 | Riorganizzati gli Apps Script ("adesso l'API funziona"), fix del bug "tutti i dati N/A", fix dell'input degli ordini, rimossi i tentativi di connessione ridondanti, rimosso il consumo automatico dei rifornimenti, aggiunto un check sugli ordini in entrata, README aggiornato dopo la **riunione del comando supremo** |
 | 18 dic 2025 – 9 mar 2026 | 64 commit su GitHub (the-silver33, sector6080, l-godeassi): nuovo `index.html`, passaggio a Supabase, HP nelle unità, rimozione di Apps Script |
 | 3 nov 2026 | Avvio del passaggio ad [[App Android]], creato questo vault, prototipo condiviso, app unita al sito su `main` con un merge, sito abbandonato per l'app |
+| 4 nov 2026 | Tolti dal repository il codice del vecchio sito e il supporto ai salvataggi dei primi prototipi |
 
 Vedi [[To Do]].

@@ -22,7 +22,12 @@ object OrderRules {
         val isValid get() = errors.all { it == null }
     }
 
-    fun simulate(catalog: Catalog, start: GameUnit, orders: List<Order>): Result {
+    fun simulate(
+        catalog: Catalog,
+        start: GameUnit,
+        orders: List<Order>,
+        occupied: Set<Cell> = emptySet(),
+    ): Result {
         val max = UnitRules.maxStats(catalog, start)
         var unit = start
         var moved = false
@@ -43,7 +48,8 @@ object OrderRules {
                         usedStationary -> "Hai usato un'arma che richiede di restare fermi"
                         t == pos -> "La destinazione è la posizione attuale"
                         !GameMap.terrainAt(t).walkable -> "Non si può entrare in acqua"
-                        GameMap.steps(pos, t, max.movement) == null ->
+                        t in occupied -> "Casella occupata da un'altra unità"
+                        GameMap.steps(pos, t, max.movement, occupied) == null ->
                             "Troppo lontano o percorso bloccato: movimento ${max.movement}"
                         else -> {
                             unit = unit.copy(position = t); moved = true; null
@@ -72,6 +78,7 @@ object OrderRules {
                         !unit.transported -> "L'unità non è a bordo di un mezzo"
                         t == null || !t.inBounds -> "Casella fuori mappa"
                         !GameMap.terrainAt(t).walkable -> "Non si può scendere in acqua"
+                        t in occupied -> "Casella occupata da un'altra unità"
                         pos.distance(t) != 1 -> "Si scende solo su caselle adiacenti libere"
                         else -> {
                             unit = unit.copy(position = t, transported = false); null
@@ -96,6 +103,8 @@ object OrderRules {
                         t != null && !t.inBounds -> "Bersaglio fuori mappa"
                         c.range != null && pos != null && t != null && pos.distance(t) > c.range ->
                             "Bersaglio fuori portata: ${pos.distance(t)} caselle, range ${c.range}"
+                        c.weapon != null && pos != null && t != null && GameMap.isLineBlocked(pos, t, occupied) ->
+                            "Un'altra unità blocca il tiro"
                         else -> {
                             activated += name
                             if (c.requiresStationary) usedStationary = true
@@ -173,8 +182,14 @@ object OrderRules {
      * Caselle che l'ordine può usare come bersaglio dopo la catena attuale.
      * Prova ogni casella con [simulate], così la mappa non può mai contraddire le regole.
      */
-    fun validTargets(catalog: Catalog, start: GameUnit, orders: List<Order>, draft: Order): Set<Cell> {
-        val origin = simulate(catalog, start, orders).finalUnit.position ?: return emptySet()
+    fun validTargets(
+        catalog: Catalog,
+        start: GameUnit,
+        orders: List<Order>,
+        draft: Order,
+        occupied: Set<Cell> = emptySet(),
+    ): Set<Cell> {
+        val origin = simulate(catalog, start, orders, occupied).finalUnit.position ?: return emptySet()
         val componentRange = draft.component?.let { catalog.component(start.type, it) }?.range ?: 0
         val reach = maxOf(UnitRules.maxStats(catalog, start).movement, 2, componentRange)
         return buildSet {
@@ -182,7 +197,7 @@ object OrderRules {
                 for (y in origin.y - reach..origin.y + reach) {
                     val cell = Cell(x, y)
                     if (!cell.inBounds || origin.distance(cell) > reach) continue
-                    val result = simulate(catalog, start, orders + draft.copy(target = cell))
+                    val result = simulate(catalog, start, orders + draft.copy(target = cell), occupied)
                     if (result.errors.last() == null) add(cell)
                 }
             }
@@ -190,12 +205,31 @@ object OrderRules {
     }
 
     /** L'ordine si può aggiungere ora alla catena? Serve a disattivare le scelte impossibili. */
-    fun isPossible(catalog: Catalog, start: GameUnit, orders: List<Order>, draft: Order): Boolean =
-        if (needsTarget(catalog, start, draft)) {
-            validTargets(catalog, start, orders, draft).isNotEmpty()
-        } else {
-            simulate(catalog, start, orders + draft).errors.last() == null
-        }
+    fun isPossible(
+        catalog: Catalog,
+        start: GameUnit,
+        orders: List<Order>,
+        draft: Order,
+        occupied: Set<Cell> = emptySet(),
+    ): Boolean = if (needsTarget(catalog, start, draft)) {
+        validTargets(catalog, start, orders, draft, occupied).isNotEmpty()
+    } else {
+        simulate(catalog, start, orders + draft, occupied).errors.last() == null
+    }
+
+    /** Spiega perché un ordine non si può dare, provandolo su una casella vicina. */
+    fun whyNot(
+        catalog: Catalog,
+        start: GameUnit,
+        orders: List<Order>,
+        draft: Order,
+        occupied: Set<Cell> = emptySet(),
+    ): String {
+        val origin = simulate(catalog, start, orders, occupied).finalUnit.position
+        val probe = if (needsTarget(catalog, start, draft)) origin?.let { Cell(it.x + 1, it.y) } else null
+        return simulate(catalog, start, orders + draft.copy(target = probe), occupied).errors.last()
+            ?: "Nessuna casella disponibile"
+    }
 
     private const val SUPPLY_EXTENDER = "Scarico Avanzato"
 }

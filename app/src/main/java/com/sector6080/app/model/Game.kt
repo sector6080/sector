@@ -4,10 +4,9 @@ import kotlinx.serialization.Serializable
 import kotlin.math.abs
 
 const val MAP_WIDTH = 80
-const val MAP_HEIGHT = 59
-const val STARTING_BUDGET = 4
+const val MAP_HEIGHT = 60
 const val GOOGLE_BONUS_PU = 1
-const val DEFAULT_TURN_HOURS = 48
+const val DEFAULT_TURN_HOURS = 24
 
 /** Casella della mappa, coordinate numeriche 1-based come nel template ordini (X,Y). */
 @Serializable
@@ -23,7 +22,6 @@ data class Cell(val x: Int, val y: Int) {
 @Serializable
 data class GameUnit(
     val matricola: String,
-    val player: String,
     val type: String,
     val components: List<String>,
     val lore: String,
@@ -35,13 +33,19 @@ data class GameUnit(
     val transported: Boolean = false,
     /** Solo un Game Master può approvare un'unità. */
     val approved: Boolean = false,
-    /** Falso per le unità create offline nelle vecchie versioni: vanno caricate sul server. */
-    val synced: Boolean = false,
 )
 
-/** Unità approvata di un altro player: tutti possono guardarne la scheda. */
+/** Unità della squadra, approvata o in attesa: tutti possono guardarne la scheda. */
 @Serializable
 data class TeamMember(val unit: GameUnit, val rank: String, val pu: Int)
+
+/** Vista del Game Master. [pending] indica un'unità in attesa di approvazione. */
+@Serializable
+data class GmUnit(val member: TeamMember, val pending: Boolean, val cost: Int)
+
+/** Ordini inviati da un'unità e non ancora applicati. */
+@Serializable
+data class GmOrders(val matricola: String, val turn: Int, val orders: List<Order>)
 
 @Serializable
 enum class OrderType(val label: String) {
@@ -87,10 +91,26 @@ data class GameState(
     val rulesRead: Boolean = false,
     /** Null finché il player non sceglie come entrare. */
     val access: Access? = null,
-    /** PU e grado appartengono al player e restano se l'unità viene persa. */
-    val pu: Int = STARTING_BUDGET,
+    /** I PU appartengono al player e restano se l'unità viene persa. Il grado no. */
+    val pu: Int = 0,
     val rank: String = "Recluta",
+    /** Si diventa GM solo dalla console di Supabase. */
+    val isGm: Boolean = false,
+    /** Tipi di unità e componenti ricevuti dal server. */
+    val catalog: Catalog = Catalog(),
+    /** Avvisi chiusi con la X. */
+    val approvalClosed: Boolean = false,
+    val accountNoticeClosed: Boolean = false,
     val chat: List<ChatMessage> = emptyList(),
-    /** Unità approvate di tutta la squadra, compresa la propria. */
+    /** Tutte le unità, compresa la propria, dal grado più alto. Comprende quelle in attesa. */
     val team: List<TeamMember> = emptyList(),
+    val gmUnits: List<GmUnit> = emptyList(),
+    val gmOrders: List<GmOrders> = emptyList(),
 )
+
+/** Unità in gioco: quelle in attesa non compaiono sulla mappa e non vedono. */
+val GameState.deployed: List<TeamMember> get() = team.filter { it.unit.approved }
+
+/** Caselle occupate dalle altre unità: bloccano movimento e tiro. */
+fun GameState.occupiedCells(): Set<Cell> =
+    deployed.filter { it.unit.matricola != unit?.matricola }.mapNotNull { it.unit.position }.toSet()

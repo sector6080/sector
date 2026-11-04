@@ -6,7 +6,9 @@ Come si lega un player alla sua [[Unità]]. Obiettivo: il minimo di passaggi per
 - Un player ha **al massimo una unità** attiva o in attesa.
 - Il player **scrive in chat solo tramite la sua unità**, anche se è una recluta.
 - Senza unità attiva o in attesa, il player **può solo leggere** la chat.
-- **PU e grado appartengono al player**: restano se l'unità viene persa.
+- **I PU appartengono al player**: restano se l'unità viene persa.
+- **Il grado si perde con l'unità**: il player torna Recluta. Deciso il 04/11/2026.
+- **Tutti si chiamano con la matricola**: il campo Player è stato tolto il 04/11/2026.
 - **I componenti appartengono all'unità**: se viene persa, i PU investiti in armamenti sono persi.
 
 ## Stati del player
@@ -15,7 +17,7 @@ Come si lega un player alla sua [[Unità]]. Obiettivo: il minimo di passaggi per
 | Visitatore | nessuno | legge | no | può leggere il regolamento |
 | Unità in attesa | sì | scrive | da definire | aspetta un [[Game Master]] |
 | Unità attiva | sì | scrive | sì | |
-| Unità persa | sì | legge | no | tiene PU e grado, può crearne subito un'altra |
+| Unità persa | sì | legge | no | tiene i PU, torna Recluta, può crearne subito un'altra |
 
 ## Opzioni di accesso
 | Opzione | Per il player | Sicurezza | Problema |
@@ -28,7 +30,7 @@ Come si lega un player alla sua [[Unità]]. Obiettivo: il minimo di passaggi per
 | Password per unità (vecchio sito) | da ricordare | bassa | da non riproporre |
 
 ## Decisione: Google + anonimo
-Deciso il 03/11/2026. L'accesso si chiede quando il player crea l'unità, non all'apertura dell'app. Il nome mostrato in gioco resta il campo "Player": email e nome Google non vengono mostrati.
+Deciso il 03/11/2026. L'accesso si chiede quando il player crea l'unità, non all'apertura dell'app. In gioco si vede solo la matricola: email e nome Google non vengono mostrati.
 
 - **PU iniziali: 4 per tutti.**
 - **Con l'accesso Google: +1 PU**, quindi 5. Vale una volta sola, anche se il collegamento avviene dopo la creazione dell'unità.
@@ -74,7 +76,7 @@ La sicurezza non dipende dalla password ma dal legame sul server:
 - Il Play Store richiede comunque di poter eliminare l'account dall'app.
 
 ## Da decidere
-- **PU alla nuova unità**: i 4 PU (5 con Google) valgono solo la prima volta, poi si usano i PU del player?
+- **PU alla nuova unità**: oggi i 4 PU valgono solo per il primo account, poi si usano i PU del player. Da confermare.
 - **Artiglieria**: va bene che con 4 PU non sia disponibile?
 - **Unità in attesa**: oggi può preparare gli ordini ma non inviarli, finché un GM non la approva. Da confermare.
-- **Unità rifiutata da un GM**: i PU vengono restituiti?
+

@@ -4,7 +4,7 @@
 Il mondo è unito sotto le grandi potenze terrestri quando, in una sola notte, la Gran Bretagna cade. Non ci sono stati né guerra convenzionale né missili nucleari: solo un silenzio improvviso e poi rapporti allarmanti. Le comunicazioni si interrompono e le missioni di soccorso falliscono. I pochi sopravvissuti parlano di **macchine senzienti, creature biomeccaniche e soldati mutati**: macchine che si autoriparano, carne e metallo fusi insieme. Il nemico impara, si evolve e gioca sporco. Nelle note di sviluppo viene chiamato **l'Entità**.
 
 ## Le forze umane
-- **CGD – Consiglio Globale di Difesa**: ha dichiarato la massima allerta. Il logo è in `foto/` (con il refuso "GOLOBALE").
+- **CGD – Consiglio Globale di Difesa**: ha dichiarato la massima allerta. Il logo, con il refuso "GOLOBALE", non è più nel repository: si recupera dalla storia di git, in `foto/`.
 - **Task Force 6080**: unità d'élite di soldati, scienziati e agenti speciali, cioè i giocatori. Il loro compito è riconquistare la Britannia settore per settore, stabilire una testa di ponte, ripristinare le comunicazioni e scoprire la verità sull'invasione.
 - Motto: *"qui non si combatte solo per la sopravvivenza. Si combatte per non diventare come loro."*
 

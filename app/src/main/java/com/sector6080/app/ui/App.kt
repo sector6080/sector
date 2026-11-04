@@ -12,9 +12,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,23 +41,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sector6080.app.model.Order
 import com.sector6080.app.ui.screens.ChatScreen
-import com.sector6080.app.ui.screens.LinksScreen
+import com.sector6080.app.ui.screens.GmScreen
 import com.sector6080.app.ui.screens.MapScreen
 import com.sector6080.app.ui.screens.OrdersScreen
+import com.sector6080.app.ui.screens.TeamScreen
 import com.sector6080.app.ui.screens.UnitScreen
 
 const val RULES_URL =
     "https://docs.google.com/document/d/1Sfr3UhyqTXyWu_aW1eq-qaq62DXUypjbo3hwyRBSUkY/edit?usp=sharing"
 
-/** Invito al server Discord (facoltativo). */
-const val DISCORD_URL = "https://discord.gg/Ah3TTPEcsR"
-
 private enum class Tab(val label: String, val icon: ImageVector) {
     UNIT("Unità", Icons.Filled.Person),
     ORDERS("Ordini", Icons.AutoMirrored.Filled.List),
     MAP("Mappa", Icons.Filled.LocationOn),
+    TEAM("Squadra", Icons.Filled.Star),
     CHAT("Chat", Icons.Filled.Email),
-    LINKS("Link", Icons.Filled.Info),
+    GM("GM", Icons.Filled.Settings),
 }
 
 @Composable
@@ -81,7 +81,8 @@ fun App(vm: GameViewModel = viewModel()) {
         },
         bottomBar = {
             NavigationBar {
-                Tab.entries.forEach { t ->
+                // La scheda GM esiste solo per chi ha il ruolo sul server
+                Tab.entries.filter { it != Tab.GM || state.isGm }.forEach { t ->
                     NavigationBarItem(
                         selected = tab == t,
                         onClick = { picking = null; tab = t },
@@ -105,8 +106,9 @@ fun App(vm: GameViewModel = viewModel()) {
                     onConfirm = { vm.addOrder(it); picking = null; tab = Tab.ORDERS },
                     onCancel = { picking = null; tab = Tab.ORDERS },
                 )
+                Tab.TEAM -> TeamScreen(vm, state)
                 Tab.CHAT -> ChatScreen(vm, state)
-                Tab.LINKS -> LinksScreen()
+                Tab.GM -> if (state.isGm) GmScreen(vm, state) else UnitScreen(vm, state)
             }
         }
     }

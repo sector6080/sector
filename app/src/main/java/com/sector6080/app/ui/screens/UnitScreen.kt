@@ -3,6 +3,7 @@ package com.sector6080.app.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,16 +11,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -29,6 +39,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,6 +60,9 @@ import com.sector6080.app.ui.theme.Warning
 @Composable
 fun UnitScreen(vm: GameViewModel, state: GameState) {
     when {
+        state.isGm -> Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            Text("Il Comando Supremo non ha unità: usa la scheda GM.")
+        }
         state.unit != null -> UnitDetails(vm, state)
         state.access == null -> AccessGate(vm)
         !state.rulesRead -> RulesGate(vm)
@@ -79,12 +93,50 @@ private fun AccessGate(vm: GameViewModel) {
     }
 }
 
-/** Sempre disponibile finché il player non ha collegato Google. */
+/** Avviso che si chiude con la X, nello stesso punto del testo che sostituisce. */
 @Composable
-private fun GoogleLinkCard() {
+private fun ClosablePopup(text: String, color: Color, onClose: () -> Unit) {
+    Surface(color = color.copy(alpha = 0.2f), shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(text, color = color, modifier = Modifier.weight(1f))
+            IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Chiudi") }
+        }
+    }
+}
+
+/** Avviso finché Google non è collegato: la X lo chiude. */
+private fun LazyListScope.accountCard(vm: GameViewModel, state: GameState) {
+    if (state.access == Access.GOOGLE || state.accountNoticeClosed) return
+    item { GoogleLinkCard(onClose = { vm.setAccountNoticeClosed(true) }) }
+}
+
+/** Ad avviso chiuso resta solo un link discreto in fondo alla pagina. */
+private fun LazyListScope.accountLink(vm: GameViewModel, state: GameState) {
+    if (state.access == Access.GOOGLE || !state.accountNoticeClosed) return
+    item {
+        TextButton(onClick = { vm.setAccountNoticeClosed(false) }) {
+            Text(
+                "Collega Google",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoogleLinkCard(onClose: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Account non collegato", fontWeight = FontWeight.Bold, color = Warning)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Account non collegato",
+                    fontWeight = FontWeight.Bold,
+                    color = Warning,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Chiudi") }
+            }
             Text(LOSS_WARNING)
             Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
                 Text("Collega Google (+$GOOGLE_BONUS_PU PU)")
@@ -119,7 +171,6 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     var typeName by rememberSaveable { mutableStateOf<String?>(null) }
     var matricola by rememberSaveable { mutableStateOf("") }
-    var player by rememberSaveable { mutableStateOf("") }
     var lore by rememberSaveable { mutableStateOf("") }
     val selected = remember { mutableStateListOf<String>() }
     var showErrors by remember { mutableStateOf(false) }
@@ -127,7 +178,7 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
     val type = typeName?.let { catalog.type(it) }
     val chosen: List<Component> = type?.components?.filter { it.name in selected }.orEmpty()
     val cost = type?.let { UnitRules.totalCost(it, chosen) } ?: 0
-    val errors = UnitRules.validate(matricola, player, lore, type, chosen, budget)
+    val errors = UnitRules.validate(matricola, lore, type, chosen, budget)
 
     LazyColumn(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -138,7 +189,7 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
             Text("Nuova unità", style = MaterialTheme.typography.headlineSmall)
             Text("Hai $budget PU. Puoi comprare solo componenti del tuo tipo.")
         }
-        if (state.access != Access.GOOGLE) item { GoogleLinkCard() }
+        accountCard(vm, state)
         item {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 catalog.types.forEach { t ->
@@ -158,12 +209,6 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
                 label = { Text("Matricola (es. XYZ-789)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        item {
-            OutlinedTextField(
-                value = player, onValueChange = { player = it },
-                label = { Text("Player") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
             )
         }
         if (type != null) {
@@ -212,21 +257,26 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
                 onClick = {
                     showErrors = true
                     if (errors.isEmpty() && type != null) {
-                        vm.createUnit(UnitRules.create(matricola, player, lore, type, chosen), cost)
+                        vm.createUnit(matricola, type.name, chosen.map { it.name }, lore.trim())
                     }
                 },
                 enabled = !busy,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             ) { Text(if (busy) "Invio in corso..." else "Crea unità") }
         }
+        accountLink(vm, state)
     }
 }
 
-/** Scheda in sola lettura: solo i Game Master possono approvare o modificare un'unità. */
+/** I valori dell'unità li modificano solo i Game Master: il player può comprare componenti. */
 @Composable
 private fun UnitDetails(vm: GameViewModel, state: GameState) {
     val unit = state.unit ?: return
     val max = UnitRules.maxStats(vm.catalog, unit)
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    var shopOpen by rememberSaveable { mutableStateOf(false) }
+    var buying by remember { mutableStateOf<Component?>(null) }
+    val shop = vm.catalog.type(unit.type)?.components.orEmpty().filter { it.name !in unit.components }
 
     LazyColumn(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -235,7 +285,7 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
         item {
             Spacer(Modifier.padding(top = 8.dp))
             Text(unit.matricola, style = MaterialTheme.typography.headlineMedium)
-            Text("${unit.type} · ${unit.player} · ${state.rank} · ${state.pu} PU")
+            Text("${unit.type} · ${state.rank} · ${state.pu} PU")
         }
         item {
             Card(Modifier.fillMaxWidth()) {
@@ -251,14 +301,15 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
                         "Posizione: ${unit.position ?: "non schierata"}" +
                             if (unit.transported) " · a bordo di un mezzo" else "",
                     )
-                    Text(
-                        if (unit.approved) "Approvata da un Game Master" else "In attesa di approvazione di un Game Master",
-                        color = if (unit.approved) Success else Warning,
-                    )
+                    if (!unit.approved) {
+                        Text("In attesa di approvazione di un Game Master", color = Warning)
+                    } else if (!state.approvalClosed) {
+                        ClosablePopup("Approvata da un Game Master", Success, vm::closeApproval)
+                    }
                 }
             }
         }
-        if (state.access != Access.GOOGLE) item { GoogleLinkCard() }
+        accountCard(vm, state)
         item { Text("Componenti", style = MaterialTheme.typography.titleMedium) }
         items(unit.components) { name ->
             val c = vm.catalog.component(unit.type, name)
@@ -272,9 +323,43 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
             }
         }
         item {
+            OutlinedButton(onClick = { shopOpen = !shopOpen }, modifier = Modifier.fillMaxWidth()) {
+                Text(if (shopOpen) "Chiudi il negozio" else "Compra componenti · ${state.pu} PU")
+            }
+        }
+        if (shopOpen) {
+            items(shop, key = { "shop/" + it.name }) { c ->
+                val missing = c.requires?.takeIf { req -> unit.components.none { it.equals(req, ignoreCase = true) } }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("${c.name} · ${c.cost} PU", fontWeight = FontWeight.SemiBold)
+                        Text(c.description, style = MaterialTheme.typography.bodySmall)
+                        if (missing != null) Text("Richiede $missing", color = Warning, style = MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(
+                        onClick = { buying = c },
+                        enabled = !busy && missing == null && c.cost <= state.pu,
+                    ) { Text("Compra") }
+                }
+            }
+        }
+        item {
             Text("Lore", style = MaterialTheme.typography.titleMedium)
             Text(unit.lore)
         }
+        accountLink(vm, state)
+    }
+
+    buying?.let { c ->
+        AlertDialog(
+            onDismissRequest = { buying = null },
+            title = { Text("Comprare ${c.name}?") },
+            text = { Text("Costa ${c.cost} PU. Ti restano ${state.pu - c.cost} PU. Se perdi l'unità, perdi anche il componente.") },
+            confirmButton = {
+                TextButton(onClick = { vm.buyComponent(c.name); buying = null }) { Text("Compra") }
+            },
+            dismissButton = { TextButton(onClick = { buying = null }) { Text("Annulla") } },
+        )
     }
 }
 

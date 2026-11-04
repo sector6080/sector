@@ -71,7 +71,7 @@ Quadro completo, compreso ciò che manca. Le tabelle già definite e i loro nomi
 
 ## Ordine di lavoro consigliato
 1. ✅ Backend scelto, accesso anonimo, unità online. Provato dal vivo.
-2. Approvazione: per ora dalla dashboard, poi **sezione GM minima**.
+2. ✅ Sezione GM, turni automatici e stipendi: script eseguito il 04/11/2026, prova dal vivo in corso.
 3. ✅ Invio ordini e turno condiviso, stesso stato del punto 1.
 4. ✅ Chat reale, stesso stato del punto 1.
 5. ✅ Mappa su server, alleati visibili con scheda e PU, visione comune: provato dal vivo. Restano i nemici e la loro nebbia di guerra lato GM.

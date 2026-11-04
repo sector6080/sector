@@ -9,15 +9,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,8 +43,11 @@ import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.MAP_HEIGHT
 import com.sector6080.app.model.MAP_WIDTH
+import com.sector6080.app.model.MapSite
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.TeamMember
+import com.sector6080.app.model.deployed
+import com.sector6080.app.model.occupiedCells
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.rules.Vision
@@ -52,6 +58,7 @@ import com.sector6080.app.ui.theme.Danger
 import com.sector6080.app.ui.theme.Fog
 import com.sector6080.app.ui.theme.Navy
 import com.sector6080.app.ui.theme.Warning
+import kotlinx.coroutines.delay
 
 private const val CELL = 24f
 private val Target = Color(0xFF5CF08A)
@@ -72,14 +79,15 @@ fun MapScreen(
 ) {
     val unit = state.unit
     val mapImage by vm.mapImage.collectAsStateWithLifecycle()
-    val sim = unit?.let { OrderRules.simulate(vm.catalog, it, state.orders).finalUnit }
+    val occupied = state.occupiedCells()
+    val sim = unit?.let { OrderRules.simulate(vm.catalog, it, state.orders, occupied).finalUnit }
     val vision = unit?.let { UnitRules.maxStats(vm.catalog, it).vision } ?: 0
     val here = unit?.position
     val planned = sim?.position
-    // La propria unità può essere ancora in attesa, quindi assente dalla squadra del server
+    // La propria unità si vede anche quando è ancora in attesa
     val members = when {
-        unit == null || state.team.any { it.unit.matricola == unit.matricola } -> state.team
-        else -> state.team + TeamMember(unit, state.rank, state.pu)
+        unit == null || state.deployed.any { it.unit.matricola == unit.matricola } -> state.deployed
+        else -> state.deployed + TeamMember(unit, state.rank, state.pu)
     }
     val allies = members.map { it.unit }.filter { it.matricola != unit?.matricola }
     // Visione comune: la somma delle visioni di tutte le unità
@@ -87,9 +95,9 @@ fun MapScreen(
         member.unit.position?.let { Vision.Source(it, UnitRules.maxStats(vm.catalog, member.unit).vision) }
     }
     val fog = remember(sources) { Vision.fogSpans(sources) }
-    val valid = remember(picking, unit, state.orders) {
+    val valid = remember(picking, unit, state.orders, state.team, state.catalog) {
         if (picking != null && unit != null) {
-            OrderRules.validTargets(vm.catalog, unit, state.orders, picking)
+            OrderRules.validTargets(vm.catalog, unit, state.orders, picking, occupied)
         } else {
             emptySet()
         }
@@ -101,6 +109,7 @@ fun MapScreen(
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var showTeam by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf<TeamMember?>(null) }
+    var siteSheet by remember { mutableStateOf<MapSite?>(null) }
 
     fun fitScale() = canvasSize.width / (MAP_WIDTH * CELL)
 
@@ -123,6 +132,7 @@ fun MapScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
+        TurnBar(state, onExpired = vm::sync)
         Canvas(
             Modifier
                 .weight(1f)
@@ -226,6 +236,7 @@ fun MapScreen(
                 } else {
                     Text(
                         when {
+                            state.isGm -> "Comando Supremo: visione della squadra."
                             unit == null -> "Crea un'unità per vederla sulla mappa."
                             here == null -> "Unità non ancora schierata."
                             else -> "Unità in $here · visione $vision" +
@@ -237,10 +248,13 @@ fun MapScreen(
                         Text("Casella $sel · ${GameMap.describe(sel)}" + (here?.let { " · distanza ${it.distance(sel)}" } ?: ""))
                     }
                     val tapped = members.firstOrNull { it.unit.position == sel }
+                    val tappedSite = sel?.let { GameMap.siteAt(it) }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = { showTeam = true }) { Text("Squadra (${members.size})") }
                         if (tapped != null) {
                             Button(onClick = { sheet = tapped }) { Text("Scheda ${tapped.unit.matricola}") }
+                        } else if (tappedSite != null) {
+                            Button(onClick = { siteSheet = tappedSite }) { Text(tappedSite.name) }
                         }
                     }
                 }
@@ -256,4 +270,42 @@ fun MapScreen(
         )
     }
     sheet?.let { UnitSheetDialog(vm.catalog, it) { sheet = null } }
+    siteSheet?.let { site ->
+        AlertDialog(
+            onDismissRequest = { siteSheet = null },
+            title = { Text(site.name) },
+            text = { Text(site.description.ifEmpty { "Nessuna descrizione." }) },
+            confirmButton = { TextButton(onClick = { siteSheet = null }) { Text("Chiudi") } },
+        )
+    }
+}
+
+/** Turno corrente e conto alla rovescia, aggiornato ogni secondo. */
+@Composable
+private fun TurnBar(state: GameState, onExpired: () -> Unit) {
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val end = state.turnStartedAt + state.turnHours * 3_600_000L
+    LaunchedEffect(end) {
+        var notified = false
+        while (true) {
+            now = System.currentTimeMillis()
+            if (state.turnStartedAt > 0 && now >= end && !notified) {
+                notified = true
+                onExpired()
+            }
+            delay(1_000)
+        }
+    }
+    val left = ((end - now) / 1_000).coerceAtLeast(0)
+    Surface(tonalElevation = 3.dp) {
+        Text(
+            when {
+                state.turnStartedAt == 0L -> "Turno ${state.turn}"
+                left == 0L -> "Turno ${state.turn} · cambio turno in corso"
+                else -> "Turno ${state.turn} · prossimo turno in ${left / 3600}h ${left / 60 % 60}m ${left % 60}s"
+            },
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+        )
+    }
 }

@@ -7,22 +7,35 @@ Definite in `supabase/schema-app.sql`. Le vecchie tabelle del sito non vengono t
 
 | Tabella | Contenuto | Lettura | Scrittura del player |
 |---|---|---|---|
-| `players` | PU e grado, creato in automatico con l'account | solo il proprio | nessuna |
+| `players` | PU e grado, creato in automatico con l'account. Il grado torna `Recluta` quando l'unità viene persa | solo il proprio | nessuna |
 | `game_units` | unità, proprietario, stato | solo la propria | con `create_unit` |
 | `game_turn` | turno corrente, inizio e durata | tutti | nessuna |
 | `game_orders` | ordini per unità e turno | solo i propri | con `send_orders` e `withdraw_orders` |
-| `chat_messages` | messaggi firmati dal server | tutti | con `send_chat` |
+| `chat_messages` | messaggi firmati dal server: `grado - matricola - tipo` | tutti | con `send_chat` |
 | `game_map` | una riga per casella: terreno e struttura | tutti | nessuna |
+| `game_sites` | descrizione delle strutture | tutti | nessuna |
+| `game_components` | i 138 componenti, con costi e statistiche | tutti | nessuna |
+| `unit_types` | tipi di unità e statistiche base | tutti | nessuna |
+| `rank_salaries` | stipendio per grado | tutti | nessuna |
+| `game_settings` | PU iniziali e bonus Google | tutti | nessuna |
+
+Le ultime cinque tabelle si modificano dal Table Editor e valgono subito, senza aggiornare l'app. Sono in `supabase/gm-turni-catalogo.sql` (eseguito il 04/11/2026: tabelle, 138 componenti, 4800 caselle e turno di 24 ore verificati), insieme a:
+- ruolo GM dato dal grado `Comando Supremo` in `players.rank`, modificabile solo dalla console. Il grado toglie l'unità e impedisce di crearne altre;
+- funzioni `gm_*`, che controllano il ruolo sul server;
+- `create_unit` e `buy_component`, che calcolano costo e statistiche sul server;
+- cambio turno con `pg_cron`, ogni minuto.
 
 La mappa e la squadra si aggiungono con `supabase/mappa-e-squadra.sql` (eseguito: 4720 caselle e 9 strutture). L'app legge tutto con due funzioni, disponibili anche senza account:
 - `get_map`: mappa compatta e strutture.
 - `get_team`: unità approvate con grado, PU, statistiche, componenti, lore e posizione. Il proprietario resta privato. I PU pubblici sono stati aggiunti con `supabase/pu-pubblici.sql` (eseguito). Provato dal vivo con 4 unità: mappa dal server, visione comune, schede e PU.
 
+`supabase/matricola-e-gradi.sql` (eseguito il 04/11/2026, firma e squadra verificate): elimina la colonna `player_name`, aggiunge il trigger che toglie il grado a chi perde l'unità, cambia la firma della chat e fa restituire a `get_team` anche le unità in attesa, ordinate per grado. L'app mostra sulla mappa solo quelle approvate. Dopo lo script le vecchie versioni dell'app non funzionano più.
+
 **Regola di fondo:** il player non scrive mai direttamente nelle tabelle. Ogni funzione ricava il player dall'account collegato, quindi nessuno può agire per conto di un altro, cambiare i propri PU o firmare messaggi con un'altra matricola.
 
 Stati dell'unità: `pending` (in attesa), `active` (approvata), `lost` (persa), `rejected` (rifiutata). Il database impedisce più di una unità `pending` o `active` per player.
 
-**Limite noto:** le statistiche iniziali e il costo arrivano dall'app, perché il catalogo non è sul server. Un'app manomessa potrebbe inviare valori falsi alla creazione, quindi vanno controllati dai [[Game Master]] prima dell'approvazione.
+**Limite risolto dallo script `gm-turni-catalogo.sql`:** costo e statistiche iniziali non arrivano più dall'app.
 
 ### Prova reale del 04/11/2026
 Eseguita con due account anonimi dall'app sull'emulatore. Funzionano: account e profilo automatico, unità sul server con PU scalati, chat, unità recuperata dopo un riavvio, approvazione, invio e ritiro degli ordini.
@@ -47,7 +60,7 @@ Dati di prova rimasti: unità ASD-543 (approvata, con un ordine) e XYZ-100, due 
 Altre regole: chat con massimo 500 caratteri e un messaggio ogni 2 secondi per unità. La visione comune si calcola nell'app sommando le unità di `get_team`: quando ci saranno i nemici dovrà calcolarla il server, per non inviarli ai telefoni.
 
 ## Vecchie tabelle del sito
-`units`, `new_units`, `player`, `map` e `general` sono state eliminate il 04/11/2026 con `supabase/rimuovi-tabelle-sito.sql`. Verificato: nel progetto restano solo le 5 tabelle dell'app, con il numero di colonne previsto e RLS attivo. `game_turn` contiene la sua riga iniziale.
+`units`, `new_units`, `player`, `map` e `general` sono state eliminate il 04/11/2026 con `supabase/rimuovi-tabelle-sito.sql`, ora tolto dal repository insieme a `pulizia-sito.sql`. Verificato: nel progetto restano solo le 5 tabelle dell'app, con il numero di colonne previsto e RLS attivo. `game_turn` contiene la sua riga iniziale.
 
 > [!success] Pulizia eseguita il 03/11/2026
 > Copia salvata ed eseguito `supabase/pulizia-sito.sql`. Verificato dopo: 5 tabelle con RLS attivo e nessuna regola, quindi nessun accesso con la chiave pubblica. Colonne password eliminate, `verify_unit` eliminata. Le sezioni qui sotto descrivono il controllo fatto **prima** della pulizia.

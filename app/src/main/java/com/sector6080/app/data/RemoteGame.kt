@@ -1,11 +1,18 @@
 package com.sector6080.app.data
 
+import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.ChatMessage
+import com.sector6080.app.model.Component
 import com.sector6080.app.model.GameUnit
+import com.sector6080.app.model.GmOrders
+import com.sector6080.app.model.GmUnit
 import com.sector6080.app.model.MapSite
 import com.sector6080.app.model.Order
+import com.sector6080.app.model.Stats
 import com.sector6080.app.model.TeamMember
+import com.sector6080.app.model.UnitType
+import com.sector6080.app.model.Weapon
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
@@ -32,13 +39,86 @@ private const val SUPABASE_KEY = "sb_publishable_Lbh2m9zIjUCwEF6PVNbc4g_XkdJ7Gcz
 
 private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
+/** I Game Master sono il Comando Supremo: il grado si imposta solo dalla console. */
+const val GM_RANK = "Comando Supremo"
+
 @Serializable
-data class PlayerRow(val pu: Int, val rank: String)
+data class PlayerRow(val pu: Int, val rank: String) {
+    /** Serve solo a mostrare la scheda GM: ogni azione viene ricontrollata dal server. */
+    val isGm get() = rank == GM_RANK
+}
+
+@Serializable
+data class UnitTypeRow(
+    val name: String,
+    val cost: Int,
+    val hp: Int,
+    val movement: Int,
+    val vision: Int,
+    val armor: Int,
+    val supplies: Int,
+)
+
+@Serializable
+data class ComponentRow(
+    val type: String,
+    val name: String,
+    val cost: Int,
+    val description: String,
+    val hp: Int = 0,
+    val movement: Int = 0,
+    val vision: Int = 0,
+    val armor: Int = 0,
+    val supplies: Int = 0,
+    val perforation: Int? = null,
+    val damage: Int? = null,
+    val hits: Int? = null,
+    @SerialName("area_w") val areaW: Int? = null,
+    @SerialName("area_h") val areaH: Int? = null,
+    val range: Int? = null,
+    @SerialName("max_uses") val maxUses: Int? = null,
+    @SerialName("reload_cost") val reloadCost: Int = 1,
+    val stationary: Boolean = false,
+    val requires: String? = null,
+) {
+    fun toComponent() = Component(
+        name = name,
+        unitType = type,
+        cost = cost,
+        description = description,
+        statMods = Stats(hp, movement, vision, armor, supplies),
+        weapon = if (damage != null) {
+            Weapon(
+                perforation = perforation ?: 0,
+                damage = damage,
+                hits = hits ?: 1,
+                area = if (areaW != null && areaH != null) areaW to areaH else null,
+            )
+        } else {
+            null
+        },
+        range = range,
+        maxUses = maxUses,
+        reloadCost = reloadCost,
+        requiresStationary = stationary,
+        requires = requires,
+    )
+}
+
+fun buildCatalog(types: List<UnitTypeRow>, components: List<ComponentRow>) = Catalog(
+    types.map { row ->
+        UnitType(
+            name = row.name,
+            creationCost = row.cost,
+            base = Stats(row.hp, row.movement, row.vision, row.armor, row.supplies),
+            components = components.filter { it.type == row.name }.sortedBy { it.cost }.map { it.toComponent() },
+        )
+    },
+)
 
 @Serializable
 data class UnitRow(
     val matricola: String,
-    @SerialName("player_name") val playerName: String,
     val type: String,
     val components: List<String>,
     val lore: String,
@@ -52,7 +132,6 @@ data class UnitRow(
 ) {
     fun toGameUnit() = GameUnit(
         matricola = matricola,
-        player = playerName,
         type = type,
         components = components,
         lore = lore,
@@ -62,7 +141,6 @@ data class UnitRow(
         position = Cell(posX, posY),
         transported = transported,
         approved = status == "active",
-        synced = true,
     )
 }
 
@@ -70,7 +148,6 @@ data class UnitRow(
 @Serializable
 data class TeamRow(
     val matricola: String,
-    @SerialName("player_name") val playerName: String,
     val rank: String,
     val pu: Int,
     val type: String,
@@ -82,11 +159,14 @@ data class TeamRow(
     @SerialName("pos_x") val posX: Int,
     @SerialName("pos_y") val posY: Int,
     val transported: Boolean,
+    val status: String = "active",
+    val cost: Int = 0,
 ) {
+    fun toGmUnit() = GmUnit(toTeamMember(), status == "pending", cost)
+
     fun toTeamMember() = TeamMember(
         GameUnit(
             matricola = matricola,
-            player = playerName,
             type = type,
             components = components,
             lore = lore,
@@ -95,8 +175,7 @@ data class TeamRow(
             uses = uses,
             position = Cell(posX, posY),
             transported = transported,
-            approved = true,
-            synced = true,
+            approved = status == "active",
         ),
         rank,
         pu,
@@ -115,6 +194,9 @@ data class TurnRow(
 
 @Serializable
 private data class OrdersRow(val orders: List<Order>)
+
+@Serializable
+private data class GmOrdersRow(val matricola: String, val turn: Int, val orders: List<Order>)
 
 @Serializable
 data class ChatRow(
@@ -137,7 +219,8 @@ data class RemoteSnapshot(
 
 /**
  * Accesso a Supabase. Le letture sono limitate dalle regole RLS al solo player
- * collegato, e ogni scrittura passa da una funzione del database (`supabase/schema-app.sql`).
+ * collegato, e ogni scrittura passa da una funzione del database (cartella `supabase`).
+ * Tipi di unità, componenti e mappa stanno sul server, così si modificano senza aggiornare l'app.
  */
 class RemoteGame {
     private val client = createSupabaseClient(SUPABASE_URL, SUPABASE_KEY) {
@@ -164,10 +247,19 @@ class RemoteGame {
         return RemoteSnapshot(player, unit?.toGameUnit(), turn, sent?.orders)
     }
 
-    suspend fun createUnit(unit: GameUnit, cost: Int) {
-        val position = requireNotNull(unit.position)
-        client.postgrest.rpc("create_unit", createUnitParams(unit, cost, position))
+    /** Il server calcola costo, statistiche e porto di partenza. */
+    suspend fun createUnit(matricola: String, type: String, components: List<String>, lore: String) {
+        client.postgrest.rpc("create_unit", createUnitParams(matricola, type, components, lore))
     }
+
+    suspend fun buyComponent(name: String) {
+        client.postgrest.rpc("buy_component", buildJsonObject { put("p_name", name) })
+    }
+
+    suspend fun catalog(): Catalog = buildCatalog(
+        client.from("unit_types").select().decodeList<UnitTypeRow>().sortedBy { it.cost },
+        client.from("game_components").select().decodeList<ComponentRow>(),
+    )
 
     suspend fun sendOrders(orders: List<Order>) {
         val params = buildJsonObject {
@@ -184,10 +276,61 @@ class RemoteGame {
         client.postgrest.rpc("send_chat", buildJsonObject { put("p_body", text) })
     }
 
+    suspend fun gmUnits(): List<GmUnit> = client.postgrest.rpc("gm_units").decodeList<TeamRow>().map { it.toGmUnit() }
+
+    suspend fun gmOrders(): List<GmOrders> = client.postgrest.rpc("gm_orders").decodeList<GmOrdersRow>()
+        .map { GmOrders(it.matricola, it.turn, it.orders) }
+
+    suspend fun gmReview(matricola: String, approve: Boolean) {
+        client.postgrest.rpc(
+            "gm_review_unit",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_approve", approve)
+            },
+        )
+    }
+
+    suspend fun gmUpdateUnit(matricola: String, hp: Int, supplies: Int) {
+        client.postgrest.rpc(
+            "gm_update_unit",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_hp", hp)
+                put("p_supplies", supplies)
+            },
+        )
+    }
+
+    suspend fun gmMarkLost(matricola: String) {
+        client.postgrest.rpc("gm_mark_lost", buildJsonObject { put("p_matricola", matricola) })
+    }
+
+    suspend fun gmApplyOrders(turn: Int, result: GameUnit) {
+        val position = requireNotNull(result.position)
+        client.postgrest.rpc(
+            "gm_apply_orders",
+            buildJsonObject {
+                put("p_matricola", result.matricola)
+                put("p_turn", turn)
+                put("p_hp", result.hp)
+                put("p_supplies", result.supplies)
+                put("p_uses", buildJsonObject { result.uses.forEach { (name, left) -> put(name, left) } })
+                put("p_x", position.x)
+                put("p_y", position.y)
+                put("p_transported", result.transported)
+            },
+        )
+    }
+
+    suspend fun gmNextTurn() {
+        client.postgrest.rpc("gm_next_turn")
+    }
+
     /** Si legge anche senza account. */
     suspend fun map(): MapData = client.postgrest.rpc("get_map").decodeAs()
 
-    /** Unità approvate di tutti i player: si legge anche senza account. */
+    /** Unità approvate e in attesa, dal grado più alto: si legge anche senza account. */
     suspend fun team(): List<TeamMember> =
         client.postgrest.rpc("get_team").decodeList<TeamRow>().map { it.toTeamMember() }
 
@@ -202,18 +345,16 @@ class RemoteGame {
     }
 }
 
-fun createUnitParams(unit: GameUnit, cost: Int, position: Cell): JsonObject = buildJsonObject {
-    put("p_matricola", unit.matricola)
-    put("p_player_name", unit.player)
-    put("p_type", unit.type)
-    put("p_components", json.encodeToJsonElement(ListSerializer(String.serializer()), unit.components))
-    put("p_lore", unit.lore)
-    put("p_cost", cost)
-    put("p_hp", unit.hp)
-    put("p_supplies", unit.supplies)
-    put("p_uses", buildJsonObject { unit.uses.forEach { (name, left) -> put(name, left) } })
-    put("p_x", position.x)
-    put("p_y", position.y)
+fun createUnitParams(
+    matricola: String,
+    type: String,
+    components: List<String>,
+    lore: String,
+): JsonObject = buildJsonObject {
+    put("p_matricola", matricola)
+    put("p_type", type)
+    put("p_components", json.encodeToJsonElement(ListSerializer(String.serializer()), components))
+    put("p_lore", lore)
 }
 
 /** Trasforma gli errori del server e della rete in un messaggio per il player. */
@@ -224,7 +365,13 @@ fun friendlyError(error: Throwable): String {
         "game_units_matricola_key" in text -> "Matricola già usata: scegline un'altra."
         "one_live_unit_per_player" in text -> "Hai già un'unità attiva o in attesa."
         "Unita non attiva" in text -> "Solo un'unità approvata può inviare ordini."
-        "Serve una unita" in text -> "Per scrivere serve un'unità attiva o in attesa."
+        "Serve una unita" in text -> "Serve un'unità attiva o in attesa."
+        "Prerequisito mancante" in text -> "Prima devi avere il componente richiesto."
+        "Componente gia posseduto" in text -> "Hai già questo componente."
+        "Componente non disponibile" in text || "Componente duplicato" in text -> "Componente non disponibile."
+        "Porti occupati" in text -> "Tutti i porti sono occupati: riprova più tardi."
+        "Solo Game Master" in text -> "Azione riservata ai Game Master."
+        "Comando Supremo non puo" in text -> "Il Comando Supremo non può avere unità."
         "Messaggi troppo ravvicinati" in text -> "Aspetta un attimo prima di scrivere ancora."
         "signups" in text.lowercase() || "anonymous" in text.lowercase() -> "Accesso senza account non disponibile."
         "Could not find" in text || "does not exist" in text -> "Il server non è ancora pronto."

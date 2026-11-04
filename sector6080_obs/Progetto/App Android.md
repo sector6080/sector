@@ -6,15 +6,16 @@ Trasformare Sector6080 **da sito web/discord ad app Android pubblicata sul Googl
 ## Stato
 - **Scelte fatte (03/11/2026):** Kotlin + Jetpack Compose, offline-first (salvataggio locale dietro un'interfaccia `GameRepository`, pronta per Firebase), sviluppo con Android Studio.
 - **Prima versione scritta** (progetto Gradle nella root del repo, modulo `app/`, package `com.sector6080.app`):
-  - il catalogo dei componenti è letto **direttamente dalle note** [[Fanteria]], [[Motorizzata]], [[Corazzata]], [[Artiglieria]]: se modifichi le note, l'app si aggiorna al build successivo. Va mantenuto il formato `- Nome – Perf. X | Range Y | Z danni | (n/n)`;
-  - scheda Unità: accesso senza account (Google in arrivo), conferma di aver letto il regolamento, creazione sul server con i PU del player, statistiche calcolate, prerequisiti ("richiede ..."), scheda in sola lettura;
-  - scheda Ordini: nessun testo libero, opzioni impossibili disattivate, caselle scelte dalla mappa, invio al [[Game Master]] (si può ritirare), timer del turno;
-  - scheda Mappa: mappa dal server 80×59 con texture, rimpicciolita all'avvio, zoom, visione comune della squadra, alleati con scheda pubblica, selezione delle caselle valide, acqua e ponti;
-  - scheda Chat: messaggi sul server, aggiornati ogni 10 secondi. Senza unità si può solo leggere, e il server firma i messaggi con la matricola;
-  - scheda Link: regolamento e server Discord facoltativo;
+  - catalogo, mappa, stipendi e impostazioni stanno su Supabase e si modificano senza aggiornare l'app. Le note [[Fanteria]], [[Motorizzata]], [[Corazzata]] e [[Artiglieria]] sono ora un riferimento: **modificarle non cambia più il gioco**, e servono solo ai test;
+  - scheda Unità: accesso senza account (Google in arrivo), conferma di aver letto il regolamento, creazione sul server con i PU del player, negozio di componenti, avvisi che si chiudono con la X. Chiuso l'avviso sull'account, resta solo un link grigio "Collega Google" in fondo alla pagina;
+  - scheda Ordini: nessun testo libero, opzioni fattibili a sinistra e le altre visibili con il motivo, caselle scelte dalla mappa, invio al [[Game Master]] (si può ritirare);
+  - scheda GM: visibile solo ai [[Game Master]];
+  - scheda Squadra: tutte le unità divise per grado, dal più alto, con la scheda di ognuna;
+  - scheda Mappa: turno e conto alla rovescia, mappa dal server 80×60 con texture, edifici con descrizione, rimpicciolita all'avvio, zoom, visione comune della squadra, alleati con scheda pubblica, selezione delle caselle valide, acqua e ponti;
+  - scheda Chat: messaggi sul server, aggiornati ogni 10 secondi. Senza unità si può solo leggere, e il server firma i messaggi con grado, matricola e tipo di unità;
   - test JVM delle regole in `app/src/test`.
 - **Collegamento a Supabase (04/11/2026):** l'app legge e scrive sul server con `RemoteGame.kt`, e tiene una copia sul telefono. Provato dal vivo con due player: vedi [[Database Supabase]].
-- **Solo interfaccia player:** approvazioni e modifiche alle unità spettano ai [[Game Master]], che per ora lavorano dalla dashboard di Supabase.
+- La scheda Link è stata tolta. Il regolamento si apre dalla domanda iniziale, e il link Discord non è più nell'app.
 - **Ultimo prototipo condivisibile:** v0.5.0 in `dist/` (cartella non inclusa in git), con mappa dal server, squadra visibile e visione comune. È una build di debug, da installare a mano.
 - **Build verificata (03/11/2026):** AGP 9.5.0, Gradle 9.6.0, Kotlin 2.4.21, compileSdk/targetSdk 37. Test, lint e APK di debug passano, e l'app gira sull'emulatore. Da riga di comando: `gradlew.bat :app:assembleDebug` con `JAVA_HOME` sul JBR di Android Studio.
 - Il piano originale del README ("tradurre tutto in Angular") è superato. Il piano per il gioco condiviso è in [[Multiplayer]].

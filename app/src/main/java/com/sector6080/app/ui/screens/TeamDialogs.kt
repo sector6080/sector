@@ -31,7 +31,7 @@ fun TeamListDialog(team: List<TeamMember>, onOpen: (TeamMember) -> Unit, onDismi
                     Column(Modifier.fillMaxWidth().clickable { onOpen(member) }.padding(vertical = 8.dp)) {
                         Text(member.unit.matricola, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "${member.unit.type} · ${member.unit.player} · ${member.rank} · ${member.pu} PU",
+                            "${member.unit.type} · ${member.rank} · ${member.pu} PU",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -55,7 +55,8 @@ fun UnitSheetDialog(catalog: Catalog, member: TeamMember, onDismiss: () -> Unit)
                 Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("${unit.type} · ${unit.player} · ${member.rank} · ${member.pu} PU")
+                Text("${unit.type} · ${member.rank} · ${member.pu} PU")
+                if (!unit.approved) Text("In attesa di approvazione")
                 Text("HP ${unit.hp}/${max.hp}", fontWeight = FontWeight.Bold)
                 StatsRow(max, showHp = false)
                 Text("Rifornimenti ${unit.supplies}/${max.supplies}")

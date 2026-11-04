@@ -5,14 +5,13 @@ La versione ufficiale è la tabella `game_map` su Supabase, con una riga per cas
 Origine: foglio Google "Sector 6080 (master)", scheda `mappa` (vedi [[Fonti e link]]). L'app tiene una copia in `GameMap.kt`, usata finché il server non risponde.
 
 ## Dimensioni
-- **80 colonne × 59 righe** dentro il bordo nero del foglio.
-- ⚠️ Il regolamento parla di griglia 60×80: nel foglio manca una riga. Va deciso se aggiungerla.
+- **80 colonne × 60 righe**, come da regolamento. Il foglio ne aveva 59: l'ultima riga, la 60, è stata aggiunta come prato.
 - Ambientazione: la **Gran Bretagna** invasa, da riconquistare settore per settore (vedi [[Lore]]).
 
 ## Terreni
 | Colore nel foglio | Terreno | Caselle | Si attraversa |
 |---|---|---|---|
-| Verde | Prato | 3174 | sì |
+| Verde | Prato | 3254 | sì |
 | Giallo | Sabbia | 785 | sì |
 | Blu | Mare | 582 | no |
 | Azzurro | Fiume | 138 | no |
@@ -44,10 +43,13 @@ I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: van
 - Vale anche per salire e scendere dai mezzi.
 - **Le armi sparano anche sull'acqua**: il range ignora mare e fiumi, e il bersaglio può trovarsi in acqua.
 - Il blocco del movimento in acqua è una scelta confermata, anche se non è nel regolamento. Vedi anche [[Turni e meccaniche]].
-- Sugli edifici si può camminare, in attesa di una regola.
+- Gli edifici non bloccano il passaggio. Toccandoli si apre una breve descrizione, modificabile nella tabella `game_sites`.
+- **Le unità bloccano:** non ci si ferma su un'altra unità e non la si attraversa.
+- **Non si spara attraverso un'altra unità:** il controllo segue la linea retta tra chi spara e il bersaglio. L'unità stessa si può colpire.
 
 ## Grafica
 - Le texture sono **generate dal codice** (`MapRenderer.kt`), senza file di immagine: terreni con rumore casuale ma sempre uguale, coste irregolari con schiuma, onde, ponti in legno, porti con gru, raffinerie con serbatoi e fiamma, magazzini.
+- In alto ci sono turno e conto alla rovescia: "prossimo turno in h m s".
 - All'apertura la mappa è **rimpicciolita**, con tutta la griglia in vista. La griglia compare quando ci si avvicina.
 - Zoom con il pizzico, spostamento con il trascinamento.
 - **Nebbia di guerra condivisa**: tutti i player vedono la stessa cosa, cioè l'unione delle visioni di tutte le unità (senza diagonali). Non esiste una visione per singola unità. Fuori dalla visione il terreno resta visibile ma più scuro. I nemici, quando ci saranno, non dovranno mai arrivare al telefono dei player se non sono visibili alla squadra (vedi [[Multiplayer]]).
@@ -57,6 +59,5 @@ I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: van
 
 ## Da fare
 - Nemici sulla mappa.
-- Impedire di fermarsi sulla casella di un alleato: la regola esiste nel regolamento, ma il controllo non è ancora nell'app.
 - Ricerca delle unità.
 - "Terreni" e "Costruire" sono archiviati, vedi [[DEV note]].

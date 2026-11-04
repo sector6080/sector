@@ -5,7 +5,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.sector6080.app.data.CatalogLoader
 import com.sector6080.app.data.GameRepository
 import com.sector6080.app.data.LocalGameRepository
 import com.sector6080.app.data.RemoteGame
@@ -16,9 +15,9 @@ import com.sector6080.app.model.Access
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
-import com.sector6080.app.model.GameUnit
+import com.sector6080.app.model.GmOrders
 import com.sector6080.app.model.Order
-import com.sector6080.app.rules.UnitRules
+import com.sector6080.app.rules.OrderRules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,9 +28,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Azioni del player. Il server decide unità, PU, turno e chat: qui resta solo una copia
- * sul telefono, più la catena di ordini in preparazione. Approvazioni, modifiche alle
- * unità e passaggio del turno spettano ai Game Master.
+ * Azioni del player e dei Game Master. Il server decide unità, PU, turno, catalogo e mappa:
+ * qui resta solo una copia sul telefono, più la catena di ordini in preparazione.
+ * Ogni azione GM viene controllata di nuovo dal server.
  */
 class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val repo: GameRepository = LocalGameRepository(app)
@@ -41,11 +40,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     @Volatile
     private var mapGeneration = 0
     private var mapLoaded = false
-
-    val catalog: Catalog = CatalogLoader.load(app)
+    private var catalogLoaded = false
 
     private val _state = MutableStateFlow(GameState())
     val state: StateFlow<GameState> = _state.asStateFlow()
+
+    val catalog: Catalog get() = _state.value.catalog
 
     private val _loaded = MutableStateFlow(false)
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
@@ -63,12 +63,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch {
-            val saved = repo.load()
-            // i salvataggi vecchi possono avere unità mai schierate o l'accesso Google simulato
-            _state.value = saved.copy(
-                unit = saved.unit?.let { it.copy(position = it.position ?: GameMap.spawnCell(it.matricola)) },
-                access = Access.ANONYMOUS.takeIf { saved.unit != null || saved.access != null },
-            )
+            _state.value = repo.load()
             _loaded.value = true
             synchronize()
         }
@@ -113,18 +108,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 mapLoaded = true
                 if (GameMap.replace(map.rows, map.sites)) drawMap()
             }
+            if (!catalogLoaded) {
+                val catalog = remote.catalog()
+                catalogLoaded = true
+                edit { it.copy(catalog = catalog) }
+            }
             val chat = remote.chat()
             val team = remote.team()
             edit { it.copy(chat = chat, team = team) }
             if (_state.value.access != null) {
                 remote.signIn()
                 val snapshot = remote.snapshot()
-                val local = _state.value.unit
-                if (snapshot.unit == null && local != null && !local.synced) {
-                    remote.createUnit(local, UnitRules.totalCost(catalog, local))
-                    apply(remote.snapshot())
-                } else {
-                    apply(snapshot)
+                apply(snapshot)
+                if (snapshot.player.isGm) {
+                    val units = remote.gmUnits()
+                    val orders = remote.gmOrders()
+                    edit { it.copy(gmUnits = units, gmOrders = orders) }
                 }
             }
         }
@@ -139,6 +138,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         s.copy(
             pu = snapshot.player.pu,
             rank = snapshot.player.rank,
+            isGm = snapshot.player.isGm,
             unit = snapshot.unit,
             turn = snapshot.turn.turn,
             turnStartedAt = snapshot.turn.startedAt?.let(::parseMillis) ?: 0,
@@ -150,6 +150,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 else -> s.orders
             },
             ordersSent = sent != null,
+            approvalClosed = s.approvalClosed && snapshot.unit != null,
         )
     }
 
@@ -160,16 +161,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun confirmRulesRead() = edit { it.copy(rulesRead = true) }
 
-    fun createUnit(unit: GameUnit, cost: Int) = act {
+    fun closeApproval() = edit { it.copy(approvalClosed = true) }
+
+    fun setAccountNoticeClosed(closed: Boolean) = edit { it.copy(accountNoticeClosed = closed) }
+
+    fun createUnit(matricola: String, type: String, components: List<String>, lore: String) = act {
         remote.signIn()
-        remote.createUnit(unit, cost)
+        remote.createUnit(matricola, type, components, lore)
     }
+
+    fun buyComponent(name: String) = act { remote.buyComponent(name) }
 
     fun addOrder(order: Order) = edit { it.copy(orders = it.orders + order) }
 
     fun removeOrder(index: Int) = edit { it.copy(orders = it.orders.filterIndexed { i, _ -> i != index }) }
-
-    fun clearOrders() = edit { it.copy(orders = emptyList()) }
 
     fun sendOrders() = act { remote.sendOrders(_state.value.orders) }
 
@@ -177,4 +182,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Il server firma il messaggio con la matricola e rifiuta chi non ha un'unità. */
     fun sendChat(text: String) = act { remote.sendChat(text.trim()) }
+
+    fun gmReview(matricola: String, approve: Boolean) = act { remote.gmReview(matricola, approve) }
+
+    fun gmChangeUnit(matricola: String, hp: Int, supplies: Int) = act {
+        remote.gmUpdateUnit(matricola, hp.coerceAtLeast(0), supplies.coerceAtLeast(0))
+    }
+
+    fun gmMarkLost(matricola: String) = act { remote.gmMarkLost(matricola) }
+
+    /** Applica gli ordini con le stesse regole usate dai player. */
+    fun gmApplyOrders(orders: GmOrders) = act {
+        val units = _state.value.gmUnits.map { it.member.unit }
+        val unit = units.first { it.matricola == orders.matricola }
+        val occupied = units.filter { it.matricola != unit.matricola }.mapNotNull { it.position }.toSet()
+        remote.gmApplyOrders(orders.turn, OrderRules.simulate(catalog, unit, orders.orders, occupied).finalUnit)
+    }
+
+    fun gmNextTurn() = act { remote.gmNextTurn() }
 }

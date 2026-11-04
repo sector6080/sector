@@ -1,28 +1,36 @@
 package com.sector6080.app
 
-import com.sector6080.app.data.CatalogLoader
 import com.sector6080.app.data.CatalogParser
+import com.sector6080.app.data.ComponentRow
+import com.sector6080.app.data.PlayerRow
 import com.sector6080.app.data.TeamRow
+import com.sector6080.app.data.UnitTypeRow
+import com.sector6080.app.data.buildCatalog
 import com.sector6080.app.data.UnitRow
 import com.sector6080.app.data.createUnitParams
 import com.sector6080.app.data.friendlyError
 import com.sector6080.app.data.parseMillis
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Cell
+import com.sector6080.app.model.Component
+import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.GameMap
+import com.sector6080.app.model.GameState
 import com.sector6080.app.model.MAP_HEIGHT
 import com.sector6080.app.model.MAP_WIDTH
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.OrderType
-import com.sector6080.app.model.STARTING_BUDGET
 import com.sector6080.app.model.Terrain
 import com.sector6080.app.model.Stats
+import com.sector6080.app.model.TeamMember
+import com.sector6080.app.model.UnitType
+import com.sector6080.app.model.deployed
+import com.sector6080.app.model.occupiedCells
 import com.sector6080.app.rules.FogSpan
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.rules.Vision
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -34,11 +42,30 @@ import org.junit.Test
 /** Le note del vault sono sul classpath di test (vedi app/build.gradle.kts). */
 class RulesTest {
     private val catalog = Catalog(
-        CatalogLoader.TYPE_FILES.map { name ->
+        listOf("Fanteria", "Motorizzata", "Corazzata", "Artiglieria").map { name ->
             val text = javaClass.classLoader!!.getResource("$name.md")!!.readText()
             CatalogParser.parse(name, text)
         },
     )
+
+    private fun newUnit(
+        matricola: String,
+        lore: String,
+        type: UnitType,
+        components: List<Component>,
+    ): GameUnit {
+        val max = UnitRules.maxStats(type, components)
+        return GameUnit(
+            matricola = matricola,
+            type = type.name,
+            components = components.map { it.name },
+            lore = lore,
+            hp = max.hp,
+            supplies = max.supplies,
+            uses = components.filter { it.isUsable }.associate { it.name to it.maxUses!! },
+            position = Cell(18, 8),
+        )
+    }
 
     @Test
     fun baseStatsMatchRulebook() {
@@ -75,39 +102,114 @@ class RulesTest {
     fun exampleUnitFromRulebook() {
         val type = catalog.type("Fanteria")!!
         val comps = listOf("Fucile d'Assalto", "Granata").map { catalog.component("Fanteria", it)!! }
-        assertTrue(UnitRules.validate("XYZ-789", "@User546", "lore", type, comps, 10).isEmpty())
-        val unit = UnitRules.create("XYZ-789", "@User546", "lore", type, comps)
+        assertTrue(UnitRules.validate("XYZ-789", "lore", type, comps, 10).isEmpty())
+        val unit = newUnit("XYZ-789", "lore", type, comps)
         assertEquals(4, UnitRules.totalCost(catalog, unit))
         assertEquals(mapOf("Fucile d'Assalto" to 3, "Granata" to 1), unit.uses)
     }
 
     @Test
-    fun newPlayersHaveFourPu() {
+    fun budgetLimitsTheUnit() {
         val type = catalog.type("Fanteria")!!
         val rifle = catalog.component("Fanteria", "Fucile d'Assalto")!!
         val smg = catalog.component("Fanteria", "SMG")!!
-        assertEquals(4, STARTING_BUDGET)
-        assertTrue(UnitRules.validate("XYZ-789", "p", "l", type, listOf(rifle), STARTING_BUDGET).isEmpty())
-        assertTrue(UnitRules.validate("XYZ-789", "p", "l", type, listOf(rifle, smg), STARTING_BUDGET).isNotEmpty())
-        val spawn = UnitRules.create("XYZ-789", "p", "l", type, listOf(rifle)).position!!
-        assertEquals(Terrain.PORT, GameMap.terrainAt(spawn))
+        assertTrue(UnitRules.validate("XYZ-789", "l", type, listOf(rifle), 4).isEmpty())
+        assertTrue(UnitRules.validate("XYZ-789", "l", type, listOf(rifle, smg), 4).isNotEmpty())
+    }
+
+    @Test
+    fun otherUnitsBlockMovementAndFireButBuildingsDoNot() {
+        val type = catalog.type("Fanteria")!!
+        val gun = catalog.component("Fanteria", "Fucile d'Assalto")!!
+        val unit = newUnit("XYZ-789", "l", type, listOf(gun)).copy(position = Cell(40, 40))
+        val ally = Cell(41, 40)
+        val blocked = setOf(ally)
+
+        val moves = OrderRules.validTargets(catalog, unit, emptyList(), Order(OrderType.MOVE), blocked)
+        assertFalse(ally in moves) // non ci si ferma su un'altra unità
+        assertFalse(Cell(42, 40) in moves) // né la si attraversa
+        assertTrue(Cell(41, 41) in moves)
+
+        val shot = Order(OrderType.ACTIVATE, component = gun.name)
+        val shots = OrderRules.validTargets(catalog, unit, emptyList(), shot, blocked)
+        assertTrue(ally in shots) // l'unità si può colpire
+        assertFalse(Cell(42, 40) in shots) // ma non si spara attraverso
+        assertTrue(Cell(40, 42) in shots)
+
+        // gli edifici non bloccano
+        assertEquals(Terrain.BUILDING, GameMap.terrainAt(Cell(25, 16)))
+        assertEquals(2, GameMap.steps(Cell(24, 16), Cell(26, 16), 2))
+        assertEquals("Magazzino 2", GameMap.siteAt(Cell(25, 16))?.name)
+    }
+
+    @Test
+    fun explainsWhyAnOrderIsNotPossible() {
+        val type = catalog.type("Fanteria")!!
+        val gun = catalog.component("Fanteria", "Fucile d'Assalto")!!
+        val unit = newUnit("XYZ-789", "l", type, listOf(gun)).copy(position = Cell(40, 40))
+        val moved = listOf(Order(OrderType.MOVE, target = Cell(41, 40)))
+        assertEquals("Massimo 1 movimento per turno", OrderRules.whyNot(catalog, unit, moved, Order(OrderType.MOVE)))
+        assertEquals(
+            "L'unità non è a bordo di un mezzo",
+            OrderRules.whyNot(catalog, unit, emptyList(), Order(OrderType.DISEMBARK)),
+        )
+    }
+
+    @Test
+    fun onlyTheSupremeCommandIsGm() {
+        assertTrue(PlayerRow(0, "Comando Supremo").isGm)
+        assertFalse(PlayerRow(0, "Capitano").isGm)
+        assertFalse(PlayerRow(0, "Recluta").isGm)
+        assertEquals(
+            "Il Comando Supremo non può avere unità.",
+            friendlyError(Exception("Il Comando Supremo non puo avere unita")),
+        )
+    }
+
+    @Test
+    fun catalogFromServerRows() {
+        val built = buildCatalog(
+            listOf(UnitTypeRow("Fanteria", 0, 9, 2, 3, 1, 4)),
+            listOf(
+                ComponentRow("Fanteria", "Mirino", 1, "+1 visione", vision = 1),
+                ComponentRow(
+                    "Fanteria", "Granata", 2, "Perf. 1", perforation = 1, damage = 1, hits = 1,
+                    areaW = 3, areaH = 3, range = 2, maxUses = 1, requires = "Mirino",
+                ),
+            ),
+        )
+        assertEquals(Stats(9, 2, 3, 1, 4), built.type("Fanteria")!!.base)
+        val grenade = built.component("Fanteria", "Granata")!!
+        assertEquals(3 to 3, grenade.weapon!!.area)
+        assertEquals("Mirino", grenade.requires)
+        assertNull(built.component("Fanteria", "Mirino")!!.weapon)
+        assertEquals(1, built.component("Fanteria", "Mirino")!!.statMods.vision)
+    }
+
+    @Test
+    fun pendingUnitsStayOffTheMap() {
+        val type = catalog.type("Fanteria")!!
+        val active = newUnit("AAA-111", "l", type, emptyList()).copy(approved = true, position = Cell(10, 10))
+        val pending = newUnit("BBB-222", "l", type, emptyList()).copy(position = Cell(20, 20))
+        val state = GameState(team = listOf(TeamMember(active, "Soldato", 0), TeamMember(pending, "Recluta", 0)))
+
+        assertEquals(listOf(active), state.deployed.map { it.unit })
+        assertEquals(setOf(Cell(10, 10)), state.occupiedCells())
     }
 
     @Test
     fun serverRowsBecomeGameData() {
         val row = UnitRow(
-            "XYZ-789", "p", "Fanteria", listOf("Pistola"), "l", 9, 4, mapOf("Pistola" to 2), 18, 8, false, "active",
+            "XYZ-789", "Fanteria", listOf("Pistola"), "l", 9, 4, mapOf("Pistola" to 2), 18, 8, false, "active",
         )
         val unit = row.toGameUnit()
         assertEquals(Cell(18, 8), unit.position)
         assertTrue(unit.approved)
-        assertTrue(unit.synced)
         assertFalse(row.copy(status = "pending").toGameUnit().approved)
 
-        val params = createUnitParams(unit, 2, Cell(18, 8))
+        val params = createUnitParams("XYZ-789", "Fanteria", listOf("Pistola"), "l")
         assertEquals("XYZ-789", params["p_matricola"]!!.jsonPrimitive.content)
-        assertEquals(2, params["p_cost"]!!.jsonPrimitive.int)
-        assertEquals(2, params["p_uses"]!!.jsonObject["Pistola"]!!.jsonPrimitive.int)
+        assertEquals(1, params["p_components"]!!.jsonArray.size)
 
         assertEquals(1793750400000, parseMillis("2026-11-04T00:00:00+00:00"))
         assertEquals("Hai già un'unità attiva o in attesa.", friendlyError(Exception("violates one_live_unit_per_player")))
@@ -120,7 +222,7 @@ class RulesTest {
         val cells = (1..MAP_WIDTH).flatMap { x -> (1..MAP_HEIGHT).map { y -> Cell(x, y) } }
         val counts = cells.groupingBy { GameMap.terrainAt(it) }.eachCount()
         // conteggi dei colori nel foglio "Sector 6080 (master)"
-        assertEquals(3174, counts[Terrain.GRASS])
+        assertEquals(3254, counts[Terrain.GRASS]) // comprese le 80 caselle della riga 60
         assertEquals(785, counts[Terrain.SAND])
         assertEquals(582, counts[Terrain.SEA])
         assertEquals(138, counts[Terrain.RIVER])
@@ -153,7 +255,7 @@ class RulesTest {
         assertNull(GameMap.steps(north, Cell(bridge.x + 1, bridge.y), 3))
 
         val type = catalog.type("Motorizzata")!!
-        val unit = UnitRules.create("XYZ-789", "p", "l", type, emptyList()).copy(position = north)
+        val unit = newUnit("XYZ-789", "l", type, emptyList()).copy(position = north)
         val moves = OrderRules.validTargets(catalog, unit, emptyList(), Order(OrderType.MOVE))
         assertTrue(south in moves)
         assertFalse(moves.any { !GameMap.terrainAt(it).walkable })
@@ -167,7 +269,7 @@ class RulesTest {
     fun mapOnlyOffersValidCells() {
         val type = catalog.type("Fanteria")!!
         val gun = catalog.component("Fanteria", "Fucile d'Assalto")!!
-        val unit = UnitRules.create("XYZ-789", "p", "l", type, listOf(gun)).copy(position = Cell(40, 40))
+        val unit = newUnit("XYZ-789", "l", type, listOf(gun)).copy(position = Cell(40, 40))
 
         val move = Order(OrderType.MOVE)
         val moves = OrderRules.validTargets(catalog, unit, emptyList(), move)
@@ -216,8 +318,8 @@ class RulesTest {
     @Test
     fun teamRowsHideNothingTheSheetNeeds() {
         val member = TeamRow(
-            "XYZ-789", "Rosso", "Caporale", 12, "Fanteria", listOf("Pistola"), "storia", 7, 3,
-            mapOf("Pistola" to 1), 30, 40, false,
+            "XYZ-789", "Caporale", 12, "Fanteria", listOf("Pistola"), "storia", 7, 3,
+            mapOf("Pistola" to 1), 30, 40, false, "active", 2,
         ).toTeamMember()
         assertEquals("Caporale", member.rank)
         assertEquals(12, member.pu)
@@ -252,7 +354,7 @@ class RulesTest {
     fun weaponsReachOverAndOntoWater() {
         val type = catalog.type("Fanteria")!!
         val gun = catalog.component("Fanteria", "Fucile d'Assalto")!!
-        val unit = UnitRules.create("XYZ-789", "p", "l", type, listOf(gun)).copy(position = Cell(22, 10))
+        val unit = newUnit("XYZ-789", "l", type, listOf(gun)).copy(position = Cell(22, 10))
         val sea = Cell(22, 8)
         val beyondSea = Cell(19, 10)
         assertEquals(Terrain.SEA, GameMap.terrainAt(sea))
@@ -269,7 +371,7 @@ class RulesTest {
     fun orderChainFollowsRules() {
         val type = catalog.type("Fanteria")!!
         val gun = catalog.component("Fanteria", "Fucile d'Assalto")!!
-        val unit = UnitRules.create("XYZ-789", "p", "l", type, listOf(gun)).copy(position = Cell(40, 40))
+        val unit = newUnit("XYZ-789", "l", type, listOf(gun)).copy(position = Cell(40, 40))
 
         val r = OrderRules.simulate(
             catalog, unit,

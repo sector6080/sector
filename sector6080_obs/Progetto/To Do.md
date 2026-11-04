@@ -4,12 +4,13 @@
 - [x] Aggiungere nell'app il link del server Discord (costante `DISCORD_URL` in `App.kt`)
 - [x] Riaprire il progetto Supabase del sito (03/11/2026)
 - [x] Salvare una copia del database (il piano gratuito non ha backup automatici)
-- [ ] Aggiornare il Google Doc: budget di creazione 4 PU (+1 con Google) invece di 10, "Player" al posto del nick Discord, Discord facoltativo
+- [ ] Aggiornare il Google Doc: budget di creazione 4 PU (+1 con Google) invece di 10, solo matricola al posto del nick Discord, Discord facoltativo, grado perso con l'unità
 - [ ] Completare la lista in [[Questioni legali]]
 - [x] Definire le coordinate dei tre porti e dei depositi (dalla [[Mappa]])
-- [ ] Confermare i dubbi sulla [[Mappa]]: colori, riga mancante, magazzini ed edifici
+- [ ] Confermare i dubbi sulla [[Mappa]]: colori, effetto di magazzini e raffinerie
 - [ ] Rendere il regolamento leggibile da tutti ("Chiunque abbia il link")
-- [ ] Decidere la durata del turno: 2 giorni o 24 ore
+- [x] Decidere la durata del turno: 24 ore
+- [ ] Aggiornare il Google Doc: turno di 24 ore e stipendi automatici
 - [x] Decidere il backend: Supabase
 - [x] Eseguire `supabase/schema-app.sql`
 - [x] Eliminare le vecchie tabelle del sito
@@ -17,7 +18,7 @@
 - [x] Provare il collegamento dell'app: unità, ordini, chat, approvazione, secondo player
 - [ ] Togliere dal database i dati di prova prima di aprire ad altri
 - [ ] Attivare un CAPTCHA o un altro limite per gli accessi anonimi
-- [ ] Restituzione dei PU per le unità rifiutate
+- [x] Restituzione dei PU per le unità rifiutate
 - [x] Controllare le regole di sicurezza RLS di Supabase (vedi [[Database Supabase]])
 - [x] Decidere il futuro del sito: abbandonato per l'app
 - [x] Esportare i dati ed eseguire `supabase/pulizia-sito.sql` (vedi [[Database Supabase]])
@@ -25,7 +26,11 @@
 - [x] Spegnere GitHub Pages (04/11/2026)
 - [x] Eseguire `supabase/mappa-e-squadra.sql`
 - [x] Eseguire `supabase/pu-pubblici.sql` e provare mappa, alleati, PU pubblici e visione comune
-- [ ] Impedire di fermarsi sulla casella di un alleato
+- [x] Eseguire `supabase/gm-turni-catalogo.sql` e darsi il ruolo GM
+- [x] Eseguire `supabase/matricola-e-gradi.sql`
+- [x] Provare GM, cambio turno automatico, stipendi e blocchi di movimento e tiro (negozio, timer, mappa 60×80 e descrizioni edifici provati il 04/11/2026)
+- [x] Impedire di fermarsi sulla casella di un alleato e di sparare attraverso le unità
+- [ ] Controllare la presenza del mezzo o del destinatario per salire e cedere rifornimenti
 - [x] Decidere il metodo di accesso: Google + anonimo
 - [ ] Sciogliere i dubbi rimasti in [[Account e identità]]
 - [x] Prototipo: chat solo in lettura senza unità, messaggi firmati dall'unità
@@ -47,8 +52,7 @@ Copiata dal `README.md` di dicembre 2025 (aggiornata dopo la riunione del comand
 ## Alta priorità
 - [ ] Fare la mappa (mappa centrale + tendina a sinistra con le unità)
 - [x] Bug: veniva inviata l'unità precedente invece di quella giusta
-- [ ] Cleaning del codice (input.html / map.html / Apps Script), molte funzioni ridondanti
-- [ ] Staccare i codici .gs dal .html
+- [x] Togliere il codice del vecchio sito dal repository
 - [x] Mancavano dei campi html → tabella
 - [x] html non leggeva più le unità nella riga 2
 - [x] Risposte del modulo 1 non organizzate in Foglio1

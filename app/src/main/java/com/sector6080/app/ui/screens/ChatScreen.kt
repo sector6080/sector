@@ -68,7 +68,7 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
                 }
             }
         }
-        if (state.unit == null) {
+        if (state.unit == null && !state.isGm) {
             Text(
                 "Puoi solo leggere: per scrivere crea prima un'unità.",
                 modifier = Modifier.padding(bottom = 16.dp),

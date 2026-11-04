@@ -18,5 +18,5 @@
 - Repo: https://github.com/sector6080/sector (spostato da `the-silver33/sector`)
 
 ## Backend
-- Supabase: URL e chiave sono in `index.html` e nel README.
+- Supabase: URL e chiave pubblica sono in `app/src/main/java/com/sector6080/app/data/RemoteGame.kt`.
 - Le chiavi non vengono copiate qui di proposito, vedi [[Problemi noti e sicurezza]].

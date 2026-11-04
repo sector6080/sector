@@ -35,9 +35,7 @@ android {
         compose = true
     }
 
-    // Il catalogo componenti viene letto direttamente dalle note del vault Obsidian:
-    // modificando le note si aggiorna l'app al prossimo build.
-    sourceSets["main"].assets.directories.add("../sector6080_obs/Gioco/Componenti")
+    // Il catalogo sta su Supabase: le note del vault servono solo ai test delle regole
     sourceSets["test"].resources.directories.add("../sector6080_obs/Gioco/Componenti")
 }
 

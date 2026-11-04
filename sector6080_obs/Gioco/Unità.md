@@ -28,26 +28,33 @@
 
 ## Creazione
 L'app chiede prima di confermare di aver letto il regolamento. Poi:
-1. Scegliere il tipo (il costo si scala dal budget: **4 PU, 5 con l'accesso Google**).
+1. Scegliere il tipo (il costo si scala dai PU del player: **4 all'inizio, 5 con l'accesso Google**).
 2. Creare una matricola non ancora usata.
-3. Indicare il nome del player.
-4. Comprare componenti con i PU, **solo del proprio tipo**.
-5. Scrivere una breve lore. L'app calcola da sola le statistiche.
-6. Aspettare l'approvazione di un [[Game Master]].
+3. Comprare componenti con i PU, **solo del proprio tipo**.
+4. Scrivere una breve lore. Il server calcola costo e statistiche.
+5. Aspettare l'approvazione di un [[Game Master]].
+
+In gioco tutti si chiamano con la **matricola**: non esiste un nome del player.
 
 > [!warning] Differenza con il regolamento
 > Il Google Doc dice 10 PU, ma la decisione attuale è **4 PU, più 1 con Google**: il doc va aggiornato. Vedi [[Account e identità]].
 
 ## Chi modifica l'unità
-Dopo la creazione la scheda è **in sola lettura**: approvazioni e modifiche spettano solo ai [[Game Master]].
+Costo, HP, rifornimenti e porto di partenza li calcola il server. Approvazioni e modifiche spettano solo ai [[Game Master]].
+
+## Nuovi componenti
+Il player può comprare altri componenti del proprio tipo con i PU rimasti, dalla scheda Unità. Si applicano subito e si perdono insieme all'unità.
+
+## Unità rifiutata
+Se un GM la rifiuta, tornano tutti i PU spesi per l'unità e i suoi componenti.
 
 ## Dispiegamento e morte
 - **Un'unità per player**, attiva o in attesa (vedi [[Account e identità]]).
-- Quando l'unità arriva a 0 HP viene distrutta e tolta dalla mappa. Il player **mantiene grado e PU** e può crearne subito un'altra.
+- Quando l'unità arriva a 0 HP viene distrutta e tolta dalla mappa. Il player **tiene i PU, perde il grado e torna Recluta**, e può crearne subito un'altra.
 - **Gli armamenti sono persi**: i PU spesi in componenti non vengono restituiti.
 - Senza unità attiva o in attesa, il player può solo leggere la chat.
 - La nuova unità viene schierata in **uno dei tre porti** il turno dopo la morte.
-- I tre porti sono sulla [[Mappa]]: alla creazione l'app assegna un porto, sempre lo stesso per la stessa matricola.
+- I tre porti sono sulla [[Mappa]]: il server assegna a caso una casella libera di un porto.
 - Idea nelle [[DEV note]]: una "lista morti".
 
 ## Esempio

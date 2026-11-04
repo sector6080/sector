@@ -1,6 +1,8 @@
 # Gerarchia e Costituzione
 
-Tutto il personale deve rispettare la **Costituzione Marziale**. Lo stipendio va ritirato **una volta ogni due giorni** (su Discord: `/collect-income`, saldo con `/leaderboard`).
+Tutto il personale deve rispettare la **Costituzione Marziale**. Lo stipendio è automatico a ogni cambio turno, per i player con un'unità attiva. Gli importi stanno nella tabella `rank_salaries` su Supabase.
+
+All'approvazione della prima unità la recluta diventa soldato. I GM coincidono con il Comando Supremo, che non può avere unità.
 
 ## Gradi
 | Grado | Ruolo | Stipendio |
@@ -11,7 +13,9 @@ Tutto il personale deve rispettare la **Costituzione Marziale**. Lo stipendio va
 | **Soldati** | Eseguono le missioni sul campo | 1 PU/turno |
 | **Reclute** | Nuove leve, unità in attesa di entrare in partita | — |
 
-Quando l'unità muore il giocatore mantiene grado e PU (vedi [[Unità]]).
+Quando l'unità muore il giocatore tiene i PU, ma perde il grado e torna Recluta (vedi [[Unità]]). Deciso il 04/11/2026: il regolamento dice ancora che il grado resta. Il Comando Supremo non ha unità e non è toccato da questa regola.
+
+Nell'app la scheda **Squadra** mostra tutte le unità divise per grado, comprese quelle in attesa. Toccandone una si apre la sua scheda. Il Comando Supremo e chi non ha un'unità non compaiono, perché non hanno una matricola.
 
 ## Costituzione Marziale
 ### Art. 1 – Promozioni e declassamenti

@@ -1,6 +1,9 @@
 package com.sector6080.app.model
 
+import kotlinx.serialization.Serializable
+
 /** Statistiche di un'unità (regolamento §4.1). */
+@Serializable
 data class Stats(
     val hp: Int = 0,
     val movement: Int = 0,
@@ -25,6 +28,7 @@ data class Stats(
     )
 }
 
+@Serializable
 data class Weapon(
     val perforation: Int,
     val damage: Int,
@@ -34,6 +38,7 @@ data class Weapon(
     val area: Pair<Int, Int>? = null,
 )
 
+@Serializable
 data class Component(
     val name: String,
     val unitType: String,
@@ -56,6 +61,7 @@ data class Component(
     val isUsable get() = maxUses != null
 }
 
+@Serializable
 data class UnitType(
     val name: String,
     val creationCost: Int,
@@ -63,7 +69,9 @@ data class UnitType(
     val components: List<Component>,
 )
 
-data class Catalog(val types: List<UnitType>) {
+/** Tipi di unità e componenti: li decide il server, l'app ne tiene solo una copia. */
+@Serializable
+data class Catalog(val types: List<UnitType> = emptyList()) {
     fun type(name: String) = types.firstOrNull { it.name.equals(name, ignoreCase = true) }
 
     fun component(type: String, name: String) =

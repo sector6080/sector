@@ -1,6 +1,8 @@
 package com.sector6080.app.model
 
 import kotlinx.serialization.Serializable
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 enum class Terrain(val label: String, val walkable: Boolean) {
     SEA("Mare", false),
@@ -14,7 +16,14 @@ enum class Terrain(val label: String, val walkable: Boolean) {
 
 /** Struttura sulla mappa: rettangolo con angolo in alto a sinistra in (x, y). */
 @Serializable
-data class MapSite(val name: String, val x: Int, val y: Int, val w: Int = 1, val h: Int = 1) {
+data class MapSite(
+    val name: String,
+    val x: Int,
+    val y: Int,
+    val w: Int = 1,
+    val h: Int = 1,
+    val description: String = "",
+) {
     operator fun contains(c: Cell) = c.x in x until x + w && c.y in y until y + h
 }
 
@@ -33,7 +42,7 @@ object GameMap {
             "K5S56G2LO5L11GK/K5S50G6L19GK/K2L3S44G5LOL24GK/K3L2S26G9LO8L6G3L22GK/K2S2LS20G3LO2L25G4L20GK/" +
             "K5L14G6L32G5L18GK/K5LO11LO2L41G2LO3L13GK/K2S3LO4L54G6L10GK/K3S66G11LK/K3S77GK/KG2S77GK/" +
             "K2GS77GK/K2GS77GK/K2GS77GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/" +
-            "K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/82K"
+            "K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/82K"
 
     @Volatile
     private var sites: List<MapSite> = listOf(
@@ -87,19 +96,16 @@ object GameMap {
         else -> Terrain.SEA
     }
 
-    fun describe(c: Cell): String = sites.firstOrNull { c in it }?.name ?: terrainAt(c).label
+    fun siteAt(c: Cell): MapSite? = sites.firstOrNull { c in it }
 
-    /** Porto in cui schierare una nuova unità: sempre lo stesso per la stessa matricola. */
-    fun spawnCell(matricola: String): Cell {
-        val port = ports[Math.floorMod(matricola.hashCode(), ports.size)]
-        return Cell(port.x, port.y)
-    }
+    fun describe(c: Cell): String = siteAt(c)?.name ?: terrainAt(c).label
 
     /**
-     * Passi per andare da [from] a [to] senza diagonali e senza entrare in acqua.
-     * Null se la casella non si raggiunge entro [limit] passi.
+     * Passi per andare da [from] a [to] senza diagonali, senza entrare in acqua
+     * e senza attraversare le caselle [blocked], occupate da altre unità.
+     * Gli edifici non bloccano. Null se la casella non si raggiunge entro [limit] passi.
      */
-    fun steps(from: Cell, to: Cell, limit: Int): Int? {
+    fun steps(from: Cell, to: Cell, limit: Int, blocked: Set<Cell> = emptySet()): Int? {
         if (from.distance(to) > limit) return null
         val seen = hashSetOf(from)
         var frontier = listOf(from)
@@ -107,7 +113,7 @@ object GameMap {
             val next = mutableListOf<Cell>()
             for (c in frontier) {
                 for (n in listOf(Cell(c.x + 1, c.y), Cell(c.x - 1, c.y), Cell(c.x, c.y + 1), Cell(c.x, c.y - 1))) {
-                    if (!n.inBounds || !terrainAt(n).walkable || !seen.add(n)) continue
+                    if (!n.inBounds || !terrainAt(n).walkable || n in blocked || !seen.add(n)) continue
                     if (n == to) return step
                     next += n
                 }
@@ -115,5 +121,15 @@ object GameMap {
             frontier = next
         }
         return null
+    }
+
+    /** Vero se una casella [blocked] sta sulla linea retta tra chi spara e il bersaglio. */
+    fun isLineBlocked(from: Cell, to: Cell, blocked: Set<Cell>): Boolean {
+        val length = maxOf(abs(to.x - from.x), abs(to.y - from.y))
+        return (1 until length).any { i ->
+            val x = from.x + (to.x - from.x).toDouble() * i / length
+            val y = from.y + (to.y - from.y).toDouble() * i / length
+            Cell(x.roundToInt(), y.roundToInt()) in blocked
+        }
     }
 }

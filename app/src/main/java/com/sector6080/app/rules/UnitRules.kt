@@ -2,7 +2,6 @@ package com.sector6080.app.rules
 
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Component
-import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.Stats
 import com.sector6080.app.model.UnitType
@@ -30,14 +29,12 @@ object UnitRules {
     /** Restituisce gli errori che impediscono la creazione (lista vuota = ok). */
     fun validate(
         matricola: String,
-        player: String,
         lore: String,
         type: UnitType?,
         components: List<Component>,
         budget: Int,
     ): List<String> = buildList {
         if (!MATRICOLA.matches(matricola)) add("Matricola: 3 lettere maiuscole, trattino, 3 numeri (es. XYZ-789)")
-        if (player.isBlank()) add("Inserisci il nome del player")
         if (type == null) {
             add("Scegli il tipo di unità")
             return@buildList
@@ -55,24 +52,4 @@ object UnitRules {
         }
     }
 
-    fun create(
-        matricola: String,
-        player: String,
-        lore: String,
-        type: UnitType,
-        components: List<Component>,
-    ): GameUnit {
-        val max = maxStats(type, components)
-        return GameUnit(
-            matricola = matricola,
-            player = player.trim(),
-            type = type.name,
-            components = components.map { it.name },
-            lore = lore.trim(),
-            hp = max.hp,
-            supplies = max.supplies,
-            uses = components.filter { it.isUsable }.associate { it.name to it.maxUses!! },
-            position = GameMap.spawnCell(matricola),
-        )
-    }
 }
