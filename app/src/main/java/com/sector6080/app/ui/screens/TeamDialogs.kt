@@ -31,7 +31,7 @@ fun TeamListDialog(team: List<TeamMember>, onOpen: (TeamMember) -> Unit, onDismi
                     Column(Modifier.fillMaxWidth().clickable { onOpen(member) }.padding(vertical = 8.dp)) {
                         Text(member.unit.matricola, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "${member.unit.type} · ${member.rank} · ${member.pu} PU",
+                            listOfNotNull(member.unit.type, member.rank, member.squadLabel).joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -44,7 +44,12 @@ fun TeamListDialog(team: List<TeamMember>, onOpen: (TeamMember) -> Unit, onDismi
 
 /** Scheda in sola lettura di un'unità della squadra. */
 @Composable
-fun UnitSheetDialog(catalog: Catalog, member: TeamMember, onDismiss: () -> Unit) {
+fun UnitSheetDialog(
+    catalog: Catalog,
+    member: TeamMember,
+    onDismiss: () -> Unit,
+    actions: @Composable () -> Unit = {},
+) {
     val unit = member.unit
     val max = UnitRules.maxStats(catalog, unit)
     AlertDialog(
@@ -57,6 +62,8 @@ fun UnitSheetDialog(catalog: Catalog, member: TeamMember, onDismiss: () -> Unit)
             ) {
                 Text("${unit.type} · ${member.rank} · ${member.pu} PU")
                 if (!unit.approved) Text("In attesa di approvazione")
+                member.squadLabel?.let { Text(it.replaceFirstChar(Char::uppercase)) }
+                actions()
                 Text("HP ${unit.hp}/${max.hp}", fontWeight = FontWeight.Bold)
                 StatsRow(max, showHp = false)
                 Text("Rifornimenti ${unit.supplies}/${max.supplies}")

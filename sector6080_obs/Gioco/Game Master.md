@@ -7,7 +7,7 @@ Sector 6080 è **PvE**: i player collaborano e i nemici sono gestiti dai Game Ma
 - Modificare le unità: HP, rifornimenti, posizione, componenti, distruzione.
 - Rivedere e applicare gli [[Ordini]].
 - Gestire i nemici e far avanzare il turno.
-- Moderare la chat (da definire).
+- Moderare la chat: cancellare i messaggi e silenziare i player.
 
 I player possono solo creare la propria unità, comprare componenti, inviare ordini e usare la chat. I GM coincidono con il Comando Supremo.
 
@@ -25,7 +25,18 @@ Dalla scheda GM si può:
 - **Cambiare HP e rifornimenti** di un'unità.
 - **Segnare un'unità come persa**: il player tiene i PU, perde componenti e grado e torna Recluta.
 - **Passare subito al turno successivo**, oltre al cambio automatico.
+- **Spostare un'unità**, scrivendo le coordinate lette dalla mappa.
+- **Aggiungere e togliere componenti** senza spendere PU: utilizzi e statistiche si aggiornano.
+- **Cambiare il grado**, come ordine diretto del Comando Supremo (vedi [[Gerarchia e Costituzione]]).
+- **Silenziare un player** in chat. Il silenzio resta anche se crea un'altra unità.
+- **Creare, modificare, spostare ed eliminare i nemici**. A 0 HP il nemico viene tolto dalla mappa.
 
-Nemici e moderazione della chat non sono ancora nella scheda.
+Dalla scheda Chat il GM cancella i messaggi e legge tutti i canali, squadroni compresi, dove però non scrive.
+
+## Nemici
+- Hanno nome, HP, armatura, descrizione e posizione.
+- Il server li manda ai telefoni solo se sono dentro la **visione comune**, quindi non si vedono nemmeno modificando l'app. Il GM li vede tutti.
+- Quelli visibili bloccano movimento e tiro, ma si possono scegliere come bersaglio.
+- **I danni non sono automatici:** il GM legge l'ordine di attacco, applica perforazione e armatura e toglie gli HP a mano. Fa lo stesso per gli attacchi dei nemici alle unità.
 
 Vedi [[Multiplayer]].

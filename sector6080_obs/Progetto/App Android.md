@@ -9,10 +9,10 @@ Trasformare Sector6080 **da sito web/discord ad app Android pubblicata sul Googl
   - catalogo, mappa, stipendi e impostazioni stanno su Supabase e si modificano senza aggiornare l'app. Le note [[Fanteria]], [[Motorizzata]], [[Corazzata]] e [[Artiglieria]] sono ora un riferimento: **modificarle non cambia più il gioco**, e servono solo ai test;
   - scheda Unità: accesso senza account (Google in arrivo), conferma di aver letto il regolamento, creazione sul server con i PU del player, negozio di componenti, avvisi che si chiudono con la X. Chiuso l'avviso sull'account, resta solo un link grigio "Collega Google" in fondo alla pagina;
   - scheda Ordini: nessun testo libero, opzioni fattibili a sinistra e le altre visibili con il motivo, caselle scelte dalla mappa, invio al [[Game Master]] (si può ritirare);
-  - scheda GM: visibile solo ai [[Game Master]];
-  - scheda Squadra: tutte le unità divise per grado, dal più alto, con la scheda di ognuna;
+  - scheda GM: visibile solo ai [[Game Master]], con approvazioni, ordini, unità, gradi e nemici;
+  - scheda Squadra: tutte le unità divise per grado, dal più alto, con la scheda di ognuna. Da fuori mostra solo matricola, tipo e nome dello squadrone. Qui i Capitani propongono e votano i gradi;
   - scheda Mappa: turno e conto alla rovescia, mappa dal server 80×60 con texture, edifici con descrizione, rimpicciolita all'avvio, zoom, visione comune della squadra, alleati con scheda pubblica, selezione delle caselle valide, acqua e ponti;
-  - scheda Chat: messaggi sul server, aggiornati ogni 10 secondi. Senza unità si può solo leggere, e il server firma i messaggi con grado, matricola e tipo di unità;
+  - scheda Chat: quattro canali sul server, aggiornati ogni 10 secondi. Eventi lo scrive il Comando Supremo, Comune chi ha un'unità, Squadrone chi è in uno squadrone, Comando Capitani, Caporali e GM. Squadrone e Comando compaiono nella barra solo a chi ne fa parte. Dalla chat Squadrone il Caporale sceglie nome e Soldati. Il server firma i messaggi come `grado(matricola)-tipo`, per esempio `Soldato(ASD-543)-Fanteria`;
   - test JVM delle regole in `app/src/test`.
 - **Collegamento a Supabase (04/11/2026):** l'app legge e scrive sul server con `RemoteGame.kt`, e tiene una copia sul telefono. Provato dal vivo con due player: vedi [[Database Supabase]].
 - La scheda Link è stata tolta. Il regolamento si apre dalla domanda iniziale, e il link Discord non è più nell'app.

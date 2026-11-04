@@ -11,8 +11,10 @@ import com.sector6080.app.data.createUnitParams
 import com.sector6080.app.data.friendlyError
 import com.sector6080.app.data.parseMillis
 import com.sector6080.app.model.Catalog
+import com.sector6080.app.model.ChatChannel
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.Component
+import com.sector6080.app.model.Enemy
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
@@ -27,6 +29,7 @@ import com.sector6080.app.model.UnitType
 import com.sector6080.app.model.deployed
 import com.sector6080.app.model.occupiedCells
 import com.sector6080.app.rules.FogSpan
+import com.sector6080.app.rules.HierarchyRules
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.rules.Vision
@@ -195,6 +198,87 @@ class RulesTest {
 
         assertEquals(listOf(active), state.deployed.map { it.unit })
         assertEquals(setOf(Cell(10, 10)), state.occupiedCells())
+    }
+
+    @Test
+    fun visibleEnemiesBlockCells() {
+        val enemy = Enemy(1, "Pattuglia", 5, 1, "", Cell(30, 30))
+        assertEquals(setOf(Cell(30, 30)), GameState(enemies = listOf(enemy)).occupiedCells())
+    }
+
+    @Test
+    fun ranksChangeOneStepAtATime() {
+        assertEquals(listOf("Caporale"), HierarchyRules.nextRanks("Soldato"))
+        assertEquals(listOf("Capitano", "Soldato"), HierarchyRules.nextRanks("Caporale"))
+        assertEquals(listOf("Caporale"), HierarchyRules.nextRanks("Capitano"))
+        assertTrue(HierarchyRules.nextRanks("Recluta").isEmpty())
+        assertTrue(HierarchyRules.nextRanks("Comando Supremo").isEmpty())
+    }
+
+    @Test
+    fun squadNameHasNoDigitsAndAtMostEightCharacters() {
+        assertTrue(HierarchyRules.isValidSquadName("Falchi"))
+        assertTrue(HierarchyRules.isValidSquadName("Lupi di"))
+        assertTrue(HierarchyRules.isValidSquadName(" Otto car "))
+        assertFalse(HierarchyRules.isValidSquadName(""))
+        assertFalse(HierarchyRules.isValidSquadName("   "))
+        assertFalse(HierarchyRules.isValidSquadName("Falco7"))
+        assertFalse(HierarchyRules.isValidSquadName("Novelett"+"e"))
+    }
+
+    @Test
+    fun squadIsBuiltFromTheTeam() {
+        val type = catalog.type("Fanteria")!!
+        val leader = newUnit("AAA-111", "l", type, emptyList()).copy(approved = true)
+        val chosen = newUnit("BBB-222", "l", type, emptyList()).copy(approved = true)
+        val free = newUnit("CCC-333", "l", type, emptyList()).copy(approved = true)
+        val recruit = newUnit("DDD-444", "l", type, emptyList())
+        val team = listOf(
+            TeamMember(leader, "Caporale", 0, squadName = "Falchi"),
+            TeamMember(chosen, "Soldato", 0, squad = "AAA-111", squadName = "Falchi"),
+            TeamMember(free, "Soldato", 0),
+            TeamMember(recruit, "Recluta", 0),
+        )
+        val corporal = GameState(unit = leader, rank = "Caporale", team = team)
+        val soldier = GameState(unit = chosen, rank = "Soldato", team = team)
+
+        assertEquals(listOf("BBB-222"), HierarchyRules.squadMembers(corporal).map { it.unit.matricola })
+        assertEquals(listOf("BBB-222"), HierarchyRules.squadMembers(soldier).map { it.unit.matricola })
+        assertEquals(listOf("CCC-333"), HierarchyRules.freeSoldiers(corporal).map { it.unit.matricola })
+        assertEquals("Falchi", HierarchyRules.squadName(soldier))
+        assertEquals("squadrone \"Falchi\"", team[0].squadLabel)
+        assertEquals("squadrone senza nome", TeamMember(chosen, "Soldato", 0, squad = "AAA-111").squadLabel)
+        assertNull(team[2].squadLabel)
+    }
+
+    @Test
+    fun chatChannelsFollowTheRank() {
+        val type = catalog.type("Fanteria")!!
+        val unit = newUnit("AAA-111", "l", type, emptyList()).copy(approved = true)
+        val soldier = GameState(unit = unit, rank = "Soldato", team = listOf(TeamMember(unit, "Soldato", 0)))
+        val chosen = soldier.copy(team = listOf(TeamMember(unit, "Soldato", 0, squad = "BBB-222")))
+        val corporal = soldier.copy(rank = "Caporale")
+        val gm = GameState(rank = "Comando Supremo", isGm = true)
+
+        assertFalse(HierarchyRules.canSee(soldier, ChatChannel.COMMAND))
+        assertTrue(HierarchyRules.canSee(corporal, ChatChannel.COMMAND))
+        assertTrue(HierarchyRules.canSee(gm, ChatChannel.COMMAND))
+
+        assertNotNull(HierarchyRules.whyNotWrite(soldier, ChatChannel.EVENTS))
+        assertNull(HierarchyRules.whyNotWrite(gm, ChatChannel.EVENTS))
+        assertNull(HierarchyRules.whyNotWrite(soldier, ChatChannel.COMMON))
+        assertNotNull(HierarchyRules.whyNotWrite(GameState(), ChatChannel.COMMON))
+        assertFalse(HierarchyRules.canSee(soldier, ChatChannel.SQUAD))
+        assertTrue(HierarchyRules.canSee(chosen, ChatChannel.SQUAD))
+        assertTrue(HierarchyRules.canSee(corporal, ChatChannel.SQUAD))
+        assertTrue(HierarchyRules.canSee(gm, ChatChannel.SQUAD))
+        assertTrue(HierarchyRules.canSee(GameState(), ChatChannel.EVENTS))
+        assertTrue(HierarchyRules.canSee(GameState(), ChatChannel.COMMON))
+        assertFalse(HierarchyRules.canSee(GameState(), ChatChannel.SQUAD))
+
+        assertNull(HierarchyRules.whyNotWrite(chosen, ChatChannel.SQUAD))
+        assertNull(HierarchyRules.whyNotWrite(corporal, ChatChannel.SQUAD))
+        assertNotNull(HierarchyRules.whyNotWrite(gm, ChatChannel.SQUAD))
     }
 
     @Test

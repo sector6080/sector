@@ -142,7 +142,7 @@ private fun NewOrderForm(vm: GameViewModel, state: GameState, unit: GameUnit, on
     var quantity by remember { mutableIntStateOf(1) }
 
     val usable = unit.components.filter { catalog.component(unit.type, it)?.isUsable == true }
-    val possible = remember(unit, state.orders, state.team, state.catalog) {
+    val possible = remember(unit, state.orders, state.team, state.enemies, state.catalog) {
         OrderType.entries.associateWith { t ->
             when (t) {
                 OrderType.ACTIVATE, OrderType.RELOAD -> usable.any {

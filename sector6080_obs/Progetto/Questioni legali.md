@@ -90,7 +90,7 @@ Oggi l'app è gratuita e senza acquisti. Se in futuro si vendessero PU o altri c
 ## Dati dei vecchi giocatori ❓
 - Il vecchio sito salvava le **password in chiaro** e le inviava a ogni visitatore (vedi [[Problemi noti e sicurezza]]).
 - Va controllato dove sono finiti quei dati: Google Sheet, Supabase, storia di git.
-- Su Supabase le colonne password sono state eliminate il 03/11/2026 (vedi [[Database Supabase]]). La copia CSV può ancora contenerle, e restano da controllare il vecchio Google Sheet e la storia di git.
+- Su Supabase le colonne password sono state eliminate il 03/11/2026 (vedi [[Database Supabase]]). La copia CSV è stata cancellata. Restano da controllare il vecchio Google Sheet e la storia di git.
 - Chi ha riusato la stessa password altrove potrebbe essere a rischio. Conviene cancellare i dati non più necessari e chiedere a un professionista se serve avvisare le persone coinvolte.
 - Non migrare mai quelle password nella nuova app.
 

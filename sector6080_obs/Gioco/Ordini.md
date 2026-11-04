@@ -24,7 +24,7 @@ Le caselle valide vengono calcolate provando ogni casella con le stesse regole d
 | **Cedere rifornimenti** | quantità, poi casella | entro 1 casella (2 con Scarico Avanzato), non più di quelli posseduti |
 
 ## Limiti del prototipo
-- Le altre unità bloccano movimento e tiro, ma non viene ancora controllata la presenza di un mezzo su cui salire o di un destinatario per i rifornimenti.
+- Le altre unità e i nemici visibili bloccano movimento e tiro, ma non viene ancora controllata la presenza di un mezzo su cui salire o di un destinatario per i rifornimenti.
 - Salire su un mezzo richiede una casella adiacente: il regolamento non lo dice esplicitamente, è una scelta dell'app da confermare.
 - Se rimuovi un ordine, quelli successivi possono diventare non validi: vengono segnati in rosso e bloccano l'invio.
 

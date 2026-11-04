@@ -55,6 +55,7 @@ I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: van
 - **Nebbia di guerra condivisa**: tutti i player vedono la stessa cosa, cioè l'unione delle visioni di tutte le unità (senza diagonali). Non esiste una visione per singola unità. Fuori dalla visione il terreno resta visibile ma più scuro. I nemici, quando ci saranno, non dovranno mai arrivare al telefono dei player se non sono visibili alla squadra (vedi [[Multiplayer]]).
 - Quando un ordine richiede una casella, la mappa si avvicina all'unità ed evidenzia in verde le caselle valide (vedi [[Ordini]]).
 - Toccando una casella si leggono coordinate, terreno e struttura.
+- **Nemici:** segnalini rossi, solo dentro la visione comune. Toccandone uno si legge la sua scheda.
 - **Alleati:** le unità approvate compaiono come segnalini verdi. Toccandone una, o aprendo l'elenco "Squadra", si legge la sua scheda: grado e PU del player, statistiche, componenti, posizione e lore.
 
 ## Da fare

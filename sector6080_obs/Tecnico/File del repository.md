@@ -21,6 +21,9 @@
 | `supabase/pu-pubblici.sql` | Aggiunge i PU alla squadra visibile a tutti |
 | `supabase/gm-turni-catalogo.sql` | Sezione GM, turni automatici, stipendi, catalogo e mappa 60×80 |
 | `supabase/matricola-e-gradi.sql` | Toglie il nome del player, grado perso con l'unità, firma della chat, squadra per grado |
+| `supabase/chat-gerarchia-gm.sql` | Canali della chat, moderazione, squadroni, votazioni, nemici e strumenti GM |
+| `supabase/firma-chat.sql` | Firma dei messaggi: `grado(matricola)-tipo` |
+| `supabase/nome-squadrone.sql` | Nome dello squadrone scelto dal Caporale |
 
 ## Vecchio sito
 Tolto dal repository il 04/11/2026 perché l'app non lo usa: `index.html`, `map.html`, `style.css`, `api_stuff/`, `trasferire_in_backend.txt`, il logo in `foto/`, `supabase/pulizia-sito.sql` e `supabase/rimuovi-tabelle-sito.sql`. Restano nella storia di git, fino al commit `a322174`, insieme a `test.html`, `debugger.html` e agli script Apps Script.

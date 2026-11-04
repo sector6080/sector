@@ -13,6 +13,9 @@ import com.sector6080.app.data.friendlyError
 import com.sector6080.app.data.parseMillis
 import com.sector6080.app.model.Access
 import com.sector6080.app.model.Catalog
+import com.sector6080.app.model.Cell
+import com.sector6080.app.model.ChatChannel
+import com.sector6080.app.model.Enemy
 import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.GmOrders
@@ -113,13 +116,18 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 catalogLoaded = true
                 edit { it.copy(catalog = catalog) }
             }
+            // Prima l'accesso: i canali privati e i nemici dipendono dall'account
+            val signedIn = _state.value.access != null
+            if (signedIn) remote.signIn()
             val chat = remote.chat()
             val team = remote.team()
-            edit { it.copy(chat = chat, team = team) }
-            if (_state.value.access != null) {
-                remote.signIn()
+            val enemies = remote.enemies()
+            edit { it.copy(chat = chat, team = team, enemies = enemies) }
+            if (signedIn) {
                 val snapshot = remote.snapshot()
+                val proposals = remote.proposals()
                 apply(snapshot)
+                edit { it.copy(proposals = proposals) }
                 if (snapshot.player.isGm) {
                     val units = remote.gmUnits()
                     val orders = remote.gmOrders()
@@ -180,8 +188,16 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun withdrawOrders() = act { remote.withdrawOrders() }
 
-    /** Il server firma il messaggio con la matricola e rifiuta chi non ha un'unità. */
-    fun sendChat(text: String) = act { remote.sendChat(text.trim()) }
+    /** Il server firma il messaggio e controlla chi può scrivere nel canale. */
+    fun sendChat(channel: ChatChannel, text: String) = act { remote.sendChat(channel.id, text.trim()) }
+
+    fun setSquadMember(matricola: String, member: Boolean) = act { remote.setSquadMember(matricola, member) }
+
+    fun setSquadName(name: String) = act { remote.setSquadName(name.trim()) }
+
+    fun proposeRank(matricola: String, rank: String) = act { remote.proposeRank(matricola, rank) }
+
+    fun voteRank(id: Long, approve: Boolean) = act { remote.voteRank(id, approve) }
 
     fun gmReview(matricola: String, approve: Boolean) = act { remote.gmReview(matricola, approve) }
 
@@ -195,9 +211,27 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun gmApplyOrders(orders: GmOrders) = act {
         val units = _state.value.gmUnits.map { it.member.unit }
         val unit = units.first { it.matricola == orders.matricola }
-        val occupied = units.filter { it.matricola != unit.matricola }.mapNotNull { it.position }.toSet()
+        val occupied = units.filter { it.matricola != unit.matricola }.mapNotNull { it.position }.toSet() +
+            _state.value.enemies.map { it.position }
         remote.gmApplyOrders(orders.turn, OrderRules.simulate(catalog, unit, orders.orders, occupied).finalUnit)
     }
 
     fun gmNextTurn() = act { remote.gmNextTurn() }
+
+    fun gmSetRank(matricola: String, rank: String) = act { remote.gmSetRank(matricola, rank) }
+
+    fun gmDeleteMessage(id: Long) = act { remote.gmDeleteMessage(id) }
+
+    fun gmSetMuted(matricola: String, muted: Boolean) = act { remote.gmSetMuted(matricola, muted) }
+
+    fun gmMoveUnit(matricola: String, cell: Cell) = act { remote.gmMoveUnit(matricola, cell) }
+
+    fun gmSetComponent(matricola: String, name: String, owned: Boolean) = act {
+        remote.gmSetComponent(matricola, name, owned)
+    }
+
+    /** Un nemico nuovo ha [Enemy.id] zero. A 0 HP il server lo toglie dalla mappa. */
+    fun gmSaveEnemy(enemy: Enemy) = act { remote.gmSaveEnemy(enemy.id.takeIf { it != 0L }, enemy) }
+
+    fun gmDeleteEnemy(id: Long) = act { remote.gmDeleteEnemy(id) }
 }

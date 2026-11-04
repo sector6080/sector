@@ -21,3 +21,6 @@ Eseguire gli script nel SQL Editor di Supabase, in quest'ordine:
 3. `pu-pubblici.sql`
 4. `gm-turni-catalogo.sql`
 5. `matricola-e-gradi.sql`
+6. `chat-gerarchia-gm.sql`
+7. `firma-chat.sql`
+8. `nome-squadrone.sql`

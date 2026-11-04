@@ -53,13 +53,13 @@ Quadro completo, compreso ciò che manca. Le tabelle già definite e i loro nomi
 | `game/current` | turno, scadenza | GM | tutti |
 | `units/{id}` | proprietario, stato (in attesa, attiva, persa, rifiutata), statistiche, posizione | GM (il player solo la creazione) | proprietario, GM |
 | `orders/{turno}_{unit}` | catena di ordini | il proprietario, fino alla scadenza | proprietario, GM |
-| `enemies/{id}` | nemici sulla mappa | GM | **solo GM** |
+| `enemies/{id}` | nemici sulla mappa | GM | GM, e i player solo dentro la visione comune |
 | `vision/{turno}` | ciò che vede la squadra, visione unica per tutti | GM | tutti i player |
-| `chat/{id}` | messaggi firmati dall'unità | chi ha un'unità attiva o in attesa | tutti |
+| `chat/{id}` | messaggi per canale, firmati dal server | dipende dal canale | Eventi e Comune tutti, gli altri secondo grado e squadrone |
 
 ## Le due regole chiave
 1. **I permessi stanno sul server.** Le regole del database garantiscono che solo i GM approvino e modifichino le unità. Nascondere i pulsanti nell'app non basta.
-2. **La nebbia di guerra non si fa sul telefono.** Se i nemici arrivassero al client, basterebbe ispezionare l'app per vederli. La visione è **condivisa da tutta la squadra**: la sezione GM unisce ciò che vedono tutte le unità e scrive solo quello in `vision`.
+2. **La nebbia di guerra non si fa sul telefono.** Se i nemici arrivassero al client, basterebbe ispezionare l'app per vederli. La visione è **condivisa da tutta la squadra**: la funzione `get_enemies` calcola sul server ciò che vedono tutte le unità e manda solo quei nemici.
 
 ## Un turno
 1. Il GM apre il turno (`game/current`).
@@ -74,7 +74,7 @@ Quadro completo, compreso ciò che manca. Le tabelle già definite e i loro nomi
 2. ✅ Sezione GM, turni automatici e stipendi: script eseguito il 04/11/2026, prova dal vivo in corso.
 3. ✅ Invio ordini e turno condiviso, stesso stato del punto 1.
 4. ✅ Chat reale, stesso stato del punto 1.
-5. ✅ Mappa su server, alleati visibili con scheda e PU, visione comune: provato dal vivo. Restano i nemici e la loro nebbia di guerra lato GM.
+5. ✅ Mappa su server, alleati visibili con scheda e PU, visione comune: provato dal vivo. I nemici e la loro nebbia di guerra sul server sono in `supabase/chat-gerarchia-gm.sql`.
 6. Accesso Google reale e bonus PU dal server.
 7. Notifiche push.
 

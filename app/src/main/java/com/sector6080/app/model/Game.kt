@@ -7,6 +7,9 @@ const val MAP_WIDTH = 80
 const val MAP_HEIGHT = 60
 const val GOOGLE_BONUS_PU = 1
 const val DEFAULT_TURN_HOURS = 24
+const val RANK_SOLDIER = "Soldato"
+const val RANK_CORPORAL = "Caporale"
+const val RANK_CAPTAIN = "Capitano"
 
 /** Casella della mappa, coordinate numeriche 1-based come nel template ordini (X,Y). */
 @Serializable
@@ -37,11 +40,26 @@ data class GameUnit(
 
 /** Unità della squadra, approvata o in attesa: tutti possono guardarne la scheda. */
 @Serializable
-data class TeamMember(val unit: GameUnit, val rank: String, val pu: Int)
+data class TeamMember(
+    val unit: GameUnit,
+    val rank: String,
+    val pu: Int,
+    /** Matricola del Caporale che guida lo squadrone. */
+    val squad: String? = null,
+    val squadName: String? = null,
+) {
+    /** Testo mostrato accanto all'unità. Il Caporale ha il nome ma non ha un [squad]. */
+    val squadLabel: String?
+        get() = when {
+            squadName != null -> "squadrone \"$squadName\""
+            squad != null -> "squadrone senza nome"
+            else -> null
+        }
+}
 
 /** Vista del Game Master. [pending] indica un'unità in attesa di approvazione. */
 @Serializable
-data class GmUnit(val member: TeamMember, val pending: Boolean, val cost: Int)
+data class GmUnit(val member: TeamMember, val pending: Boolean, val cost: Int, val muted: Boolean = false)
 
 /** Ordini inviati da un'unità e non ancora applicati. */
 @Serializable
@@ -71,11 +89,46 @@ data class Order(
 @Serializable
 enum class Access { ANONYMOUS, GOOGLE }
 
+/** Il server decide chi legge e chi scrive in ogni canale. */
+@Serializable
+enum class ChatChannel(val id: String, val label: String) {
+    EVENTS("eventi", "Eventi"),
+    COMMON("comune", "Comune"),
+    SQUAD("squadrone", "Squadrone"),
+    COMMAND("comando", "Comando"),
+}
+
 @Serializable
 data class ChatMessage(
     val author: String,
     val text: String,
     val sentAt: Long,
+    val id: Long = 0,
+    val channel: String = ChatChannel.COMMON.id,
+)
+
+/** Il telefono riceve solo i nemici dentro la visione comune: il GM li riceve tutti. */
+@Serializable
+data class Enemy(
+    val id: Long,
+    val name: String,
+    val hp: Int,
+    val armor: Int,
+    val description: String,
+    val position: Cell,
+)
+
+/** Cambio di grado in votazione tra i Capitani. */
+@Serializable
+data class RankProposal(
+    val id: Long,
+    val matricola: String,
+    val fromRank: String,
+    val newRank: String,
+    val proposedBy: String?,
+    val votesYes: Int,
+    val votesNo: Int,
+    val myVote: Boolean?,
 )
 
 @Serializable
@@ -104,6 +157,8 @@ data class GameState(
     val chat: List<ChatMessage> = emptyList(),
     /** Tutte le unità, compresa la propria, dal grado più alto. Comprende quelle in attesa. */
     val team: List<TeamMember> = emptyList(),
+    val enemies: List<Enemy> = emptyList(),
+    val proposals: List<RankProposal> = emptyList(),
     val gmUnits: List<GmUnit> = emptyList(),
     val gmOrders: List<GmOrders> = emptyList(),
 )
@@ -111,6 +166,7 @@ data class GameState(
 /** Unità in gioco: quelle in attesa non compaiono sulla mappa e non vedono. */
 val GameState.deployed: List<TeamMember> get() = team.filter { it.unit.approved }
 
-/** Caselle occupate dalle altre unità: bloccano movimento e tiro. */
+/** Caselle occupate dalle altre unità e dai nemici visibili: bloccano movimento e tiro. */
 fun GameState.occupiedCells(): Set<Cell> =
-    deployed.filter { it.unit.matricola != unit?.matricola }.mapNotNull { it.unit.position }.toSet()
+    deployed.filter { it.unit.matricola != unit?.matricola }.mapNotNull { it.unit.position }.toSet() +
+        enemies.map { it.position }

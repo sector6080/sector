@@ -3,12 +3,14 @@ package com.sector6080.app.data
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.ChatMessage
+import com.sector6080.app.model.Enemy
 import com.sector6080.app.model.Component
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.GmOrders
 import com.sector6080.app.model.GmUnit
 import com.sector6080.app.model.MapSite
 import com.sector6080.app.model.Order
+import com.sector6080.app.model.RankProposal
 import com.sector6080.app.model.Stats
 import com.sector6080.app.model.TeamMember
 import com.sector6080.app.model.UnitType
@@ -19,7 +21,6 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Order as SortOrder
 import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import kotlinx.serialization.SerialName
@@ -161,8 +162,11 @@ data class TeamRow(
     val transported: Boolean,
     val status: String = "active",
     val cost: Int = 0,
+    val squad: String? = null,
+    val muted: Boolean = false,
+    @SerialName("squad_name") val squadName: String? = null,
 ) {
-    fun toGmUnit() = GmUnit(toTeamMember(), status == "pending", cost)
+    fun toGmUnit() = GmUnit(toTeamMember(), status == "pending", cost, muted)
 
     fun toTeamMember() = TeamMember(
         GameUnit(
@@ -179,6 +183,8 @@ data class TeamRow(
         ),
         rank,
         pu,
+        squad,
+        squadName,
     )
 }
 
@@ -200,11 +206,40 @@ private data class GmOrdersRow(val matricola: String, val turn: Int, val orders:
 
 @Serializable
 data class ChatRow(
+    val id: Long,
+    val channel: String,
     val author: String,
     val body: String,
     @SerialName("sent_at") val sentAt: String,
 ) {
-    fun toChatMessage() = ChatMessage(author, body, parseMillis(sentAt))
+    fun toChatMessage() = ChatMessage(author, body, parseMillis(sentAt), id, channel)
+}
+
+@Serializable
+data class EnemyRow(
+    val id: Long,
+    val name: String,
+    val hp: Int,
+    val armor: Int,
+    val description: String,
+    @SerialName("pos_x") val posX: Int,
+    @SerialName("pos_y") val posY: Int,
+) {
+    fun toEnemy() = Enemy(id, name, hp, armor, description, Cell(posX, posY))
+}
+
+@Serializable
+data class ProposalRow(
+    val id: Long,
+    val matricola: String,
+    @SerialName("from_rank") val fromRank: String,
+    @SerialName("new_rank") val newRank: String,
+    @SerialName("proposed_by") val proposedBy: String? = null,
+    @SerialName("votes_yes") val votesYes: Int,
+    @SerialName("votes_no") val votesNo: Int,
+    @SerialName("my_vote") val myVote: Boolean? = null,
+) {
+    fun toProposal() = RankProposal(id, matricola, fromRank, newRank, proposedBy, votesYes, votesNo, myVote)
 }
 
 fun parseMillis(timestamp: String): Long = OffsetDateTime.parse(timestamp).toInstant().toEpochMilli()
@@ -272,8 +307,51 @@ class RemoteGame {
         client.postgrest.rpc("withdraw_orders")
     }
 
-    suspend fun sendChat(text: String) {
-        client.postgrest.rpc("send_chat", buildJsonObject { put("p_body", text) })
+    suspend fun sendChat(channel: String, text: String) {
+        client.postgrest.rpc(
+            "send_chat",
+            buildJsonObject {
+                put("p_channel", channel)
+                put("p_body", text)
+            },
+        )
+    }
+
+    suspend fun proposals(): List<RankProposal> =
+        client.postgrest.rpc("get_proposals").decodeList<ProposalRow>().map { it.toProposal() }
+
+    suspend fun proposeRank(matricola: String, rank: String) {
+        client.postgrest.rpc(
+            "propose_rank",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_new_rank", rank)
+            },
+        )
+    }
+
+    suspend fun voteRank(id: Long, approve: Boolean) {
+        client.postgrest.rpc(
+            "vote_rank",
+            buildJsonObject {
+                put("p_id", id)
+                put("p_approve", approve)
+            },
+        )
+    }
+
+    suspend fun setSquadMember(matricola: String, member: Boolean) {
+        client.postgrest.rpc(
+            "set_squad_member",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_member", member)
+            },
+        )
+    }
+
+    suspend fun setSquadName(name: String) {
+        client.postgrest.rpc("set_squad_name", buildJsonObject { put("p_name", name) })
     }
 
     suspend fun gmUnits(): List<GmUnit> = client.postgrest.rpc("gm_units").decodeList<TeamRow>().map { it.toGmUnit() }
@@ -327,6 +405,72 @@ class RemoteGame {
         client.postgrest.rpc("gm_next_turn")
     }
 
+    suspend fun gmSetRank(matricola: String, rank: String) {
+        client.postgrest.rpc(
+            "gm_set_rank",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_rank", rank)
+            },
+        )
+    }
+
+    suspend fun gmDeleteMessage(id: Long) {
+        client.postgrest.rpc("gm_delete_message", buildJsonObject { put("p_id", id) })
+    }
+
+    suspend fun gmSetMuted(matricola: String, muted: Boolean) {
+        client.postgrest.rpc(
+            "gm_set_muted",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_muted", muted)
+            },
+        )
+    }
+
+    suspend fun gmMoveUnit(matricola: String, cell: Cell) {
+        client.postgrest.rpc(
+            "gm_move_unit",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_x", cell.x)
+                put("p_y", cell.y)
+            },
+        )
+    }
+
+    suspend fun gmSetComponent(matricola: String, name: String, owned: Boolean) {
+        client.postgrest.rpc(
+            "gm_set_component",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_name", name)
+                put("p_owned", owned)
+            },
+        )
+    }
+
+    /** Con [id] nullo crea un nuovo nemico. */
+    suspend fun gmSaveEnemy(id: Long?, enemy: Enemy) {
+        client.postgrest.rpc(
+            "gm_save_enemy",
+            buildJsonObject {
+                put("p_id", id)
+                put("p_name", enemy.name)
+                put("p_hp", enemy.hp)
+                put("p_armor", enemy.armor)
+                put("p_description", enemy.description)
+                put("p_x", enemy.position.x)
+                put("p_y", enemy.position.y)
+            },
+        )
+    }
+
+    suspend fun gmDeleteEnemy(id: Long) {
+        client.postgrest.rpc("gm_delete_enemy", buildJsonObject { put("p_id", id) })
+    }
+
     /** Si legge anche senza account. */
     suspend fun map(): MapData = client.postgrest.rpc("get_map").decodeAs()
 
@@ -334,15 +478,13 @@ class RemoteGame {
     suspend fun team(): List<TeamMember> =
         client.postgrest.rpc("get_team").decodeList<TeamRow>().map { it.toTeamMember() }
 
-    /** Ultimi messaggi, dal più vecchio al più recente. La chat si legge anche senza account. */
-    suspend fun chat(): List<ChatMessage> = client.from("chat_messages").select {
-        order("id", SortOrder.DESCENDING)
-        limit(CHAT_HISTORY)
-    }.decodeList<ChatRow>().asReversed().map { it.toChatMessage() }
+    /** Nemici dentro la visione comune: si legge anche senza account. */
+    suspend fun enemies(): List<Enemy> =
+        client.postgrest.rpc("get_enemies").decodeList<EnemyRow>().map { it.toEnemy() }
 
-    private companion object {
-        const val CHAT_HISTORY = 100L
-    }
+    /** Messaggi dei canali che il player può leggere, dal più vecchio al più recente. */
+    suspend fun chat(): List<ChatMessage> =
+        client.postgrest.rpc("get_chat").decodeList<ChatRow>().map { it.toChatMessage() }
 }
 
 fun createUnitParams(
@@ -373,6 +515,21 @@ fun friendlyError(error: Throwable): String {
         "Solo Game Master" in text -> "Azione riservata ai Game Master."
         "Comando Supremo non puo" in text -> "Il Comando Supremo non può avere unità."
         "Messaggi troppo ravvicinati" in text -> "Aspetta un attimo prima di scrivere ancora."
+        "Sei stato silenziato" in text -> "Il Comando Supremo ti ha tolto la parola in chat."
+        "Canale non disponibile" in text -> "Non puoi scrivere in questo canale."
+        "Solo i Capitani" in text -> "Azione riservata ai Capitani."
+        "Solo i Caporali" in text -> "Azione riservata ai Caporali."
+        "Solo i Soldati" in text -> "Negli squadroni entrano solo i Soldati."
+        "Servono 6 giorni" in text -> "Servono 6 giorni reali da Caporale."
+        "Cambio di grado non valido" in text -> "Cambio di grado non previsto dalla Costituzione."
+        "Non puoi proporre te stesso" in text -> "Non puoi proporre te stesso."
+        "Non puoi votare" in text -> "Non puoi votare su te stesso."
+        "Proposta chiusa" in text -> "La votazione è già chiusa."
+        "one_open_proposal_per_unit" in text -> "C'è già una votazione aperta per questa unità."
+        "Soldato gia" in text -> "Questo Soldato è già in uno squadrone."
+        "Squadrone al completo" in text -> "Lo squadrone ha già 6 Soldati."
+        "Nome squadrone non valido" in text -> "Il nome deve avere al massimo 8 caratteri, senza numeri."
+        "Casella occupata" in text -> "La casella è occupata."
         "signups" in text.lowercase() || "anonymous" in text.lowercase() -> "Accesso senza account non disponibile."
         "Could not find" in text || "does not exist" in text -> "Il server non è ancora pronto."
         else -> "Connessione al server non riuscita."

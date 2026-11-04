@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sector6080.app.model.Cell
+import com.sector6080.app.model.Enemy
 import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.MAP_HEIGHT
@@ -95,7 +96,7 @@ fun MapScreen(
         member.unit.position?.let { Vision.Source(it, UnitRules.maxStats(vm.catalog, member.unit).vision) }
     }
     val fog = remember(sources) { Vision.fogSpans(sources) }
-    val valid = remember(picking, unit, state.orders, state.team, state.catalog) {
+    val valid = remember(picking, unit, state.orders, state.team, state.enemies, state.catalog) {
         if (picking != null && unit != null) {
             OrderRules.validTargets(vm.catalog, unit, state.orders, picking, occupied)
         } else {
@@ -110,6 +111,7 @@ fun MapScreen(
     var showTeam by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf<TeamMember?>(null) }
     var siteSheet by remember { mutableStateOf<MapSite?>(null) }
+    var enemySheet by remember { mutableStateOf<Enemy?>(null) }
 
     fun fitScale() = canvasSize.width / (MAP_WIDTH * CELL)
 
@@ -205,6 +207,10 @@ fun MapScreen(
                         mark(it, Target, 4f)
                     }
                 }
+                state.enemies.forEach {
+                    mark(it.position, Color.White, 2f)
+                    mark(it.position, Danger, 4f)
+                }
                 if (here != null) {
                     mark(here, Color.White, 2f)
                     mark(here, Accent, 4f)
@@ -249,9 +255,12 @@ fun MapScreen(
                     }
                     val tapped = members.firstOrNull { it.unit.position == sel }
                     val tappedSite = sel?.let { GameMap.siteAt(it) }
+                    val tappedEnemy = state.enemies.firstOrNull { it.position == sel }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = { showTeam = true }) { Text("Squadra (${members.size})") }
-                        if (tapped != null) {
+                        if (tappedEnemy != null) {
+                            Button(onClick = { enemySheet = tappedEnemy }) { Text(tappedEnemy.name) }
+                        } else if (tapped != null) {
                             Button(onClick = { sheet = tapped }) { Text("Scheda ${tapped.unit.matricola}") }
                         } else if (tappedSite != null) {
                             Button(onClick = { siteSheet = tappedSite }) { Text(tappedSite.name) }
@@ -269,7 +278,20 @@ fun MapScreen(
             onDismiss = { showTeam = false },
         )
     }
-    sheet?.let { UnitSheetDialog(vm.catalog, it) { sheet = null } }
+    sheet?.let { UnitSheetDialog(vm.catalog, it, onDismiss = { sheet = null }) }
+    enemySheet?.let { enemy ->
+        AlertDialog(
+            onDismissRequest = { enemySheet = null },
+            title = { Text(enemy.name) },
+            text = {
+                Text(
+                    "Nemico · HP ${enemy.hp} · Armatura ${enemy.armor} · casella ${enemy.position}" +
+                        if (enemy.description.isEmpty()) "" else "\n\n${enemy.description}",
+                )
+            },
+            confirmButton = { TextButton(onClick = { enemySheet = null }) { Text("Chiudi") } },
+        )
+    }
     siteSheet?.let { site ->
         AlertDialog(
             onDismissRequest = { siteSheet = null },

@@ -11,7 +11,9 @@ Definite in `supabase/schema-app.sql`. Le vecchie tabelle del sito non vengono t
 | `game_units` | unità, proprietario, stato | solo la propria | con `create_unit` |
 | `game_turn` | turno corrente, inizio e durata | tutti | nessuna |
 | `game_orders` | ordini per unità e turno | solo i propri | con `send_orders` e `withdraw_orders` |
-| `chat_messages` | messaggi firmati dal server: `grado - matricola - tipo` | tutti | con `send_chat` |
+| `chat_messages` | messaggi per canale, firmati dal server: `grado(matricola)-tipo` | con `get_chat`, secondo canale e grado | con `send_chat` |
+| `rank_proposals`, `rank_votes` | cambi di grado in votazione | con `get_proposals`, Capitani e GM | con `propose_rank` e `vote_rank` |
+| `game_enemies` | nemici | con `get_enemies`, solo dentro la visione comune | solo GM |
 | `game_map` | una riga per casella: terreno e struttura | tutti | nessuna |
 | `game_sites` | descrizione delle strutture | tutti | nessuna |
 | `game_components` | i 138 componenti, con costi e statistiche | tutti | nessuna |
@@ -30,6 +32,12 @@ La mappa e la squadra si aggiungono con `supabase/mappa-e-squadra.sql` (eseguito
 - `get_team`: unità approvate con grado, PU, statistiche, componenti, lore e posizione. Il proprietario resta privato. I PU pubblici sono stati aggiunti con `supabase/pu-pubblici.sql` (eseguito). Provato dal vivo con 4 unità: mappa dal server, visione comune, schede e PU.
 
 `supabase/matricola-e-gradi.sql` (eseguito il 04/11/2026, firma e squadra verificate): elimina la colonna `player_name`, aggiunge il trigger che toglie il grado a chi perde l'unità, cambia la firma della chat e fa restituire a `get_team` anche le unità in attesa, ordinate per grado. L'app mostra sulla mappa solo quelle approvate. Dopo lo script le vecchie versioni dell'app non funzionano più.
+
+`supabase/chat-gerarchia-gm.sql` (eseguito il 04/11/2026): aggiunge canali della chat, moderazione, squadroni (`game_units.squad_of`), votazioni, nemici e le funzioni GM per grado, posizione e componenti. La chat non si legge più dalla tabella, ma solo con `get_chat`, così i canali privati restano privati.
+
+Controllo del 04/11/2026 con la chiave pubblica, senza account: `get_chat`, `get_team` e `get_enemies` rispondono. Tutte le funzioni di voto, squadrone e GM e `send_chat` sono rifiutate, come la lettura diretta di `chat_messages`, `rank_proposals`, `rank_votes` e `game_enemies`. Non è stato provato con account normali: chi ha un account passa dai controlli interni a ogni funzione.
+
+`supabase/nome-squadrone.sql` (eseguito il 04/11/2026): aggiunge `game_units.squad_name` e la funzione `set_squad_name`. Il nome sta sull'unità del Caporale e il database accetta solo testo senza numeri, di massimo 8 caratteri.
 
 **Regola di fondo:** il player non scrive mai direttamente nelle tabelle. Ogni funzione ricava il player dall'account collegato, quindi nessuno può agire per conto di un altro, cambiare i propri PU o firmare messaggi con un'altra matricola.
 
@@ -105,7 +113,7 @@ Deciso il 03/11/2026: il sito viene abbandonato per l'app, quindi il database si
 
 **Pulizia, script `supabase/pulizia-sito.sql` (eseguito):** ha chiuso letture e inserimenti pubblici, ed eliminato le colonne password e la tabella `verify_unit`.
 
-I file CSV della copia possono contenere password: vanno tenuti fuori dal repository e cancellati quando non servono.
+La copia CSV è stata cancellata: i vecchi dati del sito non esistono più.
 
 **Dopo, per l'app:** nuove tabelle con il proprietario delle unità, limite di una unità per player, ordini e chat. Vedi [[Multiplayer]], [[Account e identità]] e [[Questioni legali]].
 

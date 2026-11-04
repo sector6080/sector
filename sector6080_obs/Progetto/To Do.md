@@ -22,12 +22,18 @@
 - [x] Controllare le regole di sicurezza RLS di Supabase (vedi [[Database Supabase]])
 - [x] Decidere il futuro del sito: abbandonato per l'app
 - [x] Esportare i dati ed eseguire `supabase/pulizia-sito.sql` (vedi [[Database Supabase]])
-- [ ] Cancellare la copia CSV quando non serve più: può contenere password
+- [x] Cancellare la copia CSV (già cancellata, confermato il 04/11/2026)
 - [x] Spegnere GitHub Pages (04/11/2026)
 - [x] Eseguire `supabase/mappa-e-squadra.sql`
 - [x] Eseguire `supabase/pu-pubblici.sql` e provare mappa, alleati, PU pubblici e visione comune
 - [x] Eseguire `supabase/gm-turni-catalogo.sql` e darsi il ruolo GM
 - [x] Eseguire `supabase/matricola-e-gradi.sql`
+- [x] Eseguire `supabase/chat-gerarchia-gm.sql`
+- [x] Eseguire `supabase/firma-chat.sql`
+- [x] Eseguire `supabase/nome-squadrone.sql`
+- [ ] Provare canali della chat, squadroni, votazioni, moderazione e nemici
+- [ ] Decidere se i danni degli attacchi devono essere automatici
+- [ ] Decidere se i caporali devono raccogliere gli ordini prima dei GM
 - [x] Provare GM, cambio turno automatico, stipendi e blocchi di movimento e tiro (negozio, timer, mappa 60×80 e descrizioni edifici provati il 04/11/2026)
 - [x] Impedire di fermarsi sulla casella di un alleato e di sparare attraverso le unità
 - [ ] Controllare la presenza del mezzo o del destinatario per salire e cedere rifornimenti
