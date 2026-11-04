@@ -3,6 +3,6 @@
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:statusBarColor">@color/bg</item>
     </style>
-    <color name="bg">#0F1B2D</color>
-    <color name="launcher_bg">#1A365D</color>
+    <color name="bg">#090D0C</color>
+    <color name="launcher_bg">#121917</color>
 </resources>

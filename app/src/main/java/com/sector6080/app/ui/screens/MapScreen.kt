@@ -1,18 +1,24 @@
 package com.sector6080.app.ui.screens
 
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,17 +30,19 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,15 +61,39 @@ import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.rules.Vision
 import com.sector6080.app.ui.GameViewModel
-import com.sector6080.app.ui.theme.Accent
-import com.sector6080.app.ui.theme.AccentLight
+import com.sector6080.app.ui.components.Button
+import com.sector6080.app.ui.components.OutlinedButton
+import com.sector6080.app.ui.components.drawHostileSymbol
+import com.sector6080.app.ui.components.drawUnitSymbol
 import com.sector6080.app.ui.theme.Danger
 import com.sector6080.app.ui.theme.Fog
-import com.sector6080.app.ui.theme.Navy
-import com.sector6080.app.ui.theme.Warning
+import com.sector6080.app.ui.theme.Friend
+import com.sector6080.app.ui.theme.Hostile
+import com.sector6080.app.ui.theme.Ink
+import com.sector6080.app.ui.theme.Signal
+import com.sector6080.app.ui.theme.Steel
+import com.sector6080.app.ui.theme.Void
 import kotlinx.coroutines.delay
 
 private const val CELL = 24f
+
+private fun middle(cell: Cell) = Offset((cell.x - 0.5f) * CELL, (cell.y - 0.5f) * CELL)
+
+/** Angoli del mirino attorno alla casella scelta. */
+private fun DrawScope.drawBrackets(cell: Cell, stroke: Float) {
+    val left = (cell.x - 1) * CELL
+    val top = (cell.y - 1) * CELL
+    val arm = CELL * 0.35f
+    listOf(
+        Offset(left, top) to Offset(arm, arm),
+        Offset(left + CELL, top) to Offset(-arm, arm),
+        Offset(left, top + CELL) to Offset(arm, -arm),
+        Offset(left + CELL, top + CELL) to Offset(-arm, -arm),
+    ).forEach { (corner, inward) ->
+        drawLine(Ink, corner, corner + Offset(inward.x, 0f), stroke)
+        drawLine(Ink, corner, corner + Offset(0f, inward.y), stroke)
+    }
+}
 private val Target = Color(0xFF5CF08A)
 
 /**
@@ -133,9 +165,16 @@ fun MapScreen(
         }
     }
 
+    val pulse by rememberInfiniteTransition(label = "segnale").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2400, easing = LinearOutSlowInEasing)),
+        label = "segnale",
+    )
+
     Column(Modifier.fillMaxSize()) {
         TurnBar(state, onExpired = vm::sync)
-        Canvas(
+        Box(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
@@ -157,76 +196,100 @@ fun MapScreen(
                     }
                 },
         ) {
-            withTransform({
-                translate(offset.x, offset.y)
-                scale(mapScale, mapScale, pivot = Offset.Zero)
-            }) {
-                val cellSize = Size(CELL, CELL)
-                val mapSize = Size(MAP_WIDTH * CELL, MAP_HEIGHT * CELL)
-                val image = mapImage
-                if (image != null) {
-                    drawImage(
-                        image,
-                        dstSize = IntSize(mapSize.width.toInt(), mapSize.height.toInt()),
-                        // pixel netti da vicino, immagine morbida quando è rimpicciolita
-                        filterQuality = if (mapScale >= 1f) FilterQuality.None else FilterQuality.Low,
-                    )
-                } else {
-                    drawRect(Navy, Offset.Zero, mapSize)
-                }
-                // Nebbia di guerra: il terreno resta visibile, solo più scuro.
-                fog.forEach { span ->
-                    drawRect(
-                        Fog.copy(alpha = 0.5f),
-                        Offset((span.fromX - 1) * CELL, (span.y - 1) * CELL),
-                        Size((span.toX - span.fromX + 1) * CELL, CELL),
-                    )
-                }
-                // Griglia: compare solo quando si avvicina la mappa
-                val gridAlpha = ((mapScale - 0.7f) * 0.5f).coerceIn(0f, 0.3f)
-                if (gridAlpha > 0f) {
-                    val line = Color.White.copy(alpha = gridAlpha)
-                    val width = 1f / mapScale
-                    for (x in 0..MAP_WIDTH) drawLine(line, Offset(x * CELL, 0f), Offset(x * CELL, mapSize.height), width)
-                    for (y in 0..MAP_HEIGHT) drawLine(line, Offset(0f, y * CELL), Offset(mapSize.width, y * CELL), width)
-                }
-                valid.forEach {
-                    val tl = Offset((it.x - 1) * CELL, (it.y - 1) * CELL)
-                    drawRect(Target.copy(alpha = 0.35f), tl, cellSize)
-                    drawRect(Target, tl, cellSize, style = Stroke(1.5f))
-                }
-                fun mark(c: Cell, color: Color, inset: Float) = drawRect(
-                    color,
-                    Offset((c.x - 1) * CELL + inset, (c.y - 1) * CELL + inset),
-                    Size(CELL - 2 * inset, CELL - 2 * inset),
-                )
-                if (planned != null && planned != here) mark(planned, Warning.copy(alpha = 0.8f), 4f)
-                allies.forEach { ally ->
-                    ally.position?.let {
-                        mark(it, Color.White, 2f)
-                        mark(it, Target, 4f)
+            Canvas(Modifier.fillMaxSize()) {
+                withTransform({
+                    translate(offset.x, offset.y)
+                    scale(mapScale, mapScale, pivot = Offset.Zero)
+                }) {
+                    val cellSize = Size(CELL, CELL)
+                    val mapSize = Size(MAP_WIDTH * CELL, MAP_HEIGHT * CELL)
+                    val image = mapImage
+                    if (image != null) {
+                        drawImage(
+                            image,
+                            dstSize = IntSize(mapSize.width.toInt(), mapSize.height.toInt()),
+                            // pixel netti da vicino, immagine morbida quando è rimpicciolita
+                            filterQuality = if (mapScale >= 1f) FilterQuality.None else FilterQuality.Low,
+                        )
+                    } else {
+                        drawRect(Steel, Offset.Zero, mapSize)
                     }
+                    // Nebbia di guerra: il terreno resta visibile, solo più scuro.
+                    fog.forEach { span ->
+                        drawRect(
+                            Fog.copy(alpha = 0.45f),
+                            Offset((span.fromX - 1) * CELL, (span.y - 1) * CELL),
+                            Size((span.toX - span.fromX + 1) * CELL, CELL),
+                        )
+                    }
+                    // Griglia: compare solo quando si avvicina la mappa
+                    val gridAlpha = ((mapScale - 0.7f) * 0.5f).coerceIn(0f, 0.3f)
+                    if (gridAlpha > 0f) {
+                        val line = Color.White.copy(alpha = gridAlpha)
+                        val width = 1f / mapScale
+                        for (x in 0..MAP_WIDTH) drawLine(line, Offset(x * CELL, 0f), Offset(x * CELL, mapSize.height), width)
+                        for (y in 0..MAP_HEIGHT) drawLine(line, Offset(0f, y * CELL), Offset(mapSize.width, y * CELL), width)
+                    }
+                    valid.forEach {
+                        val tl = Offset((it.x - 1) * CELL, (it.y - 1) * CELL)
+                        drawRect(Target.copy(alpha = 0.35f), tl, cellSize)
+                        drawRect(Target, tl, cellSize, style = Stroke(1.5f))
+                    }
+                    // I simboli restano leggibili anche con la mappa rimpicciolita
+                    val symbol = maxOf(CELL, 16.dp.toPx() / mapScale)
+                    val stroke = 1.5.dp.toPx() / mapScale
+                    val backing = Void.copy(alpha = 0.8f)
+                    if (here != null && planned != null && planned != here) {
+                        drawLine(
+                            Signal,
+                            middle(here),
+                            middle(planned),
+                            stroke,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(stroke * 3, stroke * 3)),
+                        )
+                        drawCircle(Signal, stroke * 2.5f, middle(planned))
+                    }
+                    allies.forEach { ally ->
+                        ally.position?.let { drawUnitSymbol(ally.type, middle(it), symbol, Friend, backing, stroke) }
+                    }
+                    state.enemies.forEach { drawHostileSymbol(middle(it.position), symbol, Hostile, backing, stroke) }
+                    if (unit != null && here != null) {
+                        drawUnitSymbol(unit.type, middle(here), symbol * 1.2f, Signal, backing, stroke * 1.4f)
+                    }
+                    selected?.let { drawBrackets(it, stroke * 1.5f) }
                 }
-                state.enemies.forEach {
-                    mark(it.position, Color.White, 2f)
-                    mark(it.position, Danger, 4f)
-                }
-                if (here != null) {
-                    mark(here, Color.White, 2f)
-                    mark(here, Accent, 4f)
-                }
-                selected?.let {
-                    drawRect(AccentLight, Offset((it.x - 1) * CELL, (it.y - 1) * CELL), cellSize, style = Stroke(3f))
+            }
+            // Solo questo strato si ridisegna di continuo: la mappa sotto resta ferma
+            Canvas(Modifier.fillMaxSize()) {
+                withTransform({
+                    translate(offset.x, offset.y)
+                    scale(mapScale, mapScale, pivot = Offset.Zero)
+                }) {
+                    val base = maxOf(CELL, 16.dp.toPx() / mapScale)
+                    fun ping(cell: Cell, color: Color) = drawCircle(
+                        color.copy(alpha = (1f - pulse) * 0.7f),
+                        radius = base * (0.7f + pulse * 1.3f),
+                        center = middle(cell),
+                        style = Stroke(1.5.dp.toPx() / mapScale),
+                    )
+                    here?.let { ping(it, Signal) }
+                    state.enemies.forEach { ping(it.position, Hostile) }
                 }
             }
         }
 
-        Surface(tonalElevation = 3.dp) {
-            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Altezza stabile: toccando una casella la mappa non si sposta
+        Surface(color = Steel) {
+            Column(
+                Modifier.fillMaxWidth().heightIn(min = 132.dp).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 val sel = selected
                 if (picking != null) {
-                    Text("Ordine: ${picking.type.label}" + (picking.component?.let { " · $it" } ?: ""),
-                        fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Ordine: ${picking.type.label}" + (picking.component?.let { " · $it" } ?: ""),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                     when {
                         sel == null -> Text("Tocca una casella evidenziata.")
                         sel in valid -> Text(OrderRules.describe(picking.copy(target = sel)))
@@ -251,7 +314,11 @@ fun MapScreen(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (sel != null) {
-                        Text("Casella $sel · ${GameMap.describe(sel)}" + (here?.let { " · distanza ${it.distance(sel)}" } ?: ""))
+                        Text(
+                            "Casella $sel · ${GameMap.describe(sel)}" + (here?.let { " · distanza ${it.distance(sel)}" } ?: ""),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Signal,
+                        )
                     }
                     val tapped = members.firstOrNull { it.unit.position == sel }
                     val tappedSite = sel?.let { GameMap.siteAt(it) }
@@ -319,15 +386,21 @@ private fun TurnBar(state: GameState, onExpired: () -> Unit) {
         }
     }
     val left = ((end - now) / 1_000).coerceAtLeast(0)
-    Surface(tonalElevation = 3.dp) {
-        Text(
-            when {
-                state.turnStartedAt == 0L -> "Turno ${state.turn}"
-                left == 0L -> "Turno ${state.turn} · cambio turno in corso"
-                else -> "Turno ${state.turn} · prossimo turno in ${left / 3600}h ${left / 60 % 60}m ${left % 60}s"
-            },
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-        )
+    Row(
+        Modifier.fillMaxWidth().background(Steel).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("TURNO ${state.turn}", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        if (state.turnStartedAt != 0L) {
+            Text(
+                if (left == 0L) {
+                    "cambio turno in corso"
+                } else {
+                    "prossimo turno in ${left / 3600}h ${left / 60 % 60}m ${left % 60}s"
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = if (left < 3600) Danger else Signal,
+            )
+        }
     }
 }

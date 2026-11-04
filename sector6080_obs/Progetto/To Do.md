@@ -34,6 +34,8 @@
 - [ ] Provare canali della chat, squadroni, votazioni, moderazione e nemici
 - [ ] Decidere se i danni degli attacchi devono essere automatici
 - [ ] Decidere se i caporali devono raccogliere gli ordini prima dei GM
+- [ ] Guardare il nuovo stile su ingresso, creazione unità, scheda GM e nemici
+- [ ] Decidere se aggiungere un carattere dedicato, per esempio Chakra Petch
 - [x] Provare GM, cambio turno automatico, stipendi e blocchi di movimento e tiro (negozio, timer, mappa 60×80 e descrizioni edifici provati il 04/11/2026)
 - [x] Impedire di fermarsi sulla casella di un alleato e di sparare attraverso le unità
 - [ ] Controllare la presenza del mezzo o del destinatario per salire e cedere rifornimenti
@@ -68,7 +70,7 @@ Copiata dal `README.md` di dicembre 2025 (aggiornata dopo la riunione del comand
 ## Media priorità
 - [ ] Timer del turno nella mappa e nel main (fusi orari)
 - [ ] Link a Discord, Google Doc (regole), mappa, main, YouTube
-- [ ] Interfaccia utente migliore
+- [x] Interfaccia utente migliore
 - [ ] Sicurezza: anti-spam, accesso all'API, password, XSS, CSRF, brute force, session hijacking, data injection → vedi [[Problemi noti e sicurezza]]
 - [ ] Rifare invia ordini (poco sicuro e brutto)
 - [x] Spostare `CheckOrderValidity()` in test.html
@@ -81,10 +83,10 @@ Copiata dal `README.md` di dicembre 2025 (aggiornata dopo la riunione del comand
 - [ ] Ordini salire/scendere: indicare l'unità invece della posizione
 
 ## Next
-- [ ] Dark mode
+- [x] Dark mode: l'app è sempre scura
 - [ ] Autosave della pagina
 - [ ] Account GitHub
-- [ ] Palette colori
+- [x] Palette colori
 - [ ] Nuova mail per Sector (Discord / TikTok / Instagram / YouTube)
 
 ## ???

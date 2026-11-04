@@ -25,16 +25,16 @@ object MapRenderer {
 
     private fun rgb(r: Int, g: Int, b: Int) = (0xFF shl 24) or (r shl 16) or (g shl 8) or b
 
-    private val GRASS_DARK = rgb(52, 98, 46)
-    private val GRASS_LIGHT = rgb(104, 150, 74)
-    private val SAND_DARK = rgb(190, 164, 108)
-    private val SAND_LIGHT = rgb(226, 204, 148)
-    private val SEA_DEEP = rgb(18, 58, 108)
-    private val SEA_LIGHT = rgb(34, 92, 152)
-    private val RIVER_DEEP = rgb(44, 112, 176)
-    private val RIVER_LIGHT = rgb(86, 160, 214)
-    private val FOAM = rgb(222, 234, 232)
-    private val WET_SAND = rgb(168, 150, 104)
+    private val GRASS_DARK = rgb(44, 72, 48)
+    private val GRASS_LIGHT = rgb(84, 112, 70)
+    private val SAND_DARK = rgb(146, 130, 96)
+    private val SAND_LIGHT = rgb(182, 164, 124)
+    private val SEA_DEEP = rgb(13, 36, 58)
+    private val SEA_LIGHT = rgb(24, 62, 92)
+    private val RIVER_DEEP = rgb(38, 90, 128)
+    private val RIVER_LIGHT = rgb(66, 124, 158)
+    private val FOAM = rgb(176, 192, 190)
+    private val WET_SAND = rgb(124, 112, 84)
 
     private fun mix(a: Int, b: Int, t: Float): Int {
         val k = t.coerceIn(0f, 1f)

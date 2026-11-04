@@ -13,10 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +38,10 @@ import com.sector6080.app.rules.HierarchyRules
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.ui.GameViewModel
+import com.sector6080.app.ui.components.Button
+import com.sector6080.app.ui.components.Card
+import com.sector6080.app.ui.components.OutlinedButton
+import com.sector6080.app.ui.components.SectionLabel
 import com.sector6080.app.ui.theme.Danger
 
 /** Nemico ancora da creare: l'id viene dal server. */
@@ -63,9 +64,8 @@ fun GmScreen(vm: GameViewModel, state: GameState) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
-            Spacer(Modifier.padding(top = 8.dp))
-            Text("Game Master", style = MaterialTheme.typography.headlineSmall)
-            Text("Turno ${state.turn}")
+            Spacer(Modifier.padding(top = 4.dp))
+            Text("Turno ${state.turn}", style = MaterialTheme.typography.headlineSmall)
             OutlinedButton(onClick = { confirmTurn = true }, enabled = !busy) {
                 Text("Passa subito al turno successivo")
             }
@@ -169,9 +169,7 @@ fun GmScreen(vm: GameViewModel, state: GameState) {
 }
 
 @Composable
-private fun Title(text: String) {
-    Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-}
+private fun Title(text: String) = SectionLabel(text)
 
 @Composable
 private fun ActiveUnitCard(
