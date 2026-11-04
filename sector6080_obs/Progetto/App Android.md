@@ -16,7 +16,7 @@ Trasformare Sector6080 **da sito web/discord ad app Android pubblicata sul Googl
   - test JVM delle regole in `app/src/test`.
 - **Collegamento a Supabase (04/11/2026):** l'app legge e scrive sul server con `RemoteGame.kt`, e tiene una copia sul telefono. Provato dal vivo con due player: vedi [[Database Supabase]].
 - La scheda Link è stata tolta. Il regolamento si apre dalla domanda iniziale, e il link Discord non è più nell'app.
-- **Ultimo prototipo condivisibile:** v0.5.0 in `dist/` (cartella non inclusa in git), con mappa dal server, squadra visibile e visione comune. È una build di debug, da installare a mano.
+- **Ultimo prototipo condivisibile:** v0.6.0 in `dist/` (cartella non inclusa in git), con scheda GM, canali della chat, squadroni, votazioni e nemici. Le versioni precedenti non funzionano più con il database attuale. È una build di debug, da installare a mano.
 - **Build verificata (03/11/2026):** AGP 9.5.0, Gradle 9.6.0, Kotlin 2.4.21, compileSdk/targetSdk 37. Test, lint e APK di debug passano, e l'app gira sull'emulatore. Da riga di comando: `gradlew.bat :app:assembleDebug` con `JAVA_HOME` sul JBR di Android Studio.
 - Il piano originale del README ("tradurre tutto in Angular") è superato. Il piano per il gioco condiviso è in [[Multiplayer]].
 
