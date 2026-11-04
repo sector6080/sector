@@ -61,6 +61,7 @@ I [[Game Master]] sono i moderatori naturali: servono strumenti per bloccare un 
 - **Dove stanno i dati:** preferire un server in Unione Europea, altrimenti valutare il trasferimento.
 - **Conservazione:** decidere quanto tenere chat e unità perse, compresa un'eventuale "lista morti".
 - **Account anonimi:** identificativi e messaggi possono comunque essere dati personali.
+- **Schede pubbliche:** nome del player, grado, PU, statistiche, lore e posizione delle unità approvate sono visibili a tutti, anche senza account. Va detto nella privacy policy, e il campo Player non dovrebbe contenere il nome reale.
 - **Bonus Google:** +1 PU premia il collegamento dell'account. La privacy policy deve spiegare chiaramente cosa cambia, e va verificato che il bonus non crei problemi.
 
 ### Minori

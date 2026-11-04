@@ -22,13 +22,16 @@
 - [x] Decidere il futuro del sito: abbandonato per l'app
 - [x] Esportare i dati ed eseguire `supabase/pulizia-sito.sql` (vedi [[Database Supabase]])
 - [ ] Cancellare la copia CSV quando non serve più: può contenere password
-- [ ] Spegnere GitHub Pages, così nessuno usa più il sito rotto
+- [x] Spegnere GitHub Pages (04/11/2026)
+- [x] Eseguire `supabase/mappa-e-squadra.sql`
+- [x] Eseguire `supabase/pu-pubblici.sql` e provare mappa, alleati, PU pubblici e visione comune
+- [ ] Impedire di fermarsi sulla casella di un alleato
 - [x] Decidere il metodo di accesso: Google + anonimo
 - [ ] Sciogliere i dubbi rimasti in [[Account e identità]]
 - [x] Prototipo: chat solo in lettura senza unità, messaggi firmati dall'unità
 - [x] Spostare PU e grado dall'unità al player
 - [ ] Accesso Google reale e bonus PU dal server
-- [ ] Portare la visione condivisa sul server
+- [x] Rendere comune la visione di tutta la squadra
 - [ ] Iniziare il [[Multiplayer]]: login e sezione [[Game Master]] minima
 - [ ] Aggiornare `origin` di git al nuovo indirizzo `github.com/sector6080/sector`
 

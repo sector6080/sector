@@ -38,6 +38,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val remote = RemoteGame()
     private val syncLock = Mutex()
 
+    @Volatile
+    private var mapGeneration = 0
+    private var mapLoaded = false
+
     val catalog: Catalog = CatalogLoader.load(app)
 
     private val _state = MutableStateFlow(GameState())
@@ -68,9 +72,16 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             _loaded.value = true
             synchronize()
         }
+        drawMap()
+    }
+
+    /** Se arriva una mappa nuova mentre si disegna quella vecchia, vince l'ultima. */
+    private fun drawMap() {
+        val generation = ++mapGeneration
         viewModelScope.launch(Dispatchers.Default) {
-            _mapImage.value = MapRenderer.preview().asImageBitmap()
-            _mapImage.value = MapRenderer.render().asImageBitmap()
+            if (generation == 1) _mapImage.value = MapRenderer.preview().asImageBitmap()
+            val image = MapRenderer.render().asImageBitmap()
+            if (generation == mapGeneration) _mapImage.value = image
         }
     }
 
@@ -97,8 +108,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun synchronize() = syncLock.withLock {
         runCatching {
+            if (!mapLoaded) {
+                val map = remote.map()
+                mapLoaded = true
+                if (GameMap.replace(map.rows, map.sites)) drawMap()
+            }
             val chat = remote.chat()
-            edit { it.copy(chat = chat) }
+            val team = remote.team()
+            edit { it.copy(chat = chat, team = team) }
             if (_state.value.access != null) {
                 remote.signIn()
                 val snapshot = remote.snapshot()

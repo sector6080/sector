@@ -2,6 +2,7 @@ package com.sector6080.app
 
 import com.sector6080.app.data.CatalogLoader
 import com.sector6080.app.data.CatalogParser
+import com.sector6080.app.data.TeamRow
 import com.sector6080.app.data.UnitRow
 import com.sector6080.app.data.createUnitParams
 import com.sector6080.app.data.friendlyError
@@ -132,7 +133,7 @@ class RulesTest {
             assertTrue(cells.filter { it in site }.all { GameMap.terrainAt(it) == Terrain.BUILDING })
         }
         assertEquals("Porto 2", GameMap.describe(Cell(50, 4)))
-        assertEquals("Magazzino", GameMap.describe(Cell(61, 15)))
+        assertEquals("Magazzino 1", GameMap.describe(Cell(61, 15)))
     }
 
     @Test
@@ -185,6 +186,48 @@ class RulesTest {
         assertFalse(OrderRules.isPossible(catalog, unit, emptyList(), Order(OrderType.DISEMBARK)))
         // arma già carica: ricaricarla sprecherebbe un rifornimento
         assertFalse(OrderRules.isPossible(catalog, unit, emptyList(), Order(OrderType.RELOAD, component = gun.name)))
+    }
+
+    @Test
+    fun serverMapReplacesTheBuiltInOne() {
+        val letters = mapOf(
+            Terrain.SEA to 'B', Terrain.RIVER to 'L', Terrain.BRIDGE to 'O', Terrain.PORT to 'A',
+            Terrain.SAND to 'S', Terrain.GRASS to 'G', Terrain.BUILDING to 'W',
+        )
+        val rows = (1..MAP_HEIGHT).map { y ->
+            (1..MAP_WIDTH).map { x -> letters.getValue(GameMap.terrainAt(Cell(x, y))) }.joinToString("")
+        }
+        val sites = GameMap.ports + GameMap.refineries + GameMap.warehouses
+        assertEquals(9, sites.size)
+
+        assertFalse(GameMap.replace(rows, sites)) // uguale a quella attuale
+        assertFalse(GameMap.replace(rows.drop(1), sites)) // dimensioni sbagliate
+
+        val changed = listOf("G" + rows[0].drop(1)) + rows.drop(1)
+        try {
+            assertTrue(GameMap.replace(changed, sites))
+            assertEquals(Terrain.GRASS, GameMap.terrainAt(Cell(1, 1)))
+        } finally {
+            GameMap.replace(rows, sites)
+        }
+        assertEquals(Terrain.SEA, GameMap.terrainAt(Cell(1, 1)))
+    }
+
+    @Test
+    fun teamRowsHideNothingTheSheetNeeds() {
+        val member = TeamRow(
+            "XYZ-789", "Rosso", "Caporale", 12, "Fanteria", listOf("Pistola"), "storia", 7, 3,
+            mapOf("Pistola" to 1), 30, 40, false,
+        ).toTeamMember()
+        assertEquals("Caporale", member.rank)
+        assertEquals(12, member.pu)
+        assertEquals("storia", member.unit.lore)
+        assertEquals(Cell(30, 40), member.unit.position)
+        assertTrue(member.unit.approved)
+
+        val a = Vision.Source(Cell(30, 40), UnitRules.maxStats(catalog, member.unit).vision)
+        assertEquals(3, a.range)
+        assertTrue(Vision.isVisible(listOf(a), Cell(33, 40)))
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.sector6080.app.model
 
+import kotlinx.serialization.Serializable
+
 enum class Terrain(val label: String, val walkable: Boolean) {
     SEA("Mare", false),
     RIVER("Fiume", false),
@@ -11,12 +13,14 @@ enum class Terrain(val label: String, val walkable: Boolean) {
 }
 
 /** Struttura sulla mappa: rettangolo con angolo in alto a sinistra in (x, y). */
+@Serializable
 data class MapSite(val name: String, val x: Int, val y: Int, val w: Int = 1, val h: Int = 1) {
     operator fun contains(c: Cell) = c.x in x until x + w && c.y in y until y + h
 }
 
 /**
- * Mappa di gioco, copiata dal foglio "Sector 6080 (master)", scheda "mappa".
+ * Mappa di gioco. La versione ufficiale sta nella tabella `game_map` del server:
+ * questa copia, presa dal foglio "Sector 6080 (master)", serve finché non arriva.
  * Ogni riga è compressa (es. 49B2A = 49 B e 2 A). K è il bordo nero del foglio.
  * B mare, L fiume, O ponte, A porto, S sabbia, G prato, W edificio.
  */
@@ -31,31 +35,46 @@ object GameMap {
             "K2GS77GK/K2GS77GK/K2GS77GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/" +
             "K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/K80GK/82K"
 
-    val ports = listOf(
+    @Volatile
+    private var sites: List<MapSite> = listOf(
         MapSite("Porto 1", 18, 8, 2, 3),
         MapSite("Porto 2", 50, 4, 2, 3),
         MapSite("Porto 3", 70, 7, 2, 3),
+        MapSite("Raffineria 1", 37, 10, 2, 2),
+        MapSite("Raffineria 2", 78, 11, 2, 2),
+        MapSite("Raffineria 3", 3, 14, 2, 2),
+        MapSite("Magazzino 1", 61, 15),
+        MapSite("Magazzino 2", 25, 16),
+        MapSite("Magazzino 3", 13, 17),
     )
-    val refineries = listOf(
-        MapSite("Raffineria carburante", 37, 10, 2, 2),
-        MapSite("Raffineria carburante", 78, 11, 2, 2),
-        MapSite("Raffineria carburante", 3, 14, 2, 2),
-    )
-    val warehouses = listOf(
-        MapSite("Magazzino", 61, 15),
-        MapSite("Magazzino", 25, 16),
-        MapSite("Magazzino", 13, 17),
-    )
-    private val sites = ports + refineries + warehouses
 
-    private val grid: List<String> = SHEET.split("/").drop(1).dropLast(1).map { row ->
+    @Volatile
+    private var grid: List<String> = SHEET.split("/").drop(1).dropLast(1).map { row ->
         Regex("""(\d*)([A-Z])""").findAll(row).joinToString("") { m ->
             m.groupValues[2].repeat(m.groupValues[1].toIntOrNull() ?: 1)
         }.removeSurrounding("K")
     }
 
+    val ports get() = sites.filter { it.name.startsWith("Porto") }
+    val refineries get() = sites.filter { it.name.startsWith("Raffineria") }
+    val warehouses get() = sites.filter { it.name.startsWith("Magazzino") }
+
     init {
-        require(grid.size == MAP_HEIGHT && grid.all { it.length == MAP_WIDTH }) { "Mappa di dimensioni errate" }
+        require(isValid(grid)) { "Mappa di dimensioni errate" }
+    }
+
+    private fun isValid(rows: List<String>) =
+        rows.size == MAP_HEIGHT && rows.all { it.length == MAP_WIDTH }
+
+    /**
+     * Sostituisce la mappa con quella del server.
+     * Restituisce true solo se è valida ed è diversa da quella attuale.
+     */
+    fun replace(rows: List<String>, newSites: List<MapSite>): Boolean {
+        if (!isValid(rows) || (rows == grid && newSites == sites)) return false
+        grid = rows
+        sites = newSites
+        return true
     }
 
     fun terrainAt(c: Cell): Terrain = when (grid[c.y - 1][c.x - 1]) {

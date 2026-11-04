@@ -3,7 +3,9 @@ package com.sector6080.app.data
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.ChatMessage
 import com.sector6080.app.model.GameUnit
+import com.sector6080.app.model.MapSite
 import com.sector6080.app.model.Order
+import com.sector6080.app.model.TeamMember
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
@@ -63,6 +65,46 @@ data class UnitRow(
         synced = true,
     )
 }
+
+/** Unità della squadra con grado e PU del player. Il proprietario resta privato. */
+@Serializable
+data class TeamRow(
+    val matricola: String,
+    @SerialName("player_name") val playerName: String,
+    val rank: String,
+    val pu: Int,
+    val type: String,
+    val components: List<String>,
+    val lore: String,
+    val hp: Int,
+    val supplies: Int,
+    val uses: Map<String, Int>,
+    @SerialName("pos_x") val posX: Int,
+    @SerialName("pos_y") val posY: Int,
+    val transported: Boolean,
+) {
+    fun toTeamMember() = TeamMember(
+        GameUnit(
+            matricola = matricola,
+            player = playerName,
+            type = type,
+            components = components,
+            lore = lore,
+            hp = hp,
+            supplies = supplies,
+            uses = uses,
+            position = Cell(posX, posY),
+            transported = transported,
+            approved = true,
+            synced = true,
+        ),
+        rank,
+        pu,
+    )
+}
+
+@Serializable
+data class MapData(val rows: List<String>, val sites: List<MapSite>)
 
 @Serializable
 data class TurnRow(
@@ -141,6 +183,13 @@ class RemoteGame {
     suspend fun sendChat(text: String) {
         client.postgrest.rpc("send_chat", buildJsonObject { put("p_body", text) })
     }
+
+    /** Si legge anche senza account. */
+    suspend fun map(): MapData = client.postgrest.rpc("get_map").decodeAs()
+
+    /** Unità approvate di tutti i player: si legge anche senza account. */
+    suspend fun team(): List<TeamMember> =
+        client.postgrest.rpc("get_team").decodeList<TeamRow>().map { it.toTeamMember() }
 
     /** Ultimi messaggi, dal più vecchio al più recente. La chat si legge anche senza account. */
     suspend fun chat(): List<ChatMessage> = client.from("chat_messages").select {

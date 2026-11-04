@@ -18,9 +18,11 @@
 |---|---|
 | `supabase/pulizia-sito.sql` | Ha chiuso il database del sito (già eseguito), vedi [[Database Supabase]] |
 | `supabase/schema-app.sql` | Tabelle e regole dell'app, vedi [[Database Supabase]] |
+| `supabase/mappa-e-squadra.sql` | Tabella della mappa e funzioni per mappa e squadra |
+| `supabase/pu-pubblici.sql` | Aggiunge i PU alla squadra visibile a tutti |
 | `supabase/rimuovi-tabelle-sito.sql` | Elimina le vecchie tabelle del sito, vedi [[Database Supabase]] |
 
-## Sito web (abbandonato)
+## Sito web (abbandonato, GitHub Pages spento)
 | File | Cosa fa |
 |---|---|
 | `index.html` | Ultimo sito con Supabase |

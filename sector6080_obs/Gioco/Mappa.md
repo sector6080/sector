@@ -1,6 +1,8 @@
 # Mappa
 
-Fonte: foglio Google "Sector 6080 (master)", scheda `mappa` (vedi [[Fonti e link]]). L'app ne contiene una copia in `GameMap.kt`: se il foglio cambia, la copia va aggiornata.
+La versione ufficiale è la tabella `game_map` su Supabase, con una riga per casella (vedi [[Database Supabase]]). Un GM può cambiare terreno o struttura dal Table Editor: l'app legge la mappa all'avvio.
+
+Origine: foglio Google "Sector 6080 (master)", scheda `mappa` (vedi [[Fonti e link]]). L'app tiene una copia in `GameMap.kt`, usata finché il server non risponde.
 
 ## Dimensioni
 - **80 colonne × 59 righe** dentro il bordo nero del foglio.
@@ -26,12 +28,12 @@ I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: van
 | Porto 1 | 18,8 | 2×3 |
 | Porto 2 | 50,4 | 2×3 |
 | Porto 3 | 70,7 | 2×3 |
-| Raffineria carburante | 37,10 | 2×2 |
-| Raffineria carburante | 78,11 | 2×2 |
-| Raffineria carburante | 3,14 | 2×2 |
-| Magazzino | 61,15 | 1×1 |
-| Magazzino | 25,16 | 1×1 |
-| Magazzino | 13,17 | 1×1 |
+| Raffineria 1 | 37,10 | 2×2 |
+| Raffineria 2 | 78,11 | 2×2 |
+| Raffineria 3 | 3,14 | 2×2 |
+| Magazzino 1 | 61,15 | 1×1 |
+| Magazzino 2 | 25,16 | 1×1 |
+| Magazzino 3 | 13,17 | 1×1 |
 
 - Le **nuove unità** partono da un porto, sempre lo stesso per la stessa matricola.
 - I **magazzini** sono probabilmente i "depositi" del regolamento, da confermare.
@@ -51,8 +53,10 @@ I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: van
 - **Nebbia di guerra condivisa**: tutti i player vedono la stessa cosa, cioè l'unione delle visioni di tutte le unità (senza diagonali). Non esiste una visione per singola unità. Fuori dalla visione il terreno resta visibile ma più scuro. I nemici, quando ci saranno, non dovranno mai arrivare al telefono dei player se non sono visibili alla squadra (vedi [[Multiplayer]]).
 - Quando un ordine richiede una casella, la mappa si avvicina all'unità ed evidenzia in verde le caselle valide (vedi [[Ordini]]).
 - Toccando una casella si leggono coordinate, terreno e struttura.
+- **Alleati:** le unità approvate compaiono come segnalini verdi. Toccandone una, o aprendo l'elenco "Squadra", si legge la sua scheda: grado e PU del player, statistiche, componenti, posizione e lore.
 
 ## Da fare
-- Alleati e nemici sulla mappa.
+- Nemici sulla mappa.
+- Impedire di fermarsi sulla casella di un alleato: la regola esiste nel regolamento, ma il controllo non è ancora nell'app.
 - Ricerca delle unità.
 - "Terreni" e "Costruire" sono archiviati, vedi [[DEV note]].

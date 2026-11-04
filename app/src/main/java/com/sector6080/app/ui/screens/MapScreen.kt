@@ -41,6 +41,7 @@ import com.sector6080.app.model.GameState
 import com.sector6080.app.model.MAP_HEIGHT
 import com.sector6080.app.model.MAP_WIDTH
 import com.sector6080.app.model.Order
+import com.sector6080.app.model.TeamMember
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.rules.Vision
@@ -75,9 +76,17 @@ fun MapScreen(
     val vision = unit?.let { UnitRules.maxStats(vm.catalog, it).vision } ?: 0
     val here = unit?.position
     val planned = sim?.position
-    // Visione condivisa: con il server questa lista conterrà tutte le unità della squadra
-    val team = listOfNotNull(here?.let { Vision.Source(it, vision) })
-    val fog = remember(team) { Vision.fogSpans(team) }
+    // La propria unità può essere ancora in attesa, quindi assente dalla squadra del server
+    val members = when {
+        unit == null || state.team.any { it.unit.matricola == unit.matricola } -> state.team
+        else -> state.team + TeamMember(unit, state.rank, state.pu)
+    }
+    val allies = members.map { it.unit }.filter { it.matricola != unit?.matricola }
+    // Visione comune: la somma delle visioni di tutte le unità
+    val sources = members.mapNotNull { member ->
+        member.unit.position?.let { Vision.Source(it, UnitRules.maxStats(vm.catalog, member.unit).vision) }
+    }
+    val fog = remember(sources) { Vision.fogSpans(sources) }
     val valid = remember(picking, unit, state.orders) {
         if (picking != null && unit != null) {
             OrderRules.validTargets(vm.catalog, unit, state.orders, picking)
@@ -90,6 +99,8 @@ fun MapScreen(
     var offset by remember { mutableStateOf(Offset.Zero) }
     var selected by remember { mutableStateOf<Cell?>(null) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    var showTeam by remember { mutableStateOf(false) }
+    var sheet by remember { mutableStateOf<TeamMember?>(null) }
 
     fun fitScale() = canvasSize.width / (MAP_WIDTH * CELL)
 
@@ -178,6 +189,12 @@ fun MapScreen(
                     Size(CELL - 2 * inset, CELL - 2 * inset),
                 )
                 if (planned != null && planned != here) mark(planned, Warning.copy(alpha = 0.8f), 4f)
+                allies.forEach { ally ->
+                    ally.position?.let {
+                        mark(it, Color.White, 2f)
+                        mark(it, Target, 4f)
+                    }
+                }
                 if (here != null) {
                     mark(here, Color.White, 2f)
                     mark(here, Accent, 4f)
@@ -219,8 +236,24 @@ fun MapScreen(
                     if (sel != null) {
                         Text("Casella $sel · ${GameMap.describe(sel)}" + (here?.let { " · distanza ${it.distance(sel)}" } ?: ""))
                     }
+                    val tapped = members.firstOrNull { it.unit.position == sel }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = { showTeam = true }) { Text("Squadra (${members.size})") }
+                        if (tapped != null) {
+                            Button(onClick = { sheet = tapped }) { Text("Scheda ${tapped.unit.matricola}") }
+                        }
+                    }
                 }
             }
         }
     }
+
+    if (showTeam) {
+        TeamListDialog(
+            team = members,
+            onOpen = { sheet = it; showTeam = false },
+            onDismiss = { showTeam = false },
+        )
+    }
+    sheet?.let { UnitSheetDialog(vm.catalog, it) { sheet = null } }
 }

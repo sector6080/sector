@@ -74,7 +74,7 @@ Quadro completo, compreso ciò che manca. Le tabelle già definite e i loro nomi
 2. Approvazione: per ora dalla dashboard, poi **sezione GM minima**.
 3. ✅ Invio ordini e turno condiviso, stesso stato del punto 1.
 4. ✅ Chat reale, stesso stato del punto 1.
-5. Mappa condivisa: alleati visibili, nemici, nebbia di guerra lato GM.
+5. ✅ Mappa su server, alleati visibili con scheda e PU, visione comune: provato dal vivo. Restano i nemici e la loro nebbia di guerra lato GM.
 6. Accesso Google reale e bonus PU dal server.
 7. Notifiche push.
 

@@ -39,6 +39,10 @@ data class GameUnit(
     val synced: Boolean = false,
 )
 
+/** Unità approvata di un altro player: tutti possono guardarne la scheda. */
+@Serializable
+data class TeamMember(val unit: GameUnit, val rank: String, val pu: Int)
+
 @Serializable
 enum class OrderType(val label: String) {
     MOVE("Muoversi"),
@@ -87,4 +91,6 @@ data class GameState(
     val pu: Int = STARTING_BUDGET,
     val rank: String = "Recluta",
     val chat: List<ChatMessage> = emptyList(),
+    /** Unità approvate di tutta la squadra, compresa la propria. */
+    val team: List<TeamMember> = emptyList(),
 )
