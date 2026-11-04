@@ -2,13 +2,33 @@
 
 ## App (prossimi passi)
 - [x] Aggiungere nell'app il link del server Discord (costante `DISCORD_URL` in `App.kt`)
-- [ ] Aggiornare il Google Doc: budget di creazione 5 PU invece di 10, "Player" al posto del nick Discord, Discord facoltativo
+- [x] Riaprire il progetto Supabase del sito (03/11/2026)
+- [x] Salvare una copia del database (il piano gratuito non ha backup automatici)
+- [ ] Aggiornare il Google Doc: budget di creazione 4 PU (+1 con Google) invece di 10, "Player" al posto del nick Discord, Discord facoltativo
+- [ ] Completare la lista in [[Questioni legali]]
 - [x] Definire le coordinate dei tre porti e dei depositi (dalla [[Mappa]])
-- [ ] Confermare i dubbi sulla [[Mappa]]: colori, acqua invalicabile, riga mancante
+- [ ] Confermare i dubbi sulla [[Mappa]]: colori, riga mancante, magazzini ed edifici
 - [ ] Rendere il regolamento leggibile da tutti ("Chiunque abbia il link")
 - [ ] Decidere la durata del turno: 2 giorni o 24 ore
-- [ ] Decidere il backend: Supabase (già usato dal sito) o Firebase
-- [ ] Controllare le regole di sicurezza RLS di Supabase
+- [x] Decidere il backend: Supabase
+- [x] Eseguire `supabase/schema-app.sql`
+- [x] Eliminare le vecchie tabelle del sito
+- [x] Attivare gli accessi anonimi nella dashboard
+- [x] Provare il collegamento dell'app: unità, ordini, chat, approvazione, secondo player
+- [ ] Togliere dal database i dati di prova prima di aprire ad altri
+- [ ] Attivare un CAPTCHA o un altro limite per gli accessi anonimi
+- [ ] Restituzione dei PU per le unità rifiutate
+- [x] Controllare le regole di sicurezza RLS di Supabase (vedi [[Database Supabase]])
+- [x] Decidere il futuro del sito: abbandonato per l'app
+- [x] Esportare i dati ed eseguire `supabase/pulizia-sito.sql` (vedi [[Database Supabase]])
+- [ ] Cancellare la copia CSV quando non serve più: può contenere password
+- [ ] Spegnere GitHub Pages, così nessuno usa più il sito rotto
+- [x] Decidere il metodo di accesso: Google + anonimo
+- [ ] Sciogliere i dubbi rimasti in [[Account e identità]]
+- [x] Prototipo: chat solo in lettura senza unità, messaggi firmati dall'unità
+- [x] Spostare PU e grado dall'unità al player
+- [ ] Accesso Google reale e bonus PU dal server
+- [ ] Portare la visione condivisa sul server
 - [ ] Iniziare il [[Multiplayer]]: login e sezione [[Game Master]] minima
 - [ ] Aggiornare `origin` di git al nuovo indirizzo `github.com/sector6080/sector`
 

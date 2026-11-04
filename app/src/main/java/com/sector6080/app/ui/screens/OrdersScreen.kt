@@ -70,10 +70,6 @@ fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Un
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Ordini inviati al Game Master", color = Success, fontWeight = FontWeight.Bold)
-                        Text(
-                            "Prototipo: gli ordini restano su questo telefono finché non ci sarà il server.",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
                         OutlinedButton(onClick = vm::withdrawOrders, modifier = Modifier.fillMaxWidth()) {
                             Text("Ritira e modifica")
                         }
@@ -113,9 +109,17 @@ fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Un
                 )
                 Button(
                     onClick = vm::sendOrders,
-                    enabled = state.orders.isNotEmpty() && result.isValid,
+                    enabled = unit.approved && state.orders.isNotEmpty() && result.isValid,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text(if (result.isValid) "Invia ordini" else "Correggi gli ordini in rosso") }
+                ) {
+                    Text(
+                        when {
+                            !unit.approved -> "Puoi inviare dopo l'approvazione"
+                            result.isValid -> "Invia ordini"
+                            else -> "Correggi gli ordini in rosso"
+                        },
+                    )
+                }
                 OutlinedButton(onClick = vm::clearOrders, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                     Text("Svuota")
                 }

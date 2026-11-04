@@ -7,14 +7,15 @@ Trasformare Sector6080 **da sito web/discord ad app Android pubblicata sul Googl
 - **Scelte fatte (03/11/2026):** Kotlin + Jetpack Compose, offline-first (salvataggio locale dietro un'interfaccia `GameRepository`, pronta per Firebase), sviluppo con Android Studio.
 - **Prima versione scritta** (progetto Gradle nella root del repo, modulo `app/`, package `com.sector6080.app`):
   - il catalogo dei componenti è letto **direttamente dalle note** [[Fanteria]], [[Motorizzata]], [[Corazzata]], [[Artiglieria]]: se modifichi le note, l'app si aggiorna al build successivo. Va mantenuto il formato `- Nome – Perf. X | Range Y | Z danni | (n/n)`;
-  - scheda Unità: conferma di aver letto il regolamento, creazione con 5 PU, statistiche calcolate, prerequisiti ("richiede ..."), scheda in sola lettura;
+  - scheda Unità: accesso senza account (Google in arrivo), conferma di aver letto il regolamento, creazione sul server con i PU del player, statistiche calcolate, prerequisiti ("richiede ..."), scheda in sola lettura;
   - scheda Ordini: nessun testo libero, opzioni impossibili disattivate, caselle scelte dalla mappa, invio al [[Game Master]] (si può ritirare), timer del turno;
   - scheda Mappa: mappa reale 80×59 con texture, rimpicciolita all'avvio, zoom, nebbia di guerra, selezione delle caselle valide, acqua e ponti;
-  - scheda Chat: solo interfaccia, i messaggi restano sul telefono finché non c'è il server;
+  - scheda Chat: messaggi sul server, aggiornati ogni 10 secondi. Senza unità si può solo leggere, e il server firma i messaggi con la matricola;
   - scheda Link: regolamento e server Discord facoltativo;
   - test JVM delle regole in `app/src/test`.
-- **Solo interfaccia player:** approvazioni e modifiche alle unità spettano ai [[Game Master]], che avranno una sezione a parte non ancora sviluppata. Nel prototipo le unità restano in attesa di approvazione, il turno resta 0 e non si può ricreare l'unità senza cancellare i dati dell'app.
-- **Ultimo prototipo condivisibile:** v0.3.0 in `dist/` (cartella non inclusa in git), con la mappa reale. È una build di debug, da installare a mano.
+- **Collegamento a Supabase (04/11/2026):** l'app legge e scrive sul server con `RemoteGame.kt`, e tiene una copia sul telefono. Provato dal vivo con due player: vedi [[Database Supabase]].
+- **Solo interfaccia player:** approvazioni e modifiche alle unità spettano ai [[Game Master]], che per ora lavorano dalla dashboard di Supabase.
+- **Ultimo prototipo condivisibile:** v0.4.0 in `dist/` (cartella non inclusa in git), collegata a Supabase. È una build di debug, da installare a mano.
 - **Build verificata (03/11/2026):** AGP 9.5.0, Gradle 9.6.0, Kotlin 2.4.21, compileSdk/targetSdk 37. Test, lint e APK di debug passano, e l'app gira sull'emulatore. Da riga di comando: `gradlew.bat :app:assembleDebug` con `JAVA_HOME` sul JBR di Android Studio.
 - Il piano originale del README ("tradurre tutto in Angular") è superato. Il piano per il gioco condiviso è in [[Multiplayer]].
 
@@ -43,7 +44,7 @@ Trasformare Sector6080 **da sito web/discord ad app Android pubblicata sul Googl
 - Account sviluppatore Google Play (25 $ una tantum).
 - Per gli account personali nuovi: closed testing con almeno 12 tester per 14 giorni prima della pubblicazione.
 - Privacy policy pubblica (servirà, visto che si raccolgono nick e login).
-- Chat e account comportano altri obblighi: segnalazione e blocco degli utenti, eliminazione dell'account (vedi [[Multiplayer]]).
+- Chat e account comportano altri obblighi: vedi [[Questioni legali]].
 - Icona, screenshot, scheda dello store, classificazione dei contenuti (tema militare).
 - Target API level recente, build AAB firmato.
 

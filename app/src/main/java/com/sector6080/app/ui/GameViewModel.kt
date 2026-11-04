@@ -8,25 +8,35 @@ import androidx.lifecycle.viewModelScope
 import com.sector6080.app.data.CatalogLoader
 import com.sector6080.app.data.GameRepository
 import com.sector6080.app.data.LocalGameRepository
+import com.sector6080.app.data.RemoteGame
+import com.sector6080.app.data.RemoteSnapshot
+import com.sector6080.app.data.friendlyError
+import com.sector6080.app.data.parseMillis
+import com.sector6080.app.model.Access
 import com.sector6080.app.model.Catalog
-import com.sector6080.app.model.ChatMessage
 import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.Order
+import com.sector6080.app.rules.UnitRules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
- * Azioni del player. Approvazioni, modifiche alle unità e passaggio del turno
- * spettano ai Game Master e non sono qui: avranno una sezione a parte.
+ * Azioni del player. Il server decide unità, PU, turno e chat: qui resta solo una copia
+ * sul telefono, più la catena di ordini in preparazione. Approvazioni, modifiche alle
+ * unità e passaggio del turno spettano ai Game Master.
  */
 class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val repo: GameRepository = LocalGameRepository(app)
+    private val remote = RemoteGame()
+    private val syncLock = Mutex()
 
     val catalog: Catalog = CatalogLoader.load(app)
 
@@ -36,6 +46,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val _loaded = MutableStateFlow(false)
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
+    /** Messaggio per il player quando il server non risponde o rifiuta un'azione. */
+    private val _notice = MutableStateFlow<String?>(null)
+    val notice: StateFlow<String?> = _notice.asStateFlow()
+
+    private val _busy = MutableStateFlow(false)
+    val busy: StateFlow<Boolean> = _busy.asStateFlow()
+
     /** Immagine della mappa con le texture: si disegna una volta sola, in background. */
     private val _mapImage = MutableStateFlow<ImageBitmap?>(null)
     val mapImage: StateFlow<ImageBitmap?> = _mapImage.asStateFlow()
@@ -43,13 +60,16 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             val saved = repo.load()
-            // i salvataggi vecchi possono avere unità mai schierate
+            // i salvataggi vecchi possono avere unità mai schierate o l'accesso Google simulato
             _state.value = saved.copy(
                 unit = saved.unit?.let { it.copy(position = it.position ?: GameMap.spawnCell(it.matricola)) },
+                access = Access.ANONYMOUS.takeIf { saved.unit != null || saved.access != null },
             )
             _loaded.value = true
+            synchronize()
         }
         viewModelScope.launch(Dispatchers.Default) {
+            _mapImage.value = MapRenderer.preview().asImageBitmap()
             _mapImage.value = MapRenderer.render().asImageBitmap()
         }
     }
@@ -60,9 +80,73 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.save(snapshot) }
     }
 
+    /** Esegue un'azione sul server e poi riallinea il telefono. */
+    private fun act(action: suspend () -> Unit) {
+        viewModelScope.launch {
+            _busy.value = true
+            runCatching { action() }
+                .onSuccess { synchronize() }
+                .onFailure { _notice.value = friendlyError(it) }
+            _busy.value = false
+        }
+    }
+
+    fun sync() {
+        if (_loaded.value) viewModelScope.launch { synchronize() }
+    }
+
+    private suspend fun synchronize() = syncLock.withLock {
+        runCatching {
+            val chat = remote.chat()
+            edit { it.copy(chat = chat) }
+            if (_state.value.access != null) {
+                remote.signIn()
+                val snapshot = remote.snapshot()
+                val local = _state.value.unit
+                if (snapshot.unit == null && local != null && !local.synced) {
+                    remote.createUnit(local, UnitRules.totalCost(catalog, local))
+                    apply(remote.snapshot())
+                } else {
+                    apply(snapshot)
+                }
+            }
+        }
+            .onSuccess { _notice.value = null }
+            .onFailure { _notice.value = friendlyError(it) }
+        Unit
+    }
+
+    private fun apply(snapshot: RemoteSnapshot) = edit { s ->
+        val sent = snapshot.sentOrders
+        val newTurn = snapshot.turn.turn != s.turn
+        s.copy(
+            pu = snapshot.player.pu,
+            rank = snapshot.player.rank,
+            unit = snapshot.unit,
+            turn = snapshot.turn.turn,
+            turnStartedAt = snapshot.turn.startedAt?.let(::parseMillis) ?: 0,
+            turnHours = snapshot.turn.hours,
+            orders = when {
+                snapshot.unit == null -> emptyList()
+                sent != null -> sent
+                newTurn -> emptyList()
+                else -> s.orders
+            },
+            ordersSent = sent != null,
+        )
+    }
+
+    fun continueAnonymously() {
+        edit { it.copy(access = Access.ANONYMOUS) }
+        sync()
+    }
+
     fun confirmRulesRead() = edit { it.copy(rulesRead = true) }
 
-    fun createUnit(unit: GameUnit) = edit { it.copy(unit = unit, orders = emptyList(), ordersSent = false) }
+    fun createUnit(unit: GameUnit, cost: Int) = act {
+        remote.signIn()
+        remote.createUnit(unit, cost)
+    }
 
     fun addOrder(order: Order) = edit { it.copy(orders = it.orders + order) }
 
@@ -70,12 +154,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun clearOrders() = edit { it.copy(orders = emptyList()) }
 
-    fun sendOrders() = edit { it.copy(ordersSent = true) }
+    fun sendOrders() = act { remote.sendOrders(_state.value.orders) }
 
-    fun withdrawOrders() = edit { it.copy(ordersSent = false) }
+    fun withdrawOrders() = act { remote.withdrawOrders() }
 
-    fun sendChat(text: String) = edit {
-        val author = it.unit?.player ?: "Recluta"
-        it.copy(chat = it.chat + ChatMessage(author, text.trim(), System.currentTimeMillis()))
-    }
+    /** Il server firma il messaggio con la matricola e rifiuta chi non ha un'unità. */
+    fun sendChat(text: String) = act { remote.sendChat(text.trim()) }
 }

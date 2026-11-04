@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import androidx.core.graphics.createBitmap
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.MAP_HEIGHT
@@ -121,12 +122,29 @@ object MapRenderer {
         }
     }
 
+    /** Anteprima immediata, un pixel per casella: le texture richiedono alcuni secondi. */
+    fun preview(): Bitmap {
+        val bitmap = createBitmap(MAP_WIDTH, MAP_HEIGHT)
+        for (x in 1..MAP_WIDTH) for (y in 1..MAP_HEIGHT) {
+            val color = when (GameMap.terrainAt(Cell(x, y))) {
+                Terrain.SEA -> SEA_LIGHT
+                Terrain.RIVER -> RIVER_LIGHT
+                Terrain.SAND -> SAND_DARK
+                Terrain.GRASS -> GRASS_DARK
+                Terrain.BRIDGE, Terrain.PORT -> rgb(120, 82, 50)
+                Terrain.BUILDING -> rgb(122, 126, 130)
+            }
+            bitmap.setPixel(x - 1, y - 1, color)
+        }
+        return bitmap
+    }
+
     fun render(): Bitmap {
         val w = MAP_WIDTH * TILE
         val h = MAP_HEIGHT * TILE
         val pixels = IntArray(w * h)
         for (y in 0 until h) for (x in 0 until w) pixels[y * w + x] = texel(x, y)
-        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(w, h)
         bitmap.setPixels(pixels, 0, w, 0, 0, w, h)
         val canvas = Canvas(bitmap)
         for (x in 1..MAP_WIDTH) for (y in 1..MAP_HEIGHT) {

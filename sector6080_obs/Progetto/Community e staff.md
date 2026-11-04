@@ -15,7 +15,7 @@ Il server continuerà a esistere ma è **facoltativo**: nell'app c'è la chat in
 
 Vecchia guida "Come partecipare" (dalle [[DEV note]]), da rivedere:
 1. Leggere il regolamento.
-2. Creare l'unità con 10 PU (ora sono 5) e inviarla nel canale apposito.
+2. Creare l'unità con 10 PU (ora sono 4, 5 con Google) e inviarla nel canale apposito.
 3. Aspettare l'approvazione di un membro del comando.
 4. Comandi del bot: `/collect-income` (ritira i PU), `/leaderboard` (PU totali).
 5. Attivare l'unità **ogni 24 ore** inviando l'ordine nel canale degli ordini con il template (vedi [[Ordini]]).

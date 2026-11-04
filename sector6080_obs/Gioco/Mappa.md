@@ -39,15 +39,16 @@ I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: van
 
 ## Regole della mappa nell'app
 - Non si entra in acqua. Il percorso si calcola casella per casella senza diagonali, quindi un fiume si attraversa solo su un ponte.
-- Vale anche per salire e scendere dai mezzi. I range delle armi invece ignorano l'acqua.
-- Il regolamento non parla dell'acqua: è una scelta dell'app, da confermare. Vedi anche [[Turni e meccaniche]].
+- Vale anche per salire e scendere dai mezzi.
+- **Le armi sparano anche sull'acqua**: il range ignora mare e fiumi, e il bersaglio può trovarsi in acqua.
+- Il blocco del movimento in acqua è una scelta confermata, anche se non è nel regolamento. Vedi anche [[Turni e meccaniche]].
 - Sugli edifici si può camminare, in attesa di una regola.
 
 ## Grafica
 - Le texture sono **generate dal codice** (`MapRenderer.kt`), senza file di immagine: terreni con rumore casuale ma sempre uguale, coste irregolari con schiuma, onde, ponti in legno, porti con gru, raffinerie con serbatoi e fiamma, magazzini.
 - All'apertura la mappa è **rimpicciolita**, con tutta la griglia in vista. La griglia compare quando ci si avvicina.
 - Zoom con il pizzico, spostamento con il trascinamento.
-- **Nebbia di guerra**: il terreno resta visibile ma più scuro, oltre la visione dell'unità (senza diagonali). I nemici, quando ci saranno, non dovranno mai arrivare al telefono dei player (vedi [[Multiplayer]]).
+- **Nebbia di guerra condivisa**: tutti i player vedono la stessa cosa, cioè l'unione delle visioni di tutte le unità (senza diagonali). Non esiste una visione per singola unità. Fuori dalla visione il terreno resta visibile ma più scuro. I nemici, quando ci saranno, non dovranno mai arrivare al telefono dei player se non sono visibili alla squadra (vedi [[Multiplayer]]).
 - Quando un ordine richiede una casella, la mappa si avvicina all'unità ed evidenzia in verde le caselle valide (vedi [[Ordini]]).
 - Toccando una casella si leggono coordinate, terreno e struttura.
 

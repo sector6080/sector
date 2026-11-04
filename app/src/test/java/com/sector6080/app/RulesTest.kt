@@ -2,6 +2,10 @@ package com.sector6080.app
 
 import com.sector6080.app.data.CatalogLoader
 import com.sector6080.app.data.CatalogParser
+import com.sector6080.app.data.UnitRow
+import com.sector6080.app.data.createUnitParams
+import com.sector6080.app.data.friendlyError
+import com.sector6080.app.data.parseMillis
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.GameMap
@@ -12,8 +16,13 @@ import com.sector6080.app.model.OrderType
 import com.sector6080.app.model.STARTING_BUDGET
 import com.sector6080.app.model.Terrain
 import com.sector6080.app.model.Stats
+import com.sector6080.app.rules.FogSpan
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
+import com.sector6080.app.rules.Vision
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -66,22 +75,43 @@ class RulesTest {
         val type = catalog.type("Fanteria")!!
         val comps = listOf("Fucile d'Assalto", "Granata").map { catalog.component("Fanteria", it)!! }
         assertTrue(UnitRules.validate("XYZ-789", "@User546", "lore", type, comps, 10).isEmpty())
-        val unit = UnitRules.create("XYZ-789", "@User546", "lore", type, comps, 10)
-        assertEquals(6, unit.puLeft)
+        val unit = UnitRules.create("XYZ-789", "@User546", "lore", type, comps)
+        assertEquals(4, UnitRules.totalCost(catalog, unit))
         assertEquals(mapOf("Fucile d'Assalto" to 3, "Granata" to 1), unit.uses)
     }
 
     @Test
-    fun creationBudgetIsFivePu() {
+    fun newPlayersHaveFourPu() {
         val type = catalog.type("Fanteria")!!
         val rifle = catalog.component("Fanteria", "Fucile d'Assalto")!!
         val smg = catalog.component("Fanteria", "SMG")!!
-        val mg = catalog.component("Fanteria", "Mitragliatrice Leggera")!!
-        assertEquals(5, STARTING_BUDGET)
-        assertTrue(UnitRules.validate("XYZ-789", "p", "l", type, listOf(rifle, smg), STARTING_BUDGET).isEmpty())
-        assertTrue(UnitRules.validate("XYZ-789", "p", "l", type, listOf(rifle, mg), STARTING_BUDGET).isNotEmpty())
-        val spawn = UnitRules.create("XYZ-789", "p", "l", type, listOf(rifle), STARTING_BUDGET).position!!
+        assertEquals(4, STARTING_BUDGET)
+        assertTrue(UnitRules.validate("XYZ-789", "p", "l", type, listOf(rifle), STARTING_BUDGET).isEmpty())
+        assertTrue(UnitRules.validate("XYZ-789", "p", "l", type, listOf(rifle, smg), STARTING_BUDGET).isNotEmpty())
+        val spawn = UnitRules.create("XYZ-789", "p", "l", type, listOf(rifle)).position!!
         assertEquals(Terrain.PORT, GameMap.terrainAt(spawn))
+    }
+
+    @Test
+    fun serverRowsBecomeGameData() {
+        val row = UnitRow(
+            "XYZ-789", "p", "Fanteria", listOf("Pistola"), "l", 9, 4, mapOf("Pistola" to 2), 18, 8, false, "active",
+        )
+        val unit = row.toGameUnit()
+        assertEquals(Cell(18, 8), unit.position)
+        assertTrue(unit.approved)
+        assertTrue(unit.synced)
+        assertFalse(row.copy(status = "pending").toGameUnit().approved)
+
+        val params = createUnitParams(unit, 2, Cell(18, 8))
+        assertEquals("XYZ-789", params["p_matricola"]!!.jsonPrimitive.content)
+        assertEquals(2, params["p_cost"]!!.jsonPrimitive.int)
+        assertEquals(2, params["p_uses"]!!.jsonObject["Pistola"]!!.jsonPrimitive.int)
+
+        assertEquals(1793750400000, parseMillis("2026-11-04T00:00:00+00:00"))
+        assertEquals("Hai già un'unità attiva o in attesa.", friendlyError(Exception("violates one_live_unit_per_player")))
+        assertEquals("Matricola già usata: scegline un'altra.", friendlyError(Exception("game_units_matricola_key")))
+        assertEquals("Connessione al server non riuscita.", friendlyError(Exception("timeout")))
     }
 
     @Test
@@ -122,7 +152,7 @@ class RulesTest {
         assertNull(GameMap.steps(north, Cell(bridge.x + 1, bridge.y), 3))
 
         val type = catalog.type("Motorizzata")!!
-        val unit = UnitRules.create("XYZ-789", "p", "l", type, emptyList(), 5).copy(position = north)
+        val unit = UnitRules.create("XYZ-789", "p", "l", type, emptyList()).copy(position = north)
         val moves = OrderRules.validTargets(catalog, unit, emptyList(), Order(OrderType.MOVE))
         assertTrue(south in moves)
         assertFalse(moves.any { !GameMap.terrainAt(it).walkable })
@@ -136,7 +166,7 @@ class RulesTest {
     fun mapOnlyOffersValidCells() {
         val type = catalog.type("Fanteria")!!
         val gun = catalog.component("Fanteria", "Fucile d'Assalto")!!
-        val unit = UnitRules.create("XYZ-789", "p", "l", type, listOf(gun), 5).copy(position = Cell(40, 40))
+        val unit = UnitRules.create("XYZ-789", "p", "l", type, listOf(gun)).copy(position = Cell(40, 40))
 
         val move = Order(OrderType.MOVE)
         val moves = OrderRules.validTargets(catalog, unit, emptyList(), move)
@@ -158,10 +188,45 @@ class RulesTest {
     }
 
     @Test
+    fun visionIsSharedByTheWholeTeam() {
+        val a = Vision.Source(Cell(10, 10), 1)
+        val b = Vision.Source(Cell(12, 10), 1)
+        val team = listOf(a, b)
+
+        assertTrue(Vision.isVisible(team, Cell(9, 10))) // solo a
+        assertTrue(Vision.isVisible(team, Cell(13, 10))) // solo b
+        assertFalse(Vision.isVisible(team, Cell(14, 10)))
+        assertFalse(Vision.isVisible(team, Cell(9, 9))) // niente diagonali
+
+        assertEquals(
+            listOf(FogSpan(10, 1, 8), FogSpan(10, 14, MAP_WIDTH)),
+            Vision.fogSpans(team).filter { it.y == 10 },
+        )
+        assertTrue(Vision.fogSpans(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun weaponsReachOverAndOntoWater() {
+        val type = catalog.type("Fanteria")!!
+        val gun = catalog.component("Fanteria", "Fucile d'Assalto")!!
+        val unit = UnitRules.create("XYZ-789", "p", "l", type, listOf(gun)).copy(position = Cell(22, 10))
+        val sea = Cell(22, 8)
+        val beyondSea = Cell(19, 10)
+        assertEquals(Terrain.SEA, GameMap.terrainAt(sea))
+
+        val shots = OrderRules.validTargets(catalog, unit, emptyList(), Order(OrderType.ACTIVATE, component = gun.name))
+        assertTrue(sea in shots)
+        assertTrue(beyondSea in shots)
+        assertTrue(shots.any { !GameMap.terrainAt(it).walkable })
+        // il movimento invece resta bloccato
+        assertFalse(sea in OrderRules.validTargets(catalog, unit, emptyList(), Order(OrderType.MOVE)))
+    }
+
+    @Test
     fun orderChainFollowsRules() {
         val type = catalog.type("Fanteria")!!
         val gun = catalog.component("Fanteria", "Fucile d'Assalto")!!
-        val unit = UnitRules.create("XYZ-789", "p", "l", type, listOf(gun), 10).copy(position = Cell(40, 40))
+        val unit = UnitRules.create("XYZ-789", "p", "l", type, listOf(gun)).copy(position = Cell(40, 40))
 
         val r = OrderRules.simulate(
             catalog, unit,

@@ -43,6 +43,7 @@ import com.sector6080.app.model.MAP_WIDTH
 import com.sector6080.app.model.Order
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
+import com.sector6080.app.rules.Vision
 import com.sector6080.app.ui.GameViewModel
 import com.sector6080.app.ui.theme.Accent
 import com.sector6080.app.ui.theme.AccentLight
@@ -50,14 +51,13 @@ import com.sector6080.app.ui.theme.Danger
 import com.sector6080.app.ui.theme.Fog
 import com.sector6080.app.ui.theme.Navy
 import com.sector6080.app.ui.theme.Warning
-import kotlin.math.abs
 
 private const val CELL = 24f
 private val Target = Color(0xFF5CF08A)
 
 /**
  * Mappa con zoom (pizzico) e spostamento (trascinamento).
- * La nebbia di guerra scurisce le caselle oltre la visione dell'unità (senza diagonali).
+ * La nebbia di guerra scurisce le caselle che nessuna unità della squadra vede.
  * Parte con tutta la mappa in vista. Con [picking] si avvicina all'unità, evidenzia
  * le caselle valide e permette di confermare solo quelle.
  */
@@ -75,6 +75,9 @@ fun MapScreen(
     val vision = unit?.let { UnitRules.maxStats(vm.catalog, it).vision } ?: 0
     val here = unit?.position
     val planned = sim?.position
+    // Visione condivisa: con il server questa lista conterrà tutte le unità della squadra
+    val team = listOfNotNull(here?.let { Vision.Source(it, vision) })
+    val fog = remember(team) { Vision.fogSpans(team) }
     val valid = remember(picking, unit, state.orders) {
         if (picking != null && unit != null) {
             OrderRules.validTargets(vm.catalog, unit, state.orders, picking)
@@ -149,16 +152,12 @@ fun MapScreen(
                     drawRect(Navy, Offset.Zero, mapSize)
                 }
                 // Nebbia di guerra: il terreno resta visibile, solo più scuro.
-                // Per ogni riga si scuriscono le caselle fuori dal rombo della visione.
-                if (here != null) {
-                    for (y in 1..MAP_HEIGHT) {
-                        val top = (y - 1) * CELL
-                        val span = vision - abs(y - here.y)
-                        val left = if (span >= 0) ((here.x - span - 1).coerceAtLeast(0)) * CELL else mapSize.width
-                        val right = if (span >= 0) (here.x + span).coerceAtMost(MAP_WIDTH) * CELL else mapSize.width
-                        drawRect(Fog.copy(alpha = 0.5f), Offset(0f, top), Size(left, CELL))
-                        drawRect(Fog.copy(alpha = 0.5f), Offset(right, top), Size(mapSize.width - right, CELL))
-                    }
+                fog.forEach { span ->
+                    drawRect(
+                        Fog.copy(alpha = 0.5f),
+                        Offset((span.fromX - 1) * CELL, (span.y - 1) * CELL),
+                        Size((span.toX - span.fromX + 1) * CELL, CELL),
+                    )
                 }
                 // Griglia: compare solo quando si avvicina la mappa
                 val gridAlpha = ((mapScale - 0.7f) * 0.5f).coerceIn(0f, 0.3f)

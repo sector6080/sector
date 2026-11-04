@@ -9,8 +9,8 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 /**
- * Accesso ai dati di gioco. Oggi è solo locale (offline);
- * un'implementazione Firebase potrà sostituirla senza toccare la UI.
+ * Copia locale dei dati di gioco. Il server resta la fonte di verità:
+ * vedi [RemoteGame].
  */
 interface GameRepository {
     suspend fun load(): GameState

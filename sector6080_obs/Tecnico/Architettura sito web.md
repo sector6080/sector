@@ -1,7 +1,7 @@
 # Architettura del sito web
 
-> [!warning] Nota superata in parte
-> Questa nota descrive il sito di dicembre 2025. Da marzo 2026 il sito su GitHub è `index.html` e usa **Supabase** al posto di Apps Script, Google Form e Sheets. Rimane `trasferire_in_backend.txt`, con il codice da spostare nel backend. La parte sotto è storia: l'analisi del nuovo sito è ancora da fare. Vedi [[Multiplayer]].
+> [!warning] Sito abbandonato
+> Il 03/11/2026 il sito è stato abbandonato per l'[[App Android]]. Questa nota descrive il sito di dicembre 2025 ed è solo storia. Da marzo 2026 il sito era `index.html` con **Supabase** al posto di Apps Script, Google Form e Sheets (vedi [[Database Supabase]]).
 
 Sviluppata tra novembre e dicembre 2025. Il repo ora è `github.com/sector6080/sector`, pubblicato su GitHub Pages.
 

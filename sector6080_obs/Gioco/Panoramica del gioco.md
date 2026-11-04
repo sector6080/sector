@@ -13,7 +13,7 @@ Fonte principale: **Regolamento Sector 6080 (BETA)**, vedi [[Fonti e link]].
 
 ## Come iniziare
 1. Leggere il regolamento: l'app lo chiede prima di creare l'unità.
-2. Creare l'unità con un **budget di 5 PU** (il Google Doc dice ancora 10: va aggiornato).
+2. Creare l'unità con un **budget di 4 PU, 5 con l'accesso Google** (il Google Doc dice ancora 10: va aggiornato).
 3. Aspettare l'approvazione di un [[Game Master]].
 
 ## Indice delle regole

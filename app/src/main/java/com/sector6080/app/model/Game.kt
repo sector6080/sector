@@ -5,7 +5,8 @@ import kotlin.math.abs
 
 const val MAP_WIDTH = 80
 const val MAP_HEIGHT = 59
-const val STARTING_BUDGET = 5
+const val STARTING_BUDGET = 4
+const val GOOGLE_BONUS_PU = 1
 const val DEFAULT_TURN_HOURS = 48
 
 /** Casella della mappa, coordinate numeriche 1-based come nel template ordini (X,Y). */
@@ -26,7 +27,6 @@ data class GameUnit(
     val type: String,
     val components: List<String>,
     val lore: String,
-    val puLeft: Int,
     val hp: Int,
     val supplies: Int,
     /** Utilizzi rimasti per componente. */
@@ -35,6 +35,8 @@ data class GameUnit(
     val transported: Boolean = false,
     /** Solo un Game Master può approvare un'unità. */
     val approved: Boolean = false,
+    /** Falso per le unità create offline nelle vecchie versioni: vanno caricate sul server. */
+    val synced: Boolean = false,
 )
 
 @Serializable
@@ -57,6 +59,10 @@ data class Order(
     val quantity: Int? = null,
 )
 
+/** Come è entrato il player. L'accesso Google non è ancora disponibile. */
+@Serializable
+enum class Access { ANONYMOUS, GOOGLE }
+
 @Serializable
 data class ChatMessage(
     val author: String,
@@ -75,5 +81,10 @@ data class GameState(
     val ordersSent: Boolean = false,
     /** Il player ha confermato di aver letto il regolamento. */
     val rulesRead: Boolean = false,
+    /** Null finché il player non sceglie come entrare. */
+    val access: Access? = null,
+    /** PU e grado appartengono al player e restano se l'unità viene persa. */
+    val pu: Int = STARTING_BUDGET,
+    val rank: String = "Recluta",
     val chat: List<ChatMessage> = emptyList(),
 )

@@ -20,10 +20,13 @@
 - [[Schema Google Sheet]]
 - [[File del repository]]
 - [[Problemi noti e sicurezza]]
+- [[Database Supabase]]
 
 ## Progetto
 - [[App Android]]
 - [[Multiplayer]]
+- [[Account e identità]]
+- [[Questioni legali]]
 - [[To Do]]
 - [[DEV note]]
 - [[Community e staff]]

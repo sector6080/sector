@@ -28,7 +28,7 @@
 
 ## Creazione
 L'app chiede prima di confermare di aver letto il regolamento. Poi:
-1. Scegliere il tipo (il costo si scala dal budget, **sempre 5 PU alla creazione**).
+1. Scegliere il tipo (il costo si scala dal budget: **4 PU, 5 con l'accesso Google**).
 2. Creare una matricola non ancora usata.
 3. Indicare il nome del player.
 4. Comprare componenti con i PU, **solo del proprio tipo**.
@@ -36,14 +36,16 @@ L'app chiede prima di confermare di aver letto il regolamento. Poi:
 6. Aspettare l'approvazione di un [[Game Master]].
 
 > [!warning] Differenza con il regolamento
-> Il Google Doc dice 10 PU, ma la decisione attuale è **5 PU**: il doc va aggiornato.
+> Il Google Doc dice 10 PU, ma la decisione attuale è **4 PU, più 1 con Google**: il doc va aggiornato. Vedi [[Account e identità]].
 
 ## Chi modifica l'unità
 Dopo la creazione la scheda è **in sola lettura**: approvazioni e modifiche spettano solo ai [[Game Master]].
 
 ## Dispiegamento e morte
-- **Un'unità per giocatore**.
-- Quando l'unità arriva a 0 HP viene distrutta e tolta dalla mappa. Il giocatore **mantiene grado e PU** e può crearne subito un'altra.
+- **Un'unità per player**, attiva o in attesa (vedi [[Account e identità]]).
+- Quando l'unità arriva a 0 HP viene distrutta e tolta dalla mappa. Il player **mantiene grado e PU** e può crearne subito un'altra.
+- **Gli armamenti sono persi**: i PU spesi in componenti non vengono restituiti.
+- Senza unità attiva o in attesa, il player può solo leggere la chat.
 - La nuova unità viene schierata in **uno dei tre porti** il turno dopo la morte.
 - I tre porti sono sulla [[Mappa]]: alla creazione l'app assegna un porto, sempre lo stesso per la stessa matricola.
 - Idea nelle [[DEV note]]: una "lista morti".

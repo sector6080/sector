@@ -31,7 +31,7 @@
 
 ## Combattimento
 - **Perforazione vs armatura**: se l'armatura del bersaglio è **maggiore** della perforazione dell'attacco, l'attacco fallisce.
-- **Range**: distanza massima del componente, **senza diagonali** (distanza di Manhattan).
+- **Range**: distanza massima del componente, **senza diagonali** (distanza di Manhattan). Si può sparare anche sopra e dentro l'acqua.
 - **Utilizzi** `(x/y)`: usi rimasti/massimi; quando finiscono serve un rifornimento per ricaricare.
 - Danni `AxB` (es. `3x2`): A attacchi separati da B danni ciascuno.
 - Area `NxM`: colpisce il bersaglio e le caselle intorno (es. una granata 3x3 colpisce il bersaglio + 8 caselle).
@@ -40,7 +40,7 @@
 ## Movimento e visione
 - Movimento solo orizzontale/verticale; non si esce dalla mappa e non ci si sovrappone ad altre unità.
 - Nell'app non si entra in mare o nei fiumi: si attraversano solo i ponti (scelta da confermare, vedi [[Mappa]]).
-- **Nebbia di guerra**: Visione N = vedi N caselle in tutte le direzioni, senza diagonali.
+- **Nebbia di guerra**: Visione N = vedi N caselle in tutte le direzioni, senza diagonali. La visione è **condivisa**: tutti i player vedono ciò che vede almeno un'unità della squadra.
 
 ## Effetti speciali citati
 Marcatura delle caselle (Faro Laser, per 2 turni), Bruciatura (1 danno/turno), EMP/disabilitazione, jammer radar, trappole, bersagli volanti, "non può muoversi" (armi pesanti), strutture ed edifici.

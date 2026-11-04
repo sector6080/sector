@@ -32,9 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sector6080.app.model.Access
 import com.sector6080.app.model.Component
+import com.sector6080.app.model.GOOGLE_BONUS_PU
 import com.sector6080.app.model.GameState
-import com.sector6080.app.model.STARTING_BUDGET
 import com.sector6080.app.model.Stats
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.ui.GameViewModel
@@ -48,8 +50,47 @@ import com.sector6080.app.ui.theme.Warning
 fun UnitScreen(vm: GameViewModel, state: GameState) {
     when {
         state.unit != null -> UnitDetails(vm, state)
+        state.access == null -> AccessGate(vm)
         !state.rulesRead -> RulesGate(vm)
-        else -> CreateUnitForm(vm)
+        else -> CreateUnitForm(vm, state)
+    }
+}
+
+private const val GOOGLE_SOON = "L'accesso con Google arriverà presto."
+private const val LOSS_WARNING =
+    "Senza accesso con Google, se disinstalli l'app o cambi telefono perdi la tua unità."
+
+@Composable
+private fun AccessGate(vm: GameViewModel) {
+    Column(
+        Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+    ) {
+        Text("Come vuoi entrare?", style = MaterialTheme.typography.headlineSmall)
+        Text("Con Google ricevi +$GOOGLE_BONUS_PU PU e la tua unità resta al sicuro.")
+        Text("$LOSS_WARNING Puoi collegare Google in qualsiasi momento.", color = Warning)
+        Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
+            Text("Entra con Google (+$GOOGLE_BONUS_PU PU)")
+        }
+        OutlinedButton(onClick = vm::continueAnonymously, modifier = Modifier.fillMaxWidth()) {
+            Text("Continua senza account")
+        }
+        Text(GOOGLE_SOON, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** Sempre disponibile finché il player non ha collegato Google. */
+@Composable
+private fun GoogleLinkCard() {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Account non collegato", fontWeight = FontWeight.Bold, color = Warning)
+            Text(LOSS_WARNING)
+            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
+                Text("Collega Google (+$GOOGLE_BONUS_PU PU)")
+            }
+            Text(GOOGLE_SOON, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 
@@ -72,8 +113,10 @@ private fun RulesGate(vm: GameViewModel) {
 }
 
 @Composable
-private fun CreateUnitForm(vm: GameViewModel) {
+private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
     val catalog = vm.catalog
+    val budget = state.pu
+    val busy by vm.busy.collectAsStateWithLifecycle()
     var typeName by rememberSaveable { mutableStateOf<String?>(null) }
     var matricola by rememberSaveable { mutableStateOf("") }
     var player by rememberSaveable { mutableStateOf("") }
@@ -84,7 +127,7 @@ private fun CreateUnitForm(vm: GameViewModel) {
     val type = typeName?.let { catalog.type(it) }
     val chosen: List<Component> = type?.components?.filter { it.name in selected }.orEmpty()
     val cost = type?.let { UnitRules.totalCost(it, chosen) } ?: 0
-    val errors = UnitRules.validate(matricola, player, lore, type, chosen, STARTING_BUDGET)
+    val errors = UnitRules.validate(matricola, player, lore, type, chosen, budget)
 
     LazyColumn(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -93,14 +136,16 @@ private fun CreateUnitForm(vm: GameViewModel) {
         item {
             Spacer(Modifier.padding(top = 8.dp))
             Text("Nuova unità", style = MaterialTheme.typography.headlineSmall)
-            Text("Hai $STARTING_BUDGET PU. Puoi comprare solo componenti del tuo tipo.")
+            Text("Hai $budget PU. Puoi comprare solo componenti del tuo tipo.")
         }
+        if (state.access != Access.GOOGLE) item { GoogleLinkCard() }
         item {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 catalog.types.forEach { t ->
                     FilterChip(
                         selected = t.name == typeName,
                         onClick = { typeName = t.name; selected.clear() },
+                        enabled = t.creationCost <= budget,
                         label = { Text("${t.name} (${t.creationCost} PU)") },
                     )
                 }
@@ -127,8 +172,8 @@ private fun CreateUnitForm(vm: GameViewModel) {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp)) {
                         Text(
-                            "Spesi $cost / $STARTING_BUDGET PU",
-                            color = if (cost > STARTING_BUDGET) Danger else Success,
+                            "Spesi $cost / $budget PU",
+                            color = if (cost > budget) Danger else Success,
                             fontWeight = FontWeight.Bold,
                         )
                         StatsRow(stats)
@@ -167,11 +212,12 @@ private fun CreateUnitForm(vm: GameViewModel) {
                 onClick = {
                     showErrors = true
                     if (errors.isEmpty() && type != null) {
-                        vm.createUnit(UnitRules.create(matricola, player, lore, type, chosen, STARTING_BUDGET))
+                        vm.createUnit(UnitRules.create(matricola, player, lore, type, chosen), cost)
                     }
                 },
+                enabled = !busy,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            ) { Text("Crea unità") }
+            ) { Text(if (busy) "Invio in corso..." else "Crea unità") }
         }
     }
 }
@@ -189,7 +235,7 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
         item {
             Spacer(Modifier.padding(top = 8.dp))
             Text(unit.matricola, style = MaterialTheme.typography.headlineMedium)
-            Text("${unit.type} · ${unit.player} · ${unit.puLeft} PU rimasti")
+            Text("${unit.type} · ${unit.player} · ${state.rank} · ${state.pu} PU")
         }
         item {
             Card(Modifier.fillMaxWidth()) {
@@ -212,6 +258,7 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
                 }
             }
         }
+        if (state.access != Access.GOOGLE) item { GoogleLinkCard() }
         item { Text("Componenti", style = MaterialTheme.typography.titleMedium) }
         items(unit.components) { name ->
             val c = vm.catalog.component(unit.type, name)

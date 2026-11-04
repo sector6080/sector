@@ -22,6 +22,11 @@ object UnitRules {
     fun totalCost(type: UnitType, components: List<Component>) =
         type.creationCost + components.sumOf { it.cost }
 
+    fun totalCost(catalog: Catalog, unit: GameUnit): Int {
+        val type = catalog.type(unit.type) ?: return 0
+        return totalCost(type, unit.components.mapNotNull { catalog.component(unit.type, it) })
+    }
+
     /** Restituisce gli errori che impediscono la creazione (lista vuota = ok). */
     fun validate(
         matricola: String,
@@ -56,7 +61,6 @@ object UnitRules {
         lore: String,
         type: UnitType,
         components: List<Component>,
-        budget: Int,
     ): GameUnit {
         val max = maxStats(type, components)
         return GameUnit(
@@ -65,7 +69,6 @@ object UnitRules {
             type = type.name,
             components = components.map { it.name },
             lore = lore.trim(),
-            puLeft = budget - totalCost(type, components),
             hp = max.hp,
             supplies = max.supplies,
             uses = components.filter { it.isUsable }.associate { it.name to it.maxUses!! },
