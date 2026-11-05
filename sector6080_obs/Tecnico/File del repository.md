@@ -24,6 +24,13 @@
 | `supabase/chat-gerarchia-gm.sql` | Canali della chat, moderazione, squadroni, votazioni, nemici e strumenti GM |
 | `supabase/firma-chat.sql` | Firma dei messaggi: `grado(matricola)-tipo` |
 | `supabase/nome-squadrone.sql` | Nome dello squadrone scelto dal Caporale |
+| `supabase/gruppi-capitani.sql` | Squadroni dei Capitani e limiti in `game_settings` |
+| `supabase/richieste-squadrone.sql` | Richieste per entrare in uno squadrone |
+| `supabase/gerarchia-squadroni.sql` | Gruppi dei Caporali dentro gli squadroni dei Capitani, canale Gruppo |
+| `supabase/fix-cambio-turno.sql` | Corregge il cambio turno manuale del GM |
+| `supabase/template-nemici.sql` | Template tra cui il GM sceglie i nemici |
+| `supabase/notifiche.sql` | Notifiche di gioco e menzioni in chat |
+| `supabase/voti-e-chiusura.sql` | Conteggio dei voti sui Capitani attuali e chiusura delle votazioni |
 
 ## Vecchio sito
 Tolto dal repository il 04/11/2026 perché l'app non lo usa: `index.html`, `map.html`, `style.css`, `api_stuff/`, `trasferire_in_backend.txt`, il logo in `foto/`, `supabase/pulizia-sito.sql` e `supabase/rimuovi-tabelle-sito.sql`. Restano nella storia di git, fino al commit `a322174`, insieme a `test.html`, `debugger.html` e agli script Apps Script.

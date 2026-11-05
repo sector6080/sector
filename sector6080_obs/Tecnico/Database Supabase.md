@@ -12,19 +12,22 @@ Definite in `supabase/schema-app.sql`. Le vecchie tabelle del sito non vengono t
 | `game_turn` | turno corrente, inizio e durata | tutti | nessuna |
 | `game_orders` | ordini per unità e turno | solo i propri | con `send_orders` e `withdraw_orders` |
 | `chat_messages` | messaggi per canale, firmati dal server: `grado(matricola)-tipo` | con `get_chat`, secondo canale e grado | con `send_chat` |
-| `rank_proposals`, `rank_votes` | cambi di grado in votazione | con `get_proposals`, Capitani e GM | con `propose_rank` e `vote_rank` |
+| `rank_proposals`, `rank_votes` | cambi di grado in votazione | con `get_proposals`, Capitani, GM e chi ha creato la votazione | con `propose_rank`, `vote_rank` e `close_proposal` |
 | `game_enemies` | nemici | con `get_enemies`, solo dentro la visione comune | solo GM |
+| `enemy_templates` | modelli dei nemici | con `gm_enemy_templates`, solo GM | dal Table Editor |
+| `notifications` | notifiche di ogni player, cancellate dopo 30 giorni | con `get_notifications`, solo le proprie | le crea il server |
+| `squad_requests` | richieste per entrare in un gruppo o in uno squadrone | con `get_squad_requests`, chi le ha fatte o ricevute | con `request_squad` e `answer_squad_request` |
 | `game_map` | una riga per casella: terreno e struttura | tutti | nessuna |
 | `game_sites` | descrizione delle strutture | tutti | nessuna |
 | `game_components` | i 138 componenti, con costi e statistiche | tutti | nessuna |
 | `unit_types` | tipi di unità e statistiche base | tutti | nessuna |
 | `rank_salaries` | stipendio per grado | tutti | nessuna |
-| `game_settings` | PU iniziali e bonus Google | tutti | nessuna |
+| `game_settings` | PU iniziali, bonus Google e posti negli squadroni | tutti | nessuna |
 
 Le ultime cinque tabelle si modificano dal Table Editor e valgono subito, senza aggiornare l'app. Sono in `supabase/gm-turni-catalogo.sql` (eseguito il 04/11/2026: tabelle, 138 componenti, 4800 caselle e turno di 24 ore verificati), insieme a:
 - ruolo GM dato dal grado `Comando Supremo` in `players.rank`, modificabile solo dalla console. Il grado toglie l'unità e impedisce di crearne altre;
 - funzioni `gm_*`, che controllano il ruolo sul server;
-- `create_unit` e `buy_component`, che calcolano costo e statistiche sul server;
+- `create_unit` e `buy_component`, che calcolano statistiche e costi sul server;
 - cambio turno con `pg_cron`, ogni minuto.
 
 La mappa e la squadra si aggiungono con `supabase/mappa-e-squadra.sql` (eseguito: 4720 caselle e 9 strutture). L'app legge tutto con due funzioni, disponibili anche senza account:
@@ -38,6 +41,22 @@ La mappa e la squadra si aggiungono con `supabase/mappa-e-squadra.sql` (eseguito
 Controllo del 04/11/2026 con la chiave pubblica, senza account: `get_chat`, `get_team` e `get_enemies` rispondono. Tutte le funzioni di voto, squadrone e GM e `send_chat` sono rifiutate, come la lettura diretta di `chat_messages`, `rank_proposals`, `rank_votes` e `game_enemies`. Non è stato provato con account normali: chi ha un account passa dai controlli interni a ogni funzione.
 
 `supabase/nome-squadrone.sql` (eseguito il 04/11/2026): aggiunge `game_units.squad_name` e la funzione `set_squad_name`. Il nome sta sull'unità del Caporale e il database accetta solo testo senza numeri, di massimo 8 caratteri.
+
+Il 04/11/2026 è stato collegato il connettore Supabase: il cambio turno `sector-cambio-turno` risulta attivo e riuscito ogni minuto, e tutte le tabelle hanno RLS attivo.
+
+`supabase/gerarchia-squadroni.sql` (eseguito il 04/11/2026 e provato con account simulati in una transazione annullata: permessi, canali, richieste e limiti rispondono come previsto): cambia la gerarchia. `game_units.squad_of` punta a chi sta sopra (Soldato, Caporale, Capitano), la chat ha il nuovo canale `gruppo` e `get_team` restituisce gruppo e squadrone di ogni unità.
+
+`supabase/richieste-squadrone.sql` (eseguito il 04/11/2026): aggiunge le richieste per entrare in uno squadrone.
+
+`supabase/gruppi-capitani.sql` (eseguito il 04/11/2026): permette ai Capitani di guidare uno squadrone e mette i limiti di 6 e 40 Soldati in `game_settings`, alle voci `squad_limit_corporal` e `squad_limit_captain`. Il limite di 40 ora conta Caporali e Soldati dello squadrone.
+
+`supabase/voti-e-chiusura.sql` (eseguito il 05/11/2026 e provato con account simulati, senza salvare nulla): `resolve_proposal` decide l'esito contando solo i Capitani attuali, `get_proposals` mostra lo stesso conteggio e dice chi può chiudere, `close_proposal` chiude una votazione senza esito, il trigger `on_captains_changed` rifà i conti quando cambia il numero dei Capitani.
+
+`supabase/notifiche.sql` (eseguito il 05/11/2026 e provato con account simulati, senza salvare nulla): aggiunge le notifiche e le menzioni in chat. Cambia anche la creazione: `create_unit` non accetta più componenti e controlla solo i PU, `gm_review_unit` fa pagare il tipo all'approvazione, `buy_component` funziona solo con l'unità attiva. La colonna `game_units.cost` è stata eliminata, perché un'unità rifiutata non ha speso nulla.
+
+`supabase/template-nemici.sql` (eseguito il 04/11/2026): aggiunge i template dei nemici.
+
+`supabase/fix-cambio-turno.sql` (applicato il 04/11/2026): Supabase rifiuta gli `UPDATE` e i `DELETE` senza `where` quando arrivano dall'app, ma non dal cambio automatico. Ogni funzione chiamata dall'app deve quindi avere il `where`, anche sulle tabelle con una riga sola.
 
 **Regola di fondo:** il player non scrive mai direttamente nelle tabelle. Ogni funzione ricava il player dall'account collegato, quindi nessuno può agire per conto di un altro, cambiare i propri PU o firmare messaggi con un'altra matricola.
 

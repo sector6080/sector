@@ -24,3 +24,10 @@ Eseguire gli script nel SQL Editor di Supabase, in quest'ordine:
 6. `chat-gerarchia-gm.sql`
 7. `firma-chat.sql`
 8. `nome-squadrone.sql`
+9. `gruppi-capitani.sql`
+10. `richieste-squadrone.sql`
+11. `gerarchia-squadroni.sql`
+12. `fix-cambio-turno.sql`
+13. `template-nemici.sql`
+14. `notifiche.sql`
+15. `voti-e-chiusura.sql`

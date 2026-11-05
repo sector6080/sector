@@ -28,6 +28,7 @@
 - [[Account e identità]]
 - [[Questioni legali]]
 - [[To Do]]
+- [[modifiche doc google da fare]]
 - [[DEV note]]
 - [[Community e staff]]
 - [[Storia dello sviluppo]]

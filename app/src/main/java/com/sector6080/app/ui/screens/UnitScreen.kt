@@ -1,6 +1,5 @@
 package com.sector6080.app.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,7 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,7 +48,6 @@ import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.ui.GameViewModel
 import com.sector6080.app.ui.RULES_URL
 import com.sector6080.app.ui.components.Button
-import com.sector6080.app.ui.components.CenteredNotice
 import com.sector6080.app.ui.components.Logo
 import com.sector6080.app.ui.components.OutlinedButton
 import com.sector6080.app.ui.components.Panel
@@ -75,7 +71,6 @@ import com.sector6080.app.ui.theme.Warning
 @Composable
 fun UnitScreen(vm: GameViewModel, state: GameState) {
     when {
-        state.isGm -> CenteredNotice("Comando Supremo", "Il Comando Supremo non ha unità: usa la scheda GM.")
         state.unit != null -> UnitDetails(vm, state)
         state.access == null -> AccessGate(vm)
         !state.rulesRead -> RulesGate(vm)
@@ -83,6 +78,7 @@ fun UnitScreen(vm: GameViewModel, state: GameState) {
     }
 }
 
+private const val COMPONENTS_AFTER_APPROVAL = "Puoi acquistare i componenti solo dopo l'approvazione."
 private const val GOOGLE_SOON = "L'accesso con Google arriverà presto."
 private const val LOSS_WARNING =
     "Senza accesso con Google, se disinstalli l'app o cambi telefono perdi la tua unità."
@@ -225,13 +221,10 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
     var typeName by rememberSaveable { mutableStateOf<String?>(null) }
     var matricola by rememberSaveable { mutableStateOf("") }
     var lore by rememberSaveable { mutableStateOf("") }
-    val selected = remember { mutableStateListOf<String>() }
     var showErrors by remember { mutableStateOf(false) }
 
     val type = typeName?.let { catalog.type(it) }
-    val chosen: List<Component> = type?.components?.filter { it.name in selected }.orEmpty()
-    val cost = type?.let { UnitRules.totalCost(it, chosen) } ?: 0
-    val errors = UnitRules.validate(matricola, lore, type, chosen, budget)
+    val errors = UnitRules.validate(matricola, lore, type, budget)
 
     LazyColumn(
         Modifier.fillMaxWidth(),
@@ -240,7 +233,8 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
     ) {
         item {
             Text("Nuova unità", style = MaterialTheme.typography.headlineSmall)
-            Text("Hai $budget PU. Puoi comprare solo componenti del tuo tipo.", color = InkDim)
+            Text("Hai $budget PU. Il tipo si paga all'approvazione.", color = InkDim)
+            Text(COMPONENTS_AFTER_APPROVAL, color = Signal)
         }
         accountCard(vm, state)
         item { SectionLabel("01 · Tipo di unità") }
@@ -249,7 +243,6 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
                 pair.forEach { t ->
                     TypeCard(t, t.name == typeName, t.creationCost <= budget, Modifier.weight(1f)) {
                         typeName = t.name
-                        selected.clear()
                     }
                 }
                 if (pair.size == 1) Spacer(Modifier.weight(1f))
@@ -265,34 +258,7 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (type != null) {
-            item { SectionLabel("03 · Componenti") }
-            item {
-                Panel(Modifier.fillMaxWidth(), accent = if (cost > budget) Danger else Line) {
-                    StatBar("PU spesi", cost, budget, color = if (cost > budget) Danger else Signal, warnLow = false)
-                    StatsRow(UnitRules.maxStats(type, chosen))
-                }
-            }
-            type.components.groupBy { it.cost }.toSortedMap().forEach { (price, comps) ->
-                item { SectionLabel("$price PU") }
-                items(comps, key = { "${type.name}/${it.name}" }) { c ->
-                    val checked = c.name in selected
-                    Row(
-                        Modifier.fillMaxWidth().clickable {
-                            if (checked) selected.remove(c.name) else selected.add(c.name)
-                        },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(checked = checked, onCheckedChange = null)
-                        Column(Modifier.padding(start = 10.dp)) {
-                            Text(c.name, style = MaterialTheme.typography.titleSmall)
-                            Text(c.description, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-            }
-        }
-        item { SectionLabel(if (type != null) "04 · Lore" else "03 · Lore") }
+        item { SectionLabel("03 · Lore") }
         item {
             OutlinedTextField(
                 value = lore, onValueChange = { lore = it },
@@ -306,7 +272,7 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
                 onClick = {
                     showErrors = true
                     if (errors.isEmpty() && type != null) {
-                        vm.createUnit(matricola, type.name, chosen.map { it.name }, lore.trim())
+                        vm.createUnit(matricola, type.name, lore.trim())
                     }
                 },
                 enabled = !busy,
@@ -373,11 +339,15 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
             }
         }
         item {
-            OutlinedButton(onClick = { shopOpen = !shopOpen }, modifier = Modifier.fillMaxWidth()) {
-                Text(if (shopOpen) "Chiudi il negozio" else "Compra componenti · ${state.pu} PU")
+            if (unit.approved) {
+                OutlinedButton(onClick = { shopOpen = !shopOpen }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (shopOpen) "Chiudi il negozio" else "Compra componenti · ${state.pu} PU")
+                }
+            } else {
+                Text(COMPONENTS_AFTER_APPROVAL, color = InkDim)
             }
         }
-        if (shopOpen) {
+        if (shopOpen && unit.approved) {
             items(shop, key = { "shop/" + it.name }) { c ->
                 val missing = c.requires?.takeIf { req -> unit.components.none { it.equals(req, ignoreCase = true) } }
                 Panel(Modifier.fillMaxWidth()) {

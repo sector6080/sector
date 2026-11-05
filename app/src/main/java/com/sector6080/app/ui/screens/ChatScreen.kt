@@ -1,5 +1,6 @@
 package com.sector6080.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,11 +28,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sector6080.app.data.GM_RANK
 import com.sector6080.app.model.ChatChannel
 import com.sector6080.app.model.ChatMessage
 import com.sector6080.app.model.GameState
+import com.sector6080.app.rules.Formation
 import com.sector6080.app.rules.HierarchyRules
 import com.sector6080.app.ui.GameViewModel
 import com.sector6080.app.ui.components.Button
@@ -43,13 +45,10 @@ import com.sector6080.app.ui.theme.Danger
 import com.sector6080.app.ui.theme.Friend
 import com.sector6080.app.ui.theme.InkDim
 import com.sector6080.app.ui.theme.Signal
-import kotlinx.coroutines.delay
 import java.text.DateFormat
 import java.util.Date
 
-private const val REFRESH_MILLIS = 10_000L
-
-/** Chat di gioco a canali: si aggiorna da sola finché la scheda è aperta. */
+/** Chat di gioco a canali. Toccando la firma di un messaggio si menziona chi l'ha scritto. */
 @Composable
 fun ChatScreen(vm: GameViewModel, state: GameState) {
     var text by rememberSaveable { mutableStateOf("") }
@@ -61,13 +60,7 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
     // Chi perde il grado può trovarsi su un canale che non vede più
     val channel = selected.takeIf { it in channels } ?: ChatChannel.COMMON
     val blocked = HierarchyRules.whyNotWrite(state, channel)
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(REFRESH_MILLIS)
-            vm.sync()
-        }
-    }
+    val formation = Formation.entries.firstOrNull { it.channel == channel && HierarchyRules.inFormation(state, it) }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Row(
@@ -78,10 +71,19 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
                 FilterChip(selected = c == channel, onClick = { selected = c }, label = { Text(c.label) })
             }
         }
-        if (channel == ChatChannel.SQUAD && HierarchyRules.inSquad(state)) {
-            val count = HierarchyRules.squadMembers(state).size
+        if (formation != null) {
+            val count = HierarchyRules.size(state, formation)
+            val limit = HierarchyRules.limit(state, formation) ?: "?"
+            val requests = HierarchyRules.incomingRequests(state).size.takeIf { state.rank == formation.leaderRank } ?: 0
             OutlinedButton(onClick = { showSquad = true }) {
-                Text("${HierarchyRules.squadTitle(HierarchyRules.squadName(state))} · $count/${HierarchyRules.MAX_SQUAD}")
+                Text(
+                    "${HierarchyRules.title(formation, HierarchyRules.name(state, formation))} · $count/$limit" +
+                        when (requests) {
+                            0 -> ""
+                            1 -> " · 1 richiesta"
+                            else -> " · $requests richieste"
+                        },
+                )
             }
         }
         LazyColumn(
@@ -105,11 +107,21 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 10.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                val signature = HierarchyRules.authorMatricola(m.author)
+                                    ?.takeIf { blocked == null && it != state.unit?.matricola }
                                 Text(
                                     m.author,
                                     style = MaterialTheme.typography.labelMedium,
                                     color = tint,
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .then(
+                                            if (signature != null) {
+                                                Modifier.clickable { text = "$text@$signature " }
+                                            } else {
+                                                Modifier
+                                            },
+                                        ),
                                 )
                                 Text(
                                     time.format(Date(m.sentAt)),
@@ -117,7 +129,11 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
                                     color = InkDim,
                                 )
                             }
-                            Text(m.text, modifier = Modifier.padding(top = 2.dp))
+                            Text(
+                                m.text,
+                                color = if (HierarchyRules.mentionsMe(state, m)) Signal else Color.Unspecified,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
                         }
                         if (state.isGm) {
                             IconButton(onClick = { deleting = m }) {
@@ -136,6 +152,7 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                if (state.isGm) TextButton(onClick = { text = "@tutti $text" }) { Text("@tutti") }
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
@@ -150,7 +167,7 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
         }
     }
 
-    if (showSquad) SquadDialog(vm, state, onDismiss = { showSquad = false })
+    if (showSquad && formation != null) SquadDialog(vm, state, formation, onDismiss = { showSquad = false })
     deleting?.let { message ->
         AlertDialog(
             onDismissRequest = { deleting = null },

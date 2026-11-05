@@ -4,19 +4,23 @@ import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.ChatMessage
 import com.sector6080.app.model.Enemy
+import com.sector6080.app.model.EnemyTemplate
 import com.sector6080.app.model.Component
+import com.sector6080.app.model.GameNotification
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.GmOrders
 import com.sector6080.app.model.GmUnit
 import com.sector6080.app.model.MapSite
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.RankProposal
+import com.sector6080.app.model.SquadRequest
 import com.sector6080.app.model.Stats
 import com.sector6080.app.model.TeamMember
 import com.sector6080.app.model.UnitType
 import com.sector6080.app.model.Weapon
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
@@ -26,7 +30,6 @@ import io.github.jan.supabase.serializer.KotlinXSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -161,12 +164,13 @@ data class TeamRow(
     @SerialName("pos_y") val posY: Int,
     val transported: Boolean,
     val status: String = "active",
-    val cost: Int = 0,
-    val squad: String? = null,
     val muted: Boolean = false,
-    @SerialName("squad_name") val squadName: String? = null,
+    @SerialName("group_leader") val group: String? = null,
+    @SerialName("group_name") val groupName: String? = null,
+    @SerialName("squadron_leader") val squadron: String? = null,
+    @SerialName("squadron_name") val squadronName: String? = null,
 ) {
-    fun toGmUnit() = GmUnit(toTeamMember(), status == "pending", cost, muted)
+    fun toGmUnit() = GmUnit(toTeamMember(), status == "pending", muted)
 
     fun toTeamMember() = TeamMember(
         GameUnit(
@@ -183,8 +187,10 @@ data class TeamRow(
         ),
         rank,
         pu,
-        squad,
-        squadName,
+        group,
+        groupName,
+        squadron,
+        squadronName,
     )
 }
 
@@ -216,6 +222,20 @@ data class ChatRow(
 }
 
 @Serializable
+data class NotificationRow(
+    val id: Long,
+    val title: String,
+    val body: String,
+    @SerialName("created_at") val createdAt: String,
+    val read: Boolean,
+) {
+    fun toNotification() = GameNotification(id, title, body, parseMillis(createdAt), read)
+}
+
+@Serializable
+private data class SettingRow(val key: String, val value: Int)
+
+@Serializable
 data class EnemyRow(
     val id: Long,
     val name: String,
@@ -238,8 +258,9 @@ data class ProposalRow(
     @SerialName("votes_yes") val votesYes: Int,
     @SerialName("votes_no") val votesNo: Int,
     @SerialName("my_vote") val myVote: Boolean? = null,
+    @SerialName("can_close") val canClose: Boolean = false,
 ) {
-    fun toProposal() = RankProposal(id, matricola, fromRank, newRank, proposedBy, votesYes, votesNo, myVote)
+    fun toProposal() = RankProposal(id, matricola, fromRank, newRank, proposedBy, votesYes, votesNo, myVote, canClose)
 }
 
 fun parseMillis(timestamp: String): Long = OffsetDateTime.parse(timestamp).toInstant().toEpochMilli()
@@ -257,17 +278,33 @@ data class RemoteSnapshot(
  * collegato, e ogni scrittura passa da una funzione del database (cartella `supabase`).
  * Tipi di unità, componenti e mappa stanno sul server, così si modificano senza aggiornare l'app.
  */
-class RemoteGame {
+class RemoteGame private constructor() {
     private val client = createSupabaseClient(SUPABASE_URL, SUPABASE_KEY) {
         defaultSerializer = KotlinXSerializer(json)
         install(Auth)
         install(Postgrest)
     }
 
-    /** Riprende la sessione salvata o crea un account anonimo. */
+    /**
+     * Riprende la sessione salvata o crea un account anonimo. L'account nuovo nasce solo se
+     * non ce n'è uno salvato: un errore di rete non deve mai far perdere quello esistente.
+     */
     suspend fun signIn() {
         client.auth.awaitInitialization()
-        if (client.auth.currentUserOrNull() == null) client.auth.signInAnonymously()
+        if (client.auth.sessionStatus.value is SessionStatus.NotAuthenticated) client.auth.signInAnonymously()
+    }
+
+    /** Non crea account: serve al controllo delle notifiche ad app chiusa. */
+    suspend fun hasAccount(): Boolean {
+        client.auth.awaitInitialization()
+        return client.auth.currentUserOrNull() != null
+    }
+
+    suspend fun notifications(): List<GameNotification> =
+        client.postgrest.rpc("get_notifications").decodeList<NotificationRow>().map { it.toNotification() }
+
+    suspend fun markNotificationsRead() {
+        client.postgrest.rpc("mark_notifications_read")
     }
 
     suspend fun snapshot(): RemoteSnapshot {
@@ -282,9 +319,9 @@ class RemoteGame {
         return RemoteSnapshot(player, unit?.toGameUnit(), turn, sent?.orders)
     }
 
-    /** Il server calcola costo, statistiche e porto di partenza. */
-    suspend fun createUnit(matricola: String, type: String, components: List<String>, lore: String) {
-        client.postgrest.rpc("create_unit", createUnitParams(matricola, type, components, lore))
+    /** Il server calcola statistiche e porto di partenza. Il tipo si paga all'approvazione. */
+    suspend fun createUnit(matricola: String, type: String, lore: String) {
+        client.postgrest.rpc("create_unit", createUnitParams(matricola, type, lore))
     }
 
     suspend fun buyComponent(name: String) {
@@ -295,6 +332,10 @@ class RemoteGame {
         client.from("unit_types").select().decodeList<UnitTypeRow>().sortedBy { it.cost },
         client.from("game_components").select().decodeList<ComponentRow>(),
     )
+
+    /** Si legge anche senza account. */
+    suspend fun settings(): Map<String, Int> =
+        client.from("game_settings").select().decodeList<SettingRow>().associate { it.key to it.value }
 
     suspend fun sendOrders(orders: List<Order>) {
         val params = buildJsonObject {
@@ -340,6 +381,10 @@ class RemoteGame {
         )
     }
 
+    suspend fun closeProposal(id: Long) {
+        client.postgrest.rpc("close_proposal", buildJsonObject { put("p_id", id) })
+    }
+
     suspend fun setSquadMember(matricola: String, member: Boolean) {
         client.postgrest.rpc(
             "set_squad_member",
@@ -350,9 +395,30 @@ class RemoteGame {
         )
     }
 
+    suspend fun squadRequests(): List<SquadRequest> =
+        client.postgrest.rpc("get_squad_requests").decodeList<SquadRequest>()
+
+    /** Con [leader] nullo ritira la richiesta. */
+    suspend fun requestSquad(leader: String?) {
+        client.postgrest.rpc("request_squad", buildJsonObject { put("p_leader", leader) })
+    }
+
+    suspend fun answerSquadRequest(matricola: String, accept: Boolean) {
+        client.postgrest.rpc(
+            "answer_squad_request",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_accept", accept)
+            },
+        )
+    }
+
     suspend fun setSquadName(name: String) {
         client.postgrest.rpc("set_squad_name", buildJsonObject { put("p_name", name) })
     }
+
+    suspend fun gmEnemyTemplates(): List<EnemyTemplate> =
+        client.postgrest.rpc("gm_enemy_templates").decodeList<EnemyTemplate>()
 
     suspend fun gmUnits(): List<GmUnit> = client.postgrest.rpc("gm_units").decodeList<TeamRow>().map { it.toGmUnit() }
 
@@ -485,17 +551,20 @@ class RemoteGame {
     /** Messaggi dei canali che il player può leggere, dal più vecchio al più recente. */
     suspend fun chat(): List<ChatMessage> =
         client.postgrest.rpc("get_chat").decodeList<ChatRow>().map { it.toChatMessage() }
+
+    companion object {
+        /** Un solo client: due client con lo stesso account si rovinerebbero la sessione a vicenda. */
+        val shared by lazy { RemoteGame() }
+    }
 }
 
 fun createUnitParams(
     matricola: String,
     type: String,
-    components: List<String>,
     lore: String,
 ): JsonObject = buildJsonObject {
     put("p_matricola", matricola)
     put("p_type", type)
-    put("p_components", json.encodeToJsonElement(ListSerializer(String.serializer()), components))
     put("p_lore", lore)
 }
 
@@ -509,6 +578,7 @@ fun friendlyError(error: Throwable): String {
         "Unita non attiva" in text -> "Solo un'unità approvata può inviare ordini."
         "Serve una unita" in text -> "Serve un'unità attiva o in attesa."
         "Prerequisito mancante" in text -> "Prima devi avere il componente richiesto."
+        "Solo dopo approvazione" in text -> "Puoi acquistare i componenti solo dopo l'approvazione."
         "Componente gia posseduto" in text -> "Hai già questo componente."
         "Componente non disponibile" in text || "Componente duplicato" in text -> "Componente non disponibile."
         "Porti occupati" in text -> "Tutti i porti sono occupati: riprova più tardi."
@@ -518,20 +588,24 @@ fun friendlyError(error: Throwable): String {
         "Sei stato silenziato" in text -> "Il Comando Supremo ti ha tolto la parola in chat."
         "Canale non disponibile" in text -> "Non puoi scrivere in questo canale."
         "Solo i Capitani" in text -> "Azione riservata ai Capitani."
-        "Solo i Caporali" in text -> "Azione riservata ai Caporali."
-        "Solo i Soldati" in text -> "Negli squadroni entrano solo i Soldati."
+        "Solo Caporali" in text -> "Azione riservata a Caporali e Capitani."
+        "Grado non adatto" in text -> "I Soldati entrano nei gruppi, i Caporali negli squadroni."
         "Servono 6 giorni" in text -> "Servono 6 giorni reali da Caporale."
         "Cambio di grado non valido" in text -> "Cambio di grado non previsto dalla Costituzione."
         "Non puoi proporre te stesso" in text -> "Non puoi proporre te stesso."
         "Non puoi votare" in text -> "Non puoi votare su te stesso."
         "Proposta chiusa" in text -> "La votazione è già chiusa."
+        "Solo chi ha creato la votazione" in text -> "Può chiuderla solo chi l'ha creata."
         "one_open_proposal_per_unit" in text -> "C'è già una votazione aperta per questa unità."
-        "Soldato gia" in text -> "Questo Soldato è già in uno squadrone."
-        "Squadrone al completo" in text -> "Lo squadrone ha già 6 Soldati."
+        "Unita gia in un gruppo" in text -> "Questa unità è già in un gruppo."
+        "Gruppo al completo" in text -> "Non ci sono più posti."
+        "Richiesta non trovata" in text -> "La richiesta non esiste più."
+        "Non guida un gruppo" in text -> "Questa unità non guida un gruppo."
         "Nome squadrone non valido" in text -> "Il nome deve avere al massimo 8 caratteri, senza numeri."
         "Casella occupata" in text -> "La casella è occupata."
         "signups" in text.lowercase() || "anonymous" in text.lowercase() -> "Accesso senza account non disponibile."
         "Could not find" in text || "does not exist" in text -> "Il server non è ancora pronto."
+        "permission denied" in text -> "Accesso non valido: chiudi e riapri l'app."
         else -> "Connessione al server non riuscita."
     }
 }

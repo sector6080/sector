@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +33,7 @@ import com.sector6080.app.ui.components.OutlinedButton
 import com.sector6080.app.ui.components.Panel
 import com.sector6080.app.ui.components.RankBadge
 import com.sector6080.app.ui.components.SectionLabel
+import com.sector6080.app.ui.components.StatusStrip
 import com.sector6080.app.ui.components.UnitSymbol
 import com.sector6080.app.ui.theme.Mono
 import com.sector6080.app.ui.theme.Signal
@@ -46,6 +48,13 @@ fun TeamScreen(vm: GameViewModel, state: GameState) {
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        HierarchyRules.outgoingRequest(state)?.let { request ->
+            item {
+                StatusStrip("Richiesta inviata a ${request.leader}", Signal) {
+                    TextButton(onClick = { vm.requestSquad(null) }) { Text("Ritira") }
+                }
+            }
+        }
         if (state.proposals.isNotEmpty()) {
             item { SectionLabel("Votazioni", trailing = "${state.proposals.size}") }
             items(state.proposals, key = { "v-${it.id}" }) { ProposalCard(vm, state, it) }
@@ -80,7 +89,7 @@ fun TeamScreen(vm: GameViewModel, state: GameState) {
     }
 }
 
-/** I Capitani votano, il Comando Supremo vede l'andamento e decide dalla scheda GM. */
+/** I Capitani votano, il Comando Supremo vede l'andamento e decide dalla scheda GM. Chi l'ha creata può chiuderla. */
 @Composable
 private fun ProposalCard(vm: GameViewModel, state: GameState, proposal: RankProposal) {
     val busy by vm.busy.collectAsStateWithLifecycle()
@@ -105,13 +114,19 @@ private fun ProposalCard(vm: GameViewModel, state: GameState, proposal: RankProp
                 ) { Text("No") }
             }
         }
+        if (proposal.canClose) {
+            OutlinedButton(onClick = { vm.closeProposal(proposal.id) }, enabled = !busy) { Text("Chiudi votazione") }
+        }
     }
 }
 
-/** Il Capitano propone i cambi di grado. Lo squadrone si gestisce dalla chat. */
+/** Soldati e Caporali chiedono di entrare, il Capitano propone i cambi di grado. */
 @Composable
 private fun SheetActions(vm: GameViewModel, state: GameState, member: TeamMember, onDone: () -> Unit) {
     val matricola = member.unit.matricola
+    if (HierarchyRules.canRequestSquad(state, member)) {
+        Button(onClick = { vm.requestSquad(matricola); onDone() }) { Text("Chiedi di entrare") }
+    }
     if (state.rank != RANK_CAPTAIN || !member.unit.approved || matricola == state.unit?.matricola) return
     if (state.proposals.any { it.matricola == matricola }) return
 

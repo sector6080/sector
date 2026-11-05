@@ -19,6 +19,7 @@ Problemi trovati leggendo il codice del sito, ora tolto dal repository. Valgono 
 - `sendData` riceve un 4° parametro che la funzione non usa.
 
 ## Lezioni per l'app
+- Un messaggio "connessione non riuscita" può nascondere un errore del server: i log di Supabase dicono quale.
 - Autenticazione vera (Supabase Auth o simile), password mai inviate al client.
 - Validazione degli ordini **lato server**.
 - Database strutturato (es. Firestore) al posto del parsing di testo da Google Form.

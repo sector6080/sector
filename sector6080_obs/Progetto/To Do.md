@@ -4,13 +4,12 @@
 - [x] Aggiungere nell'app il link del server Discord (costante `DISCORD_URL` in `App.kt`)
 - [x] Riaprire il progetto Supabase del sito (03/11/2026)
 - [x] Salvare una copia del database (il piano gratuito non ha backup automatici)
-- [ ] Aggiornare il Google Doc: budget di creazione 4 PU (+1 con Google) invece di 10, solo matricola al posto del nick Discord, Discord facoltativo, grado perso con l'unità
+- [ ] Aggiornare il Google Doc: elenco in [[modifiche doc google da fare]]
 - [ ] Completare la lista in [[Questioni legali]]
 - [x] Definire le coordinate dei tre porti e dei depositi (dalla [[Mappa]])
 - [ ] Confermare i dubbi sulla [[Mappa]]: colori, effetto di magazzini e raffinerie
-- [ ] Rendere il regolamento leggibile da tutti ("Chiunque abbia il link")
+- [x] Rendere il regolamento leggibile da tutti ("Chiunque abbia il link")
 - [x] Decidere la durata del turno: 24 ore
-- [ ] Aggiornare il Google Doc: turno di 24 ore e stipendi automatici
 - [x] Decidere il backend: Supabase
 - [x] Eseguire `supabase/schema-app.sql`
 - [x] Eliminare le vecchie tabelle del sito
@@ -18,7 +17,7 @@
 - [x] Provare il collegamento dell'app: unità, ordini, chat, approvazione, secondo player
 - [ ] Togliere dal database i dati di prova prima di aprire ad altri
 - [ ] Attivare un CAPTCHA o un altro limite per gli accessi anonimi
-- [x] Restituzione dei PU per le unità rifiutate
+- [x] Unità rifiutate senza perdite: il tipo si paga all'approvazione, quindi il rimborso non serve più
 - [x] Controllare le regole di sicurezza RLS di Supabase (vedi [[Database Supabase]])
 - [x] Decidere il futuro del sito: abbandonato per l'app
 - [x] Esportare i dati ed eseguire `supabase/pulizia-sito.sql` (vedi [[Database Supabase]])
@@ -31,10 +30,20 @@
 - [x] Eseguire `supabase/chat-gerarchia-gm.sql`
 - [x] Eseguire `supabase/firma-chat.sql`
 - [x] Eseguire `supabase/nome-squadrone.sql`
+- [x] Eseguire `supabase/gruppi-capitani.sql`
+- [x] Eseguire `supabase/richieste-squadrone.sql`
+- [x] Eseguire `supabase/gerarchia-squadroni.sql`
+- [x] Eseguire `supabase/template-nemici.sql`
+- [x] Eseguire `supabase/notifiche.sql`
+- [x] Eseguire `supabase/voti-e-chiusura.sql`
+- [ ] Provare nell'app la chiusura delle votazioni
+- [ ] Provare nell'app notifiche, menzioni, creazione senza componenti e negozio dopo l'approvazione
+- [ ] Decidere se aggiungere Firebase per le notifiche immediate ad app chiusa
+- [ ] Bilanciare i valori dei template dei nemici
+- [x] Correggere il grado scritto con un a capo finale
 - [ ] Provare canali della chat, squadroni, votazioni, moderazione e nemici
-- [ ] Decidere se i danni degli attacchi devono essere automatici
-- [ ] Decidere se i caporali devono raccogliere gli ordini prima dei GM
-- [ ] Guardare il nuovo stile su ingresso, creazione unità, scheda GM e nemici
+- [ ] Rendere i danni degli attacchi automatici
+- [x] Guardare il nuovo stile su ingresso, creazione unità, scheda GM e nemici
 - [ ] Decidere se aggiungere un carattere dedicato, per esempio Chakra Petch
 - [x] Provare GM, cambio turno automatico, stipendi e blocchi di movimento e tiro (negozio, timer, mappa 60×80 e descrizioni edifici provati il 04/11/2026)
 - [x] Impedire di fermarsi sulla casella di un alleato e di sparare attraverso le unità
@@ -47,7 +56,7 @@
 - [x] Rendere comune la visione di tutta la squadra
 - [ ] Iniziare il [[Multiplayer]]: login e sezione [[Game Master]] minima
 - [ ] Aggiornare `origin` di git al nuovo indirizzo `github.com/sector6080/sector`
-
+- [ ] Fare le cosi dette "azioni istantanee" che non hanno bis
 ## Vecchia lista del sito
 Copiata dal `README.md` di dicembre 2025 (aggiornata dopo la riunione del comando supremo del 13/12/2025). Il README attuale ne ha una versione più recente. Le voci già completate sono barrate.
 

@@ -58,11 +58,7 @@ import com.sector6080.app.ui.theme.Warning
 fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Unit) {
     val unit = state.unit
     if (unit == null) {
-        if (state.isGm) {
-            CenteredNotice("Comando Supremo", "Il Comando Supremo non dà ordini: gli ordini dei player sono nella scheda GM.")
-        } else {
-            CenteredNotice("Nessuna unità", "Crea prima la tua unità nella scheda Unità.")
-        }
+        CenteredNotice("Nessuna unità", "Crea prima la tua unità nella scheda Unità.")
         return
     }
     val result = OrderRules.simulate(vm.catalog, unit, state.orders, state.occupiedCells())

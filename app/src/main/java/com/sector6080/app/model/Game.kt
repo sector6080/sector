@@ -44,22 +44,29 @@ data class TeamMember(
     val unit: GameUnit,
     val rank: String,
     val pu: Int,
-    /** Matricola del Caporale che guida lo squadrone. */
-    val squad: String? = null,
-    val squadName: String? = null,
+    /** Matricola del Caporale che guida il gruppo. */
+    val group: String? = null,
+    val groupName: String? = null,
+    /** Matricola del Capitano che guida lo squadrone. */
+    val squadron: String? = null,
+    val squadronName: String? = null,
 ) {
-    /** Testo mostrato accanto all'unità. Il Caporale ha il nome ma non ha un [squad]. */
+    /** Testo mostrato accanto all'unità. */
     val squadLabel: String?
-        get() = when {
-            squadName != null -> "squadrone \"$squadName\""
-            squad != null -> "squadrone senza nome"
-            else -> null
+        get() {
+            fun part(label: String, leader: String?, name: String?) = when {
+                name != null -> "$label \"$name\""
+                leader != null -> "$label senza nome"
+                else -> null
+            }
+            val parts = listOfNotNull(part("gruppo", group, groupName), part("squadrone", squadron, squadronName))
+            return parts.joinToString(" · ").ifEmpty { null }
         }
 }
 
 /** Vista del Game Master. [pending] indica un'unità in attesa di approvazione. */
 @Serializable
-data class GmUnit(val member: TeamMember, val pending: Boolean, val cost: Int, val muted: Boolean = false)
+data class GmUnit(val member: TeamMember, val pending: Boolean, val muted: Boolean = false)
 
 /** Ordini inviati da un'unità e non ancora applicati. */
 @Serializable
@@ -94,6 +101,7 @@ enum class Access { ANONYMOUS, GOOGLE }
 enum class ChatChannel(val id: String, val label: String) {
     EVENTS("eventi", "Eventi"),
     COMMON("comune", "Comune"),
+    GROUP("gruppo", "Gruppo"),
     SQUAD("squadrone", "Squadrone"),
     COMMAND("comando", "Comando"),
 }
@@ -118,6 +126,24 @@ data class Enemy(
     val position: Cell,
 )
 
+/** Le crea il server: promozioni, nuovo turno, menzioni in chat e altri eventi. */
+@Serializable
+data class GameNotification(
+    val id: Long,
+    val title: String,
+    val body: String,
+    val createdAt: Long,
+    val read: Boolean,
+)
+
+/** Modello tra cui il GM sceglie quando fa comparire un nemico. */
+@Serializable
+data class EnemyTemplate(val name: String, val hp: Int, val armor: Int, val description: String)
+
+/** Soldato o Caporale che chiede di entrare nel gruppo o nello squadrone di [leader]. */
+@Serializable
+data class SquadRequest(val matricola: String, val type: String, val leader: String)
+
 /** Cambio di grado in votazione tra i Capitani. */
 @Serializable
 data class RankProposal(
@@ -129,6 +155,7 @@ data class RankProposal(
     val votesYes: Int,
     val votesNo: Int,
     val myVote: Boolean?,
+    val canClose: Boolean = false,
 )
 
 @Serializable
@@ -151,16 +178,24 @@ data class GameState(
     val isGm: Boolean = false,
     /** Tipi di unità e componenti ricevuti dal server. */
     val catalog: Catalog = Catalog(),
+    /** Valori della tabella game_settings, per esempio i posti negli squadroni. */
+    val settings: Map<String, Int> = emptyMap(),
     /** Avvisi chiusi con la X. */
     val approvalClosed: Boolean = false,
     val accountNoticeClosed: Boolean = false,
+    /** Effetti sonori dell'app. Il suono delle notifiche dipende dalle impostazioni di Android. */
+    val soundOn: Boolean = true,
     val chat: List<ChatMessage> = emptyList(),
     /** Tutte le unità, compresa la propria, dal grado più alto. Comprende quelle in attesa. */
     val team: List<TeamMember> = emptyList(),
     val enemies: List<Enemy> = emptyList(),
     val proposals: List<RankProposal> = emptyList(),
+    /** Richieste fatte o ricevute dal player. */
+    val squadRequests: List<SquadRequest> = emptyList(),
+    val notifications: List<GameNotification> = emptyList(),
     val gmUnits: List<GmUnit> = emptyList(),
     val gmOrders: List<GmOrders> = emptyList(),
+    val enemyTemplates: List<EnemyTemplate> = emptyList(),
 )
 
 /** Unità in gioco: quelle in attesa non compaiono sulla mappa e non vedono. */

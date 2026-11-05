@@ -1,19 +1,19 @@
 # Unità
 
 ## Caratteristiche (regolamento)
-| Campo | Descrizione |
-|---|---|
-| Matricola | Codice identificativo, 3 lettere – 3 numeri (es. `XYZ-789`) |
-| Player | Nome del giocatore (non più il nick Discord) |
-| Tipo | [[Fanteria]], [[Motorizzata]], [[Corazzata]], [[Artiglieria]] |
-| HP | Punti vita (`attuali/max`). A 0 l'unità è eliminata |
-| Movimento | Caselle per turno, solo orizzontale/verticale |
-| Visione | Caselle visibili intorno a sé (nebbia di guerra) |
-| Armatura | Blocca gli attacchi con perforazione inferiore |
-| Rifornimenti | `attuali/max` |
-| Componenti | Presi dalla lista del proprio tipo, con utilizzi `(x/y)` |
-| Lore | Origine e motivazione dell'unità |
-| PU rimasti | PU avanzati dopo la creazione |
+| Campo        | Descrizione                                                   |
+| ------------ | ------------------------------------------------------------- |
+| Matricola    | Codice identificativo, 3 lettere – 3 numeri (es. `XYZ-789`)   |
+| Player       | Nome del giocatore (non più il nick Discord)                  |
+| Tipo         | [[Fanteria]], [[Motorizzata]], [[Corazzata]], [[Artiglieria]] |
+| HP           | Punti vita (`attuali/max`). A 0 l'unità è eliminata           |
+| Movimento    | Caselle per turno, solo orizzontale/verticale                 |
+| Visione      | Caselle visibili intorno a sé (nebbia di guerra)              |
+| Armatura     | Blocca gli attacchi con perforazione inferiore                |
+| Rifornimenti | `attuali/max`                                                 |
+| Componenti   | Presi dalla lista del proprio tipo, con utilizzi `(x/y)`      |
+| Lore         | Origine e motivazione dell'unità                              |
+| PU rimasti   | PU avanzati dopo la creazione                                 |
 
 > [!note] Differenze con il vecchio sito
 > Il sito non salvava **HP**, **Lore** e **PU rimasti**, e salvava i componenti come testo libero. L'app segue il regolamento.
@@ -30,9 +30,9 @@
 L'app chiede prima di confermare di aver letto il regolamento. Poi:
 1. Scegliere il tipo (il costo si scala dai PU del player: **4 all'inizio, 5 con l'accesso Google**).
 2. Creare una matricola non ancora usata.
-3. Comprare componenti con i PU, **solo del proprio tipo**.
-4. Scrivere una breve lore. Il server calcola costo e statistiche.
-5. Aspettare l'approvazione di un [[Game Master]].
+3. Scrivere una breve lore. Il server calcola le statistiche.
+4. Aspettare l'approvazione di un [[Game Master]]: solo allora si paga il tipo.
+5. Comprare i componenti del proprio tipo con i PU rimasti: **si può solo dopo l'approvazione**.
 
 In gioco tutti si chiamano con la **matricola**: non esiste un nome del player.
 

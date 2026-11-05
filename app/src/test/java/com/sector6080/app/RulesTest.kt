@@ -12,6 +12,7 @@ import com.sector6080.app.data.friendlyError
 import com.sector6080.app.data.parseMillis
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.ChatChannel
+import com.sector6080.app.model.ChatMessage
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.Component
 import com.sector6080.app.model.Enemy
@@ -23,17 +24,18 @@ import com.sector6080.app.model.MAP_WIDTH
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.OrderType
 import com.sector6080.app.model.Terrain
+import com.sector6080.app.model.SquadRequest
 import com.sector6080.app.model.Stats
 import com.sector6080.app.model.TeamMember
 import com.sector6080.app.model.UnitType
 import com.sector6080.app.model.deployed
 import com.sector6080.app.model.occupiedCells
 import com.sector6080.app.rules.FogSpan
+import com.sector6080.app.rules.Formation
 import com.sector6080.app.rules.HierarchyRules
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.rules.Vision
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -105,19 +107,15 @@ class RulesTest {
     fun exampleUnitFromRulebook() {
         val type = catalog.type("Fanteria")!!
         val comps = listOf("Fucile d'Assalto", "Granata").map { catalog.component("Fanteria", it)!! }
-        assertTrue(UnitRules.validate("XYZ-789", "lore", type, comps, 10).isEmpty())
         val unit = newUnit("XYZ-789", "lore", type, comps)
-        assertEquals(4, UnitRules.totalCost(catalog, unit))
         assertEquals(mapOf("Fucile d'Assalto" to 3, "Granata" to 1), unit.uses)
     }
 
     @Test
     fun budgetLimitsTheUnit() {
-        val type = catalog.type("Fanteria")!!
-        val rifle = catalog.component("Fanteria", "Fucile d'Assalto")!!
-        val smg = catalog.component("Fanteria", "SMG")!!
-        assertTrue(UnitRules.validate("XYZ-789", "l", type, listOf(rifle), 4).isEmpty())
-        assertTrue(UnitRules.validate("XYZ-789", "l", type, listOf(rifle, smg), 4).isNotEmpty())
+        val type = catalog.type("Corazzata")!!
+        assertTrue(UnitRules.validate("XYZ-789", "l", type, type.creationCost).isEmpty())
+        assertTrue(UnitRules.validate("XYZ-789", "l", type, type.creationCost - 1).isNotEmpty())
     }
 
     @Test
@@ -227,28 +225,84 @@ class RulesTest {
     }
 
     @Test
-    fun squadIsBuiltFromTheTeam() {
+    fun groupsEnterTheSquadronWithTheirCorporal() {
         val type = catalog.type("Fanteria")!!
-        val leader = newUnit("AAA-111", "l", type, emptyList()).copy(approved = true)
-        val chosen = newUnit("BBB-222", "l", type, emptyList()).copy(approved = true)
-        val free = newUnit("CCC-333", "l", type, emptyList()).copy(approved = true)
-        val recruit = newUnit("DDD-444", "l", type, emptyList())
+        fun unit(matricola: String, approved: Boolean = true) =
+            newUnit(matricola, "l", type, emptyList()).copy(approved = approved)
         val team = listOf(
-            TeamMember(leader, "Caporale", 0, squadName = "Falchi"),
-            TeamMember(chosen, "Soldato", 0, squad = "AAA-111", squadName = "Falchi"),
-            TeamMember(free, "Soldato", 0),
-            TeamMember(recruit, "Recluta", 0),
+            TeamMember(unit("CAP-001"), "Capitano", 0, squadron = "CAP-001", squadronName = "Aquile"),
+            TeamMember(unit("COR-001"), "Caporale", 0, group = "COR-001", groupName = "Falchi", squadron = "CAP-001", squadronName = "Aquile"),
+            TeamMember(unit("COR-002"), "Caporale", 0, group = "COR-002"),
+            TeamMember(unit("SOL-001"), "Soldato", 0, group = "COR-001", groupName = "Falchi", squadron = "CAP-001", squadronName = "Aquile"),
+            TeamMember(unit("SOL-002"), "Soldato", 0),
+            TeamMember(unit("REC-001", approved = false), "Recluta", 0),
         )
-        val corporal = GameState(unit = leader, rank = "Caporale", team = team)
-        val soldier = GameState(unit = chosen, rank = "Soldato", team = team)
+        val limits = mapOf("squad_limit_corporal" to 6, "squad_limit_captain" to 40)
+        fun state(i: Int) = GameState(unit = team[i].unit, rank = team[i].rank, team = team, settings = limits)
+        val captain = state(0)
+        val corporal = state(1)
+        val freeCorporal = state(2)
+        val soldier = state(3)
+        val loner = state(4)
+        fun matricole(list: List<TeamMember>) = list.map { it.unit.matricola }
 
-        assertEquals(listOf("BBB-222"), HierarchyRules.squadMembers(corporal).map { it.unit.matricola })
-        assertEquals(listOf("BBB-222"), HierarchyRules.squadMembers(soldier).map { it.unit.matricola })
-        assertEquals(listOf("CCC-333"), HierarchyRules.freeSoldiers(corporal).map { it.unit.matricola })
-        assertEquals("Falchi", HierarchyRules.squadName(soldier))
-        assertEquals("squadrone \"Falchi\"", team[0].squadLabel)
-        assertEquals("squadrone senza nome", TeamMember(chosen, "Soldato", 0, squad = "AAA-111").squadLabel)
-        assertNull(team[2].squadLabel)
+        assertEquals(listOf("COR-001"), matricole(HierarchyRules.members(captain, Formation.SQUADRON)))
+        assertEquals(listOf("SOL-001"), matricole(HierarchyRules.members(corporal, Formation.GROUP)))
+        assertEquals(2, HierarchyRules.size(captain, Formation.SQUADRON))
+        assertEquals(1, HierarchyRules.size(soldier, Formation.GROUP))
+        assertEquals(listOf("COR-002"), matricole(HierarchyRules.free(captain, Formation.SQUADRON)))
+        assertEquals(listOf("SOL-002"), matricole(HierarchyRules.free(corporal, Formation.GROUP)))
+        assertEquals(1, HierarchyRules.soldiersOf(captain, team[1]))
+        assertEquals("Aquile", HierarchyRules.name(soldier, Formation.SQUADRON))
+        assertEquals("Falchi", HierarchyRules.name(soldier, Formation.GROUP))
+        assertEquals(6, HierarchyRules.limit(corporal, Formation.GROUP))
+        assertEquals(40, HierarchyRules.limit(captain, Formation.SQUADRON))
+
+        // Chi sta in un gruppo dentro uno squadrone vede entrambi i canali
+        assertTrue(HierarchyRules.canSee(soldier, ChatChannel.GROUP))
+        assertTrue(HierarchyRules.canSee(soldier, ChatChannel.SQUAD))
+        assertTrue(HierarchyRules.canSee(captain, ChatChannel.SQUAD))
+        assertFalse(HierarchyRules.canSee(captain, ChatChannel.GROUP))
+        assertTrue(HierarchyRules.canSee(freeCorporal, ChatChannel.GROUP))
+        assertFalse(HierarchyRules.canSee(freeCorporal, ChatChannel.SQUAD))
+        assertFalse(HierarchyRules.canSee(loner, ChatChannel.GROUP))
+        assertFalse(HierarchyRules.canSee(loner, ChatChannel.SQUAD))
+
+        // I Soldati chiedono a un Caporale, i Caporali a un Capitano
+        assertTrue(HierarchyRules.canRequestSquad(loner, team[1]))
+        assertFalse(HierarchyRules.canRequestSquad(loner, team[0]))
+        assertFalse(HierarchyRules.canRequestSquad(soldier, team[2]))
+        assertTrue(HierarchyRules.canRequestSquad(freeCorporal, team[0]))
+        assertFalse(HierarchyRules.canRequestSquad(corporal, team[0]))
+        assertFalse(HierarchyRules.canRequestSquad(captain, team[0]))
+
+        val request = SquadRequest("SOL-002", "Fanteria", "COR-001")
+        val waiting = loner.copy(squadRequests = listOf(request))
+        assertFalse(HierarchyRules.canRequestSquad(waiting, team[1]))
+        assertTrue(HierarchyRules.canRequestSquad(waiting, team[2]))
+        assertEquals(request, HierarchyRules.outgoingRequest(waiting))
+        assertEquals(listOf(request), HierarchyRules.incomingRequests(corporal.copy(squadRequests = listOf(request))))
+        assertTrue(HierarchyRules.incomingRequests(waiting).isEmpty())
+
+        assertEquals("gruppo \"Falchi\" · squadrone \"Aquile\"", team[3].squadLabel)
+        assertEquals("gruppo senza nome", team[2].squadLabel)
+        assertNull(team[4].squadLabel)
+    }
+
+    @Test
+    fun mentionsAreReadFromTheChat() {
+        assertEquals("ASD-543", HierarchyRules.authorMatricola("Soldato(ASD-543)-Fanteria"))
+        assertNull(HierarchyRules.authorMatricola("Comando Supremo"))
+
+        val unit = newUnit("ASD-543", "l", catalog.type("Fanteria")!!, emptyList())
+        val state = GameState(unit = unit, rank = "Soldato")
+        fun message(author: String, text: String) = ChatMessage(author, text, 0)
+
+        assertTrue(HierarchyRules.mentionsMe(state, message("Soldato(AAA-111)-Fanteria", "ciao @asd-543")))
+        assertFalse(HierarchyRules.mentionsMe(state, message("Soldato(AAA-111)-Fanteria", "ciao @ABC-123")))
+        assertTrue(HierarchyRules.mentionsMe(state, message("Comando Supremo", "@tutti al porto")))
+        assertFalse(HierarchyRules.mentionsMe(state, message("Soldato(AAA-111)-Fanteria", "@tutti al porto")))
+        assertFalse(HierarchyRules.mentionsMe(GameState(), message("Soldato(AAA-111)-Fanteria", "ciao @ASD-543")))
     }
 
     @Test
@@ -256,7 +310,7 @@ class RulesTest {
         val type = catalog.type("Fanteria")!!
         val unit = newUnit("AAA-111", "l", type, emptyList()).copy(approved = true)
         val soldier = GameState(unit = unit, rank = "Soldato", team = listOf(TeamMember(unit, "Soldato", 0)))
-        val chosen = soldier.copy(team = listOf(TeamMember(unit, "Soldato", 0, squad = "BBB-222")))
+        val chosen = soldier.copy(team = listOf(TeamMember(unit, "Soldato", 0, group = "BBB-222")))
         val corporal = soldier.copy(rank = "Caporale")
         val gm = GameState(rank = "Comando Supremo", isGm = true)
 
@@ -268,16 +322,16 @@ class RulesTest {
         assertNull(HierarchyRules.whyNotWrite(gm, ChatChannel.EVENTS))
         assertNull(HierarchyRules.whyNotWrite(soldier, ChatChannel.COMMON))
         assertNotNull(HierarchyRules.whyNotWrite(GameState(), ChatChannel.COMMON))
-        assertFalse(HierarchyRules.canSee(soldier, ChatChannel.SQUAD))
-        assertTrue(HierarchyRules.canSee(chosen, ChatChannel.SQUAD))
-        assertTrue(HierarchyRules.canSee(corporal, ChatChannel.SQUAD))
+        assertFalse(HierarchyRules.canSee(soldier, ChatChannel.GROUP))
+        assertTrue(HierarchyRules.canSee(chosen, ChatChannel.GROUP))
+        assertTrue(HierarchyRules.canSee(gm, ChatChannel.GROUP))
         assertTrue(HierarchyRules.canSee(gm, ChatChannel.SQUAD))
         assertTrue(HierarchyRules.canSee(GameState(), ChatChannel.EVENTS))
         assertTrue(HierarchyRules.canSee(GameState(), ChatChannel.COMMON))
+        assertFalse(HierarchyRules.canSee(GameState(), ChatChannel.GROUP))
         assertFalse(HierarchyRules.canSee(GameState(), ChatChannel.SQUAD))
 
-        assertNull(HierarchyRules.whyNotWrite(chosen, ChatChannel.SQUAD))
-        assertNull(HierarchyRules.whyNotWrite(corporal, ChatChannel.SQUAD))
+        assertNull(HierarchyRules.whyNotWrite(chosen, ChatChannel.GROUP))
         assertNotNull(HierarchyRules.whyNotWrite(gm, ChatChannel.SQUAD))
     }
 
@@ -291,14 +345,17 @@ class RulesTest {
         assertTrue(unit.approved)
         assertFalse(row.copy(status = "pending").toGameUnit().approved)
 
-        val params = createUnitParams("XYZ-789", "Fanteria", listOf("Pistola"), "l")
+        val params = createUnitParams("XYZ-789", "Fanteria", "l")
         assertEquals("XYZ-789", params["p_matricola"]!!.jsonPrimitive.content)
-        assertEquals(1, params["p_components"]!!.jsonArray.size)
 
         assertEquals(1793750400000, parseMillis("2026-11-04T00:00:00+00:00"))
         assertEquals("Hai già un'unità attiva o in attesa.", friendlyError(Exception("violates one_live_unit_per_player")))
         assertEquals("Matricola già usata: scegline un'altra.", friendlyError(Exception("game_units_matricola_key")))
         assertEquals("Connessione al server non riuscita.", friendlyError(Exception("timeout")))
+        assertEquals(
+            "Accesso non valido: chiudi e riapri l'app.",
+            friendlyError(Exception("permission denied for function send_chat")),
+        )
     }
 
     @Test
@@ -403,7 +460,7 @@ class RulesTest {
     fun teamRowsHideNothingTheSheetNeeds() {
         val member = TeamRow(
             "XYZ-789", "Caporale", 12, "Fanteria", listOf("Pistola"), "storia", 7, 3,
-            mapOf("Pistola" to 1), 30, 40, false, "active", 2,
+            mapOf("Pistola" to 1), 30, 40, false, "active",
         ).toTeamMember()
         assertEquals("Caporale", member.rank)
         assertEquals(12, member.pu)

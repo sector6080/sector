@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.sector6080.app.data.AlertsWorker
 import com.sector6080.app.ui.App
 import com.sector6080.app.ui.theme.Sector6080Theme
 
@@ -17,6 +18,7 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
+        AlertsWorker.schedule(this)
         setContent {
             Sector6080Theme { App() }
         }

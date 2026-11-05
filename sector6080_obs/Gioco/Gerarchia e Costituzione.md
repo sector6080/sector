@@ -17,13 +17,29 @@ Quando l'unità muore il giocatore tiene i PU, ma perde il grado e torna Recluta
 
 Nell'app la scheda **Squadra** mostra tutte le unità divise per grado, comprese quelle in attesa. Da fuori si leggono solo matricola, tipo e nome dello squadrone. Toccandone una si apre la sua scheda, con PU, statistiche e lore. Il Comando Supremo e chi non ha un'unità non compaiono, perché non hanno una matricola.
 
-## Squadroni
-Uno squadrone è formato da **un Caporale e fino a 6 Soldati**.
-- Il Caporale sceglie nome e Soldati dalla chat Squadrone, e può toglierli. Gli altri membri vedono l'elenco.
+## Mostrine
+| Grado | Frecce |
+|---|---|
+| Recluta | una |
+| Soldato | due |
+| Caporale | tre |
+| Capitano | tre, di cui una invertita |
+| Comando Supremo | tre, di cui due invertite |
+
+## Gruppi e squadroni
+La gerarchia ha due livelli:
+- Il **gruppo** è formato da un Caporale e fino a 6 Soldati.
+- Lo **squadrone** è guidato da un Capitano, che sceglie quali gruppi far entrare. Ogni gruppo entra intero, Caporale compreso, e tutti i suoi membri fanno parte dello squadrone.
+- Lo squadrone ha fino a 30 unità, contando sia i Caporali sia i Soldati.
+- I limiti stanno nella tabella `game_settings` e si cambiano dal Table Editor.
+
+Regole:
+- Ognuno ha il suo canale: **Gruppo** per il Caporale e i suoi Soldati, **Squadrone** per il Capitano e tutti i gruppi scelti. Chi non ne fa parte non li vede.
+- Chi guida sceglie nome e membri dal pulsante in alto nel canale. Gli altri membri vedono l'elenco.
 - Il nome è un testo **senza numeri, di massimo 8 caratteri**.
-- Chi non è stato scelto non vede il canale Squadrone.
-- Un Soldato sta in un solo squadrone.
-- Lo squadrone si scioglie se il Caporale perde l'unità o il grado.
+- I Soldati liberi possono **chiedere di entrare** in un gruppo, i Caporali in uno squadrone, dalla scheda dell'unità nella pagina Squadra. Chi guida accetta o rifiuta dal canale.
+- Si può avere una sola richiesta alla volta: una nuova sostituisce la precedente, e si può ritirare.
+- Ogni cambio di grado fa uscire dal proprio gruppo o squadrone e libera chi stava sotto. Se un Caporale perde l'unità, il suo gruppo si scioglie ed esce dallo squadrone.
 
 ## Costituzione Marziale
 ### Art. 1 – Promozioni e declassamenti
@@ -44,6 +60,8 @@ Uno squadrone è formato da **un Caporale e fino a 6 Soldati**.
 ### Come funziona nell'app
 - Il **Capitano** apre la scheda di un'unità e propone il grado: il suo voto conta subito a favore.
 - Le votazioni stanno in cima alla scheda Squadra. Votano i Capitani, tranne chi è oggetto della proposta. Serve il 50%+1.
+- Contano solo i voti di chi è Capitano in quel momento. Se il numero dei Capitani cambia, il conteggio si rifà da solo.
+- Chi ha creato la votazione può chiuderla senza esito, anche se nel frattempo ha cambiato grado. Può farlo anche il Comando Supremo.
 - Il **Comando Supremo** cambia il grado dalla scheda GM, come ordine diretto.
 - I **6 giorni da Caporale** valgono per entrambe le strade e li controlla il server.
 - Si cambia un grado alla volta.

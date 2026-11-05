@@ -20,30 +20,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sector6080.app.model.GameState
-import com.sector6080.app.model.RANK_CORPORAL
 import com.sector6080.app.model.TeamMember
+import com.sector6080.app.rules.Formation
 import com.sector6080.app.rules.HierarchyRules
 import com.sector6080.app.ui.GameViewModel
 
-/** Si apre dalla chat Squadrone: il Caporale sceglie nome e Soldati, gli altri membri guardano. */
+/** Si apre dalla chat: chi guida sceglie nome e membri, gli altri possono solo guardare. */
 @Composable
-fun SquadDialog(vm: GameViewModel, state: GameState, onDismiss: () -> Unit) {
+fun SquadDialog(vm: GameViewModel, state: GameState, formation: Formation, onDismiss: () -> Unit) {
     val busy by vm.busy.collectAsStateWithLifecycle()
-    val leader = state.rank == RANK_CORPORAL
-    val current = HierarchyRules.squadName(state)
-    val members = HierarchyRules.squadMembers(state)
-    val full = members.size >= HierarchyRules.MAX_SQUAD
+    val leading = state.rank == formation.leaderRank
+    val current = HierarchyRules.name(state, formation)
+    val members = HierarchyRules.members(state, formation)
+    val size = HierarchyRules.size(state, formation)
+    val limit = HierarchyRules.limit(state, formation)
+    val full = limit != null && size >= limit
+    val squadron = formation == Formation.SQUADRON
     var name by rememberSaveable { mutableStateOf(current.orEmpty()) }
+
+    fun describe(member: TeamMember) = if (squadron) {
+        val groupName = member.groupName?.let { " \"$it\"" }.orEmpty()
+        "${member.unit.matricola}$groupName · ${HierarchyRules.soldiersOf(state, member)} Soldati"
+    } else {
+        "${member.unit.matricola} · ${member.unit.type}"
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(HierarchyRules.squadTitle(current)) },
+        title = { Text(HierarchyRules.title(formation, current)) },
         text = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                if (leader) {
+                if (leading) {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { text -> name = text.filterNot(Char::isDigit).take(HierarchyRules.MAX_SQUAD_NAME) },
@@ -54,22 +64,46 @@ fun SquadDialog(vm: GameViewModel, state: GameState, onDismiss: () -> Unit) {
                         onClick = { vm.setSquadName(name) },
                         enabled = !busy && HierarchyRules.isValidSquadName(name) && name.trim() != current,
                     ) { Text("Salva il nome") }
+
+                    val requests = HierarchyRules.incomingRequests(state)
+                    if (requests.isNotEmpty()) {
+                        Text("Richieste ${requests.size}", style = MaterialTheme.typography.titleSmall)
+                    }
+                    requests.forEach { request ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("${request.matricola} · ${request.type}", modifier = Modifier.weight(1f))
+                            TextButton(
+                                onClick = { vm.answerSquadRequest(request.matricola, true) },
+                                enabled = !busy && !full,
+                            ) { Text("Accetta") }
+                            TextButton(
+                                onClick = { vm.answerSquadRequest(request.matricola, false) },
+                                enabled = !busy,
+                            ) { Text("Rifiuta") }
+                        }
+                    }
                 }
 
-                Text("Soldati ${members.size}/${HierarchyRules.MAX_SQUAD}", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "${if (squadron) "Unità" else "Soldati"} $size/${limit ?: "?"}",
+                    style = MaterialTheme.typography.titleSmall,
+                )
                 if (members.isEmpty()) Text("Nessuno")
                 members.forEach { member ->
-                    SoldierRow(member, "Togli".takeIf { leader }, !busy) {
+                    MemberRow(describe(member), "Togli".takeIf { leading }, !busy) {
                         vm.setSquadMember(member.unit.matricola, false)
                     }
                 }
 
-                if (leader) {
-                    val free = HierarchyRules.freeSoldiers(state)
-                    Text("Soldati liberi", style = MaterialTheme.typography.titleSmall)
+                if (leading) {
+                    val free = HierarchyRules.free(state, formation)
+                    Text(
+                        if (squadron) "Gruppi liberi" else "Soldati liberi",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
                     if (free.isEmpty()) Text("Nessuno")
                     free.forEach { member ->
-                        SoldierRow(member, "Aggiungi", !busy && !full) {
+                        MemberRow(describe(member), "Aggiungi", !busy && !full) {
                             vm.setSquadMember(member.unit.matricola, true)
                         }
                     }
@@ -81,9 +115,9 @@ fun SquadDialog(vm: GameViewModel, state: GameState, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun SoldierRow(member: TeamMember, action: String?, enabled: Boolean, onAction: () -> Unit) {
+private fun MemberRow(text: String, action: String?, enabled: Boolean, onAction: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("${member.unit.matricola} · ${member.unit.type}", modifier = Modifier.weight(1f))
+        Text(text, modifier = Modifier.weight(1f))
         if (action != null) TextButton(onClick = onAction, enabled = enabled) { Text(action) }
     }
 }

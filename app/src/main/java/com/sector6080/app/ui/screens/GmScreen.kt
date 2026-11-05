@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.Enemy
+import com.sector6080.app.model.EnemyTemplate
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.GmUnit
@@ -40,6 +41,7 @@ import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.ui.GameViewModel
 import com.sector6080.app.ui.components.Button
 import com.sector6080.app.ui.components.Card
+import com.sector6080.app.ui.components.FilterChip
 import com.sector6080.app.ui.components.OutlinedButton
 import com.sector6080.app.ui.components.SectionLabel
 import com.sector6080.app.ui.theme.Danger
@@ -77,16 +79,12 @@ fun GmScreen(vm: GameViewModel, state: GameState) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("${unit.matricola} · ${unit.type}", fontWeight = FontWeight.SemiBold)
-                    Text("Costo ${gm.cost} PU")
-                    Text(
-                        "Componenti: " + unit.components.ifEmpty { listOf("nessuno") }.joinToString(),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    Text("Costo ${vm.catalog.type(unit.type)?.creationCost ?: 0} PU, pagato all'approvazione")
                     Text("Lore: ${unit.lore}", style = MaterialTheme.typography.bodySmall)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { vm.gmReview(unit.matricola, true) }, enabled = !busy) { Text("Approva") }
                         OutlinedButton(onClick = { vm.gmReview(unit.matricola, false) }, enabled = !busy) {
-                            Text("Rifiuta e rimborsa")
+                            Text("Rifiuta")
                         }
                     }
                 }
@@ -162,6 +160,7 @@ fun GmScreen(vm: GameViewModel, state: GameState) {
     enemyForm?.let { enemy ->
         EnemyDialog(
             enemy,
+            state.enemyTemplates,
             onSave = { vm.gmSaveEnemy(it); enemyForm = null },
             onDismiss = { enemyForm = null },
         )
@@ -316,7 +315,12 @@ private fun ComponentsDialog(vm: GameViewModel, unit: GameUnit, busy: Boolean, o
 }
 
 @Composable
-private fun EnemyDialog(enemy: Enemy, onSave: (Enemy) -> Unit, onDismiss: () -> Unit) {
+private fun EnemyDialog(
+    enemy: Enemy,
+    templates: List<EnemyTemplate>,
+    onSave: (Enemy) -> Unit,
+    onDismiss: () -> Unit,
+) {
     val isNew = enemy == NEW_ENEMY
     var name by rememberSaveable { mutableStateOf(enemy.name) }
     var hp by rememberSaveable { mutableStateOf(if (isNew) "" else enemy.hp.toString()) }
@@ -337,6 +341,25 @@ private fun EnemyDialog(enemy: Enemy, onSave: (Enemy) -> Unit, onDismiss: () -> 
                 Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                // Il template riempie i campi: il GM può ancora ritoccarli prima di salvare
+                if (isNew && templates.isEmpty()) {
+                    Text("Nessun template: si aggiungono nella tabella enemy_templates.", style = MaterialTheme.typography.bodySmall)
+                }
+                if (isNew) {
+                    templates.forEach { template ->
+                        FilterChip(
+                            selected = name == template.name,
+                            onClick = {
+                                name = template.name
+                                hp = template.hp.toString()
+                                armor = template.armor.toString()
+                                description = template.description
+                            },
+                            label = { Text("${template.name} · HP ${template.hp} · Arm ${template.armor}") },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.take(40) },

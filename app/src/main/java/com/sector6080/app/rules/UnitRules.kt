@@ -18,20 +18,11 @@ object UnitRules {
         return maxStats(type, unit.components.mapNotNull { catalog.component(unit.type, it) })
     }
 
-    fun totalCost(type: UnitType, components: List<Component>) =
-        type.creationCost + components.sumOf { it.cost }
-
-    fun totalCost(catalog: Catalog, unit: GameUnit): Int {
-        val type = catalog.type(unit.type) ?: return 0
-        return totalCost(type, unit.components.mapNotNull { catalog.component(unit.type, it) })
-    }
-
     /** Restituisce gli errori che impediscono la creazione (lista vuota = ok). */
     fun validate(
         matricola: String,
         lore: String,
         type: UnitType?,
-        components: List<Component>,
         budget: Int,
     ): List<String> = buildList {
         if (!MATRICOLA.matches(matricola)) add("Matricola: 3 lettere maiuscole, trattino, 3 numeri (es. XYZ-789)")
@@ -40,16 +31,7 @@ object UnitRules {
             return@buildList
         }
         if (lore.isBlank()) add("Scrivi una piccola lore dell'unità")
-        val cost = totalCost(type, components)
-        if (cost > budget) add("Costo $cost PU superiore al budget di $budget PU")
-        val names = components.map { it.name }.toSet()
-        for (c in components) {
-            if (c.unitType != type.name) add("${c.name} non è un componente di ${type.name}")
-            val req = c.requires
-            if (req != null && names.none { it.equals(req, ignoreCase = true) }) {
-                add("${c.name} richiede $req")
-            }
-        }
+        if (type.creationCost > budget) add("Costo ${type.creationCost} PU superiore al budget di $budget PU")
     }
 
 }

@@ -9,6 +9,7 @@ import com.sector6080.app.data.GameRepository
 import com.sector6080.app.data.LocalGameRepository
 import com.sector6080.app.data.RemoteGame
 import com.sector6080.app.data.RemoteSnapshot
+import com.sector6080.app.data.SystemAlerts
 import com.sector6080.app.data.friendlyError
 import com.sector6080.app.data.parseMillis
 import com.sector6080.app.model.Access
@@ -30,6 +31,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+private const val MAX_SILENT_FAILURES = 3
+
 /**
  * Azioni del player e dei Game Master. Il server decide unità, PU, turno, catalogo e mappa:
  * qui resta solo una copia sul telefono, più la catena di ordini in preparazione.
@@ -37,13 +40,14 @@ import kotlinx.coroutines.sync.withLock
  */
 class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val repo: GameRepository = LocalGameRepository(app)
-    private val remote = RemoteGame()
+    private val remote = RemoteGame.shared
     private val syncLock = Mutex()
 
     @Volatile
     private var mapGeneration = 0
     private var mapLoaded = false
     private var catalogLoaded = false
+    private var failedSyncs = 0
 
     private val _state = MutableStateFlow(GameState())
     val state: StateFlow<GameState> = _state.asStateFlow()
@@ -66,7 +70,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch {
-            _state.value = repo.load()
+            val saved = repo.load()
+            // I primi prototipi salvavano l'unità senza accesso: senza account si può solo leggere
+            _state.value = if (saved.unit != null && saved.access == null) {
+                saved.copy(access = Access.ANONYMOUS)
+            } else {
+                saved
+            }
             _loaded.value = true
             synchronize()
         }
@@ -93,7 +103,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private fun act(action: suspend () -> Unit) {
         viewModelScope.launch {
             _busy.value = true
-            runCatching { action() }
+            runCatching {
+                // Così un'azione fatta subito dopo l'apertura non parte senza account
+                if (_state.value.access != null) remote.signIn()
+                action()
+            }
                 .onSuccess { synchronize() }
                 .onFailure { _notice.value = friendlyError(it) }
             _busy.value = false
@@ -122,21 +136,30 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             val chat = remote.chat()
             val team = remote.team()
             val enemies = remote.enemies()
-            edit { it.copy(chat = chat, team = team, enemies = enemies) }
+            val settings = remote.settings()
+            edit { it.copy(chat = chat, team = team, enemies = enemies, settings = settings) }
             if (signedIn) {
                 val snapshot = remote.snapshot()
                 val proposals = remote.proposals()
+                val requests = remote.squadRequests()
+                val notifications = remote.notifications()
                 apply(snapshot)
-                edit { it.copy(proposals = proposals) }
+                edit { it.copy(proposals = proposals, squadRequests = requests, notifications = notifications) }
+                SystemAlerts.show(getApplication(), notifications)
                 if (snapshot.player.isGm) {
                     val units = remote.gmUnits()
                     val orders = remote.gmOrders()
-                    edit { it.copy(gmUnits = units, gmOrders = orders) }
+                    val templates = remote.gmEnemyTemplates()
+                    edit { it.copy(gmUnits = units, gmOrders = orders, enemyTemplates = templates) }
                 }
             }
         }
-            .onSuccess { _notice.value = null }
-            .onFailure { _notice.value = friendlyError(it) }
+            .onSuccess {
+                failedSyncs = 0
+                _notice.value = null
+            }
+            // Un attimo di rete assente non merita un avviso: conta solo se si ripete
+            .onFailure { if (++failedSyncs >= MAX_SILENT_FAILURES) _notice.value = friendlyError(it) }
         Unit
     }
 
@@ -173,9 +196,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setAccountNoticeClosed(closed: Boolean) = edit { it.copy(accountNoticeClosed = closed) }
 
-    fun createUnit(matricola: String, type: String, components: List<String>, lore: String) = act {
+    fun setSoundOn(on: Boolean) = edit { it.copy(soundOn = on) }
+
+    fun createUnit(matricola: String, type: String, lore: String) = act {
         remote.signIn()
-        remote.createUnit(matricola, type, components, lore)
+        remote.createUnit(matricola, type, lore)
     }
 
     fun buyComponent(name: String) = act { remote.buyComponent(name) }
@@ -193,11 +218,25 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSquadMember(matricola: String, member: Boolean) = act { remote.setSquadMember(matricola, member) }
 
+    fun markNotificationsRead() {
+        edit { s -> s.copy(notifications = s.notifications.map { it.copy(read = true) }) }
+        act { remote.markNotificationsRead() }
+    }
+
     fun setSquadName(name: String) = act { remote.setSquadName(name.trim()) }
+
+    /** Con [leader] nullo ritira la richiesta. */
+    fun requestSquad(leader: String?) = act { remote.requestSquad(leader) }
+
+    fun answerSquadRequest(matricola: String, accept: Boolean) = act {
+        remote.answerSquadRequest(matricola, accept)
+    }
 
     fun proposeRank(matricola: String, rank: String) = act { remote.proposeRank(matricola, rank) }
 
     fun voteRank(id: Long, approve: Boolean) = act { remote.voteRank(id, approve) }
+
+    fun closeProposal(id: Long) = act { remote.closeProposal(id) }
 
     fun gmReview(matricola: String, approve: Boolean) = act { remote.gmReview(matricola, approve) }
 
