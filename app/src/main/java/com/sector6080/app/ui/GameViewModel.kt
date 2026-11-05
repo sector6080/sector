@@ -1,6 +1,7 @@
 package com.sector6080.app.ui
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.AndroidViewModel
@@ -19,9 +20,8 @@ import com.sector6080.app.model.ChatChannel
 import com.sector6080.app.model.Enemy
 import com.sector6080.app.model.GameMap
 import com.sector6080.app.model.GameState
-import com.sector6080.app.model.GmOrders
 import com.sector6080.app.model.Order
-import com.sector6080.app.rules.OrderRules
+import com.sector6080.app.model.OrderType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +32,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 private const val MAX_SILENT_FAILURES = 3
+private const val MAP_VERSION = "map_version"
+private const val LOG_TAG = "Sector6080"
 
 /**
  * Azioni del player e dei Game Master. Il server decide unità, PU, turno, catalogo e mappa:
@@ -47,6 +49,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private var mapGeneration = 0
     private var mapLoaded = false
     private var catalogLoaded = false
+    private var mapVersion: Int? = null
     private var failedSyncs = 0
 
     private val _state = MutableStateFlow(GameState())
@@ -121,9 +124,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun synchronize() = syncLock.withLock {
         runCatching {
             if (!mapLoaded) {
-                val map = remote.map()
+                loadMap()
                 mapLoaded = true
-                if (GameMap.replace(map.rows, map.sites)) drawMap()
             }
             if (!catalogLoaded) {
                 val catalog = remote.catalog()
@@ -137,7 +139,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             val team = remote.team()
             val enemies = remote.enemies()
             val settings = remote.settings()
-            edit { it.copy(chat = chat, team = team, enemies = enemies, settings = settings) }
+            val marks = remote.marks()
+            val unitless = remote.unitless()
+            // Un ponte nuovo cambia la mappa per tutti
+            val version = settings[MAP_VERSION]
+            if (mapVersion != null && version != mapVersion) loadMap()
+            mapVersion = version
+            edit {
+                it.copy(chat = chat, team = team, unitless = unitless, enemies = enemies, settings = settings, marks = marks)
+            }
             if (signedIn) {
                 val snapshot = remote.snapshot()
                 val proposals = remote.proposals()
@@ -145,12 +155,16 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 val notifications = remote.notifications()
                 apply(snapshot)
                 edit { it.copy(proposals = proposals, squadRequests = requests, notifications = notifications) }
-                SystemAlerts.show(getApplication(), notifications)
+                // Con l'app aperta suona la campanella: l'avviso di Android serve solo ad app chiusa
+                SystemAlerts.takeFresh(getApplication(), notifications)
                 if (snapshot.player.isGm) {
                     val units = remote.gmUnits()
                     val orders = remote.gmOrders()
                     val templates = remote.gmEnemyTemplates()
+                    // Prima si salva quello che è arrivato: una chiamata che fallisce non deve bloccare le altre
                     edit { it.copy(gmUnits = units, gmOrders = orders, enemyTemplates = templates) }
+                    val players = remote.gmPlayers()
+                    edit { it.copy(gmPlayers = players) }
                 }
             }
         }
@@ -159,18 +173,28 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 _notice.value = null
             }
             // Un attimo di rete assente non merita un avviso: conta solo se si ripete
-            .onFailure { if (++failedSyncs >= MAX_SILENT_FAILURES) _notice.value = friendlyError(it) }
+            .onFailure {
+                Log.w(LOG_TAG, "Sincronizzazione non riuscita", it)
+                if (++failedSyncs >= MAX_SILENT_FAILURES) _notice.value = friendlyError(it)
+            }
         Unit
+    }
+
+    private suspend fun loadMap() {
+        val map = remote.map()
+        if (GameMap.replace(map.rows, map.sites)) drawMap()
     }
 
     private fun apply(snapshot: RemoteSnapshot) = edit { s ->
         val sent = snapshot.sentOrders
         val newTurn = snapshot.turn.turn != s.turn
+        // Mezzo e armatura di questo momento stanno nella squadra, non nella riga dell'unità
+        val live = s.team.firstOrNull { it.unit.matricola == snapshot.unit?.matricola }?.unit
         s.copy(
             pu = snapshot.player.pu,
             rank = snapshot.player.rank,
             isGm = snapshot.player.isGm,
-            unit = snapshot.unit,
+            unit = snapshot.unit?.copy(carrier = live?.carrier, armorBonus = live?.armorBonus ?: 0),
             turn = snapshot.turn.turn,
             turnStartedAt = snapshot.turn.startedAt?.let(::parseMillis) ?: 0,
             turnHours = snapshot.turn.hours,
@@ -194,9 +218,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun closeApproval() = edit { it.copy(approvalClosed = true) }
 
-    fun setAccountNoticeClosed(closed: Boolean) = edit { it.copy(accountNoticeClosed = closed) }
-
-    fun setSoundOn(on: Boolean) = edit { it.copy(soundOn = on) }
+    fun setSoundVolume(volume: Float) = edit { it.copy(soundVolume = volume) }
 
     fun createUnit(matricola: String, type: String, lore: String) = act {
         remote.signIn()
@@ -212,6 +234,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun sendOrders() = act { remote.sendOrders(_state.value.orders) }
 
     fun withdrawOrders() = act { remote.withdrawOrders() }
+
+    fun boardVehicle(matricola: String) = act { remote.boardVehicle(matricola) }
+
+    fun giveSupplies(matricola: String, quantity: Int) = act { remote.giveSupplies(matricola, quantity) }
+
+    /** Casella scelta sulla mappa: scendere dal mezzo parte subito, il resto entra nella catena. */
+    fun confirmTarget(order: Order) {
+        val cell = order.target
+        if (order.type == OrderType.DISEMBARK && cell != null) {
+            act { remote.leaveVehicle(cell) }
+        } else {
+            addOrder(order)
+        }
+    }
 
     /** Il server firma il messaggio e controlla chi può scrivere nel canale. */
     fun sendChat(channel: ChatChannel, text: String) = act { remote.sendChat(channel.id, text.trim()) }
@@ -246,22 +282,17 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun gmMarkLost(matricola: String) = act { remote.gmMarkLost(matricola) }
 
-    /** Applica gli ordini con le stesse regole usate dai player. */
-    fun gmApplyOrders(orders: GmOrders) = act {
-        val units = _state.value.gmUnits.map { it.member.unit }
-        val unit = units.first { it.matricola == orders.matricola }
-        val occupied = units.filter { it.matricola != unit.matricola }.mapNotNull { it.position }.toSet() +
-            _state.value.enemies.map { it.position }
-        remote.gmApplyOrders(orders.turn, OrderRules.simulate(catalog, unit, orders.orders, occupied).finalUnit)
-    }
-
     fun gmNextTurn() = act { remote.gmNextTurn() }
 
     fun gmSetRank(matricola: String, rank: String) = act { remote.gmSetRank(matricola, rank) }
 
     fun gmDeleteMessage(id: Long) = act { remote.gmDeleteMessage(id) }
 
-    fun gmSetMuted(matricola: String, muted: Boolean) = act { remote.gmSetMuted(matricola, muted) }
+    fun gmMutePlayer(player: String, muted: Boolean) = act { remote.gmMutePlayer(player, muted) }
+
+    fun gmChangePu(player: String, amount: Int) = act { remote.gmChangePu(player, amount) }
+
+    fun gmDeletePlayer(player: String) = act { remote.gmDeletePlayer(player) }
 
     fun gmMoveUnit(matricola: String, cell: Cell) = act { remote.gmMoveUnit(matricola, cell) }
 

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
@@ -23,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,12 +32,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.OrderType
+import com.sector6080.app.model.deployed
+import com.sector6080.app.model.markedCells
 import com.sector6080.app.model.occupiedCells
 import com.sector6080.app.rules.OrderRules
+import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.ui.GameViewModel
 import com.sector6080.app.ui.components.Button
 import com.sector6080.app.ui.components.CenteredNotice
@@ -45,8 +49,6 @@ import com.sector6080.app.ui.components.FilterChip
 import com.sector6080.app.ui.components.OutlinedButton
 import com.sector6080.app.ui.components.Panel
 import com.sector6080.app.ui.components.SectionLabel
-import com.sector6080.app.ui.components.StatTile
-import com.sector6080.app.ui.components.StatusStrip
 import com.sector6080.app.ui.theme.Danger
 import com.sector6080.app.ui.theme.InkDim
 import com.sector6080.app.ui.theme.Line
@@ -61,20 +63,42 @@ fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Un
         CenteredNotice("Nessuna unità", "Crea prima la tua unità nella scheda Unità.")
         return
     }
-    val result = OrderRules.simulate(vm.catalog, unit, state.orders, state.occupiedCells())
+    if (!unit.approved) {
+        CenteredNotice("Unità in attesa", "Potrai dare ordini dopo l'approvazione di un Game Master.")
+        return
+    }
+    val busy by vm.busy.collectAsStateWithLifecycle()
+    val team = state.deployed.map { it.unit }
+    val occupied = state.occupiedCells()
+    val result = OrderRules.simulate(vm.catalog, unit, state.orders, occupied, state.markedCells())
 
     LazyColumn(
         Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (!unit.approved) {
-            item { StatusStrip("Unità in attesa di approvazione: un Game Master deve approvarla.", Warning) }
+        // Salire, scendere e cedere compaiono solo quando si possono fare, e partono subito
+        if (OrderRules.disembarkCells(unit, occupied).isNotEmpty()) {
+            item {
+                InstantAction("Scendere da ${unit.carrier ?: "mezzo"}", "Scendi", busy) {
+                    onPickOnMap(Order(OrderType.DISEMBARK))
+                }
+            }
+        }
+        items(OrderRules.vehiclesInReach(vm.catalog, unit, team), key = { "mezzo/" + it.matricola }) { vehicle ->
+            InstantAction("Salire su ${vehicle.matricola}", "Sali", busy) { vm.boardVehicle(vehicle.matricola) }
+        }
+        items(OrderRules.supplyRecipients(vm.catalog, unit, team), key = { "rifornimenti/" + it.matricola }) { other ->
+            val max = UnitRules.maxStats(vm.catalog, other).supplies
+            InstantAction("Cedere rifornimenti a ${other.matricola}", "+1", busy, "${other.supplies}/$max") {
+                vm.giveSupplies(other.matricola, 1)
+            }
         }
         if (state.ordersSent) {
             item {
                 Panel(Modifier.fillMaxWidth(), accent = Success) {
-                    Text("Ordini inviati al Game Master", color = Success, style = MaterialTheme.typography.titleMedium)
+                    Text("Ordini inviati", color = Success, style = MaterialTheme.typography.titleMedium)
+                    Text("Il server li esegue allo scadere del turno.", style = MaterialTheme.typography.bodySmall)
                     OutlinedButton(onClick = vm::withdrawOrders, modifier = Modifier.fillMaxWidth()) {
                         Text("Ritira e modifica")
                     }
@@ -83,11 +107,8 @@ fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Un
         } else {
             item { NewOrderForm(vm, state, unit, onPickOnMap) }
         }
-        item {
-            SectionLabel("Catena ordini", trailing = "${state.orders.size}")
-            if (state.orders.isEmpty()) {
-                Text("Nessun ordine. Puoi darne quanti vuoi, in qualsiasi sequenza.", color = InkDim)
-            }
+        if (state.orders.isNotEmpty()) {
+            item { SectionLabel("Catena ordini", trailing = "${state.orders.size}") }
         }
         itemsIndexed(state.orders) { i, order ->
             OrderStep(
@@ -98,29 +119,31 @@ fun OrdersScreen(vm: GameViewModel, state: GameState, onPickOnMap: (Order) -> Un
                 onRemove = { vm.removeOrder(i) }.takeUnless { state.ordersSent },
             )
         }
-        if (!state.ordersSent) {
+        if (!state.ordersSent && state.orders.isNotEmpty()) {
             item {
-                val after = result.finalUnit
-                SectionLabel("Dopo gli ordini")
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    StatTile("Pos", after.position?.toString() ?: "—", Modifier.weight(1f))
-                    StatTile("Rif", "${after.supplies}", Modifier.weight(1f))
-                    StatTile("HP", "${after.hp}", Modifier.weight(1f))
-                }
                 Button(
                     onClick = vm::sendOrders,
-                    enabled = unit.approved && state.orders.isNotEmpty() && result.isValid,
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                ) {
-                    Text(
-                        when {
-                            !unit.approved -> "Puoi inviare dopo l'approvazione"
-                            result.isValid -> "Invia ordini"
-                            else -> "Correggi gli ordini in rosso"
-                        },
-                    )
-                }
+                    enabled = result.isValid,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                ) { Text(if (result.isValid) "Invia ordini" else "Correggi gli ordini in rosso") }
+                Text(
+                    "Partono allo scadere del turno.",
+                    color = InkDim,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun InstantAction(text: String, action: String, busy: Boolean, amount: String? = null, onClick: () -> Unit) {
+    Panel(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(text, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            if (amount != null) Text(amount, style = MaterialTheme.typography.labelMedium, color = Signal)
+            OutlinedButton(onClick = onClick, enabled = !busy) { Text(action) }
         }
     }
 }
@@ -156,40 +179,39 @@ private fun OrderStep(index: Int, last: Boolean, text: String, error: String?, o
 private fun NewOrderForm(vm: GameViewModel, state: GameState, unit: GameUnit, onPickOnMap: (Order) -> Unit) {
     val catalog = vm.catalog
     val occupied = state.occupiedCells()
+    val marked = state.markedCells()
     var type by remember { mutableStateOf<OrderType?>(null) }
     var component by remember { mutableStateOf<String?>(null) }
-    var quantity by remember { mutableIntStateOf(1) }
 
     val usable = unit.components.filter { catalog.component(unit.type, it)?.isUsable == true }
-    val possible = remember(unit, state.orders, state.team, state.enemies, state.catalog) {
-        OrderType.entries.associateWith { t ->
+    val types = OrderType.entries.filterNot { it.instant }
+    val possible = remember(unit, state.orders, state.team, state.enemies, state.marks, state.catalog) {
+        types.associateWith { t ->
             when (t) {
                 OrderType.ACTIVATE, OrderType.RELOAD -> usable.any {
-                    OrderRules.isPossible(catalog, unit, state.orders, Order(t, component = it), occupied)
+                    OrderRules.isPossible(catalog, unit, state.orders, Order(t, component = it), occupied, marked)
                 }
-                OrderType.GIVE -> OrderRules.isPossible(catalog, unit, state.orders, Order(t, quantity = 1), occupied)
-                else -> OrderRules.isPossible(catalog, unit, state.orders, Order(t), occupied)
+                else -> OrderRules.isPossible(catalog, unit, state.orders, Order(t), occupied, marked)
             }
         }
     }
     val current = type
     val canDo = current != null && possible[current] == true
     val needsComponent = current == OrderType.ACTIVATE || current == OrderType.RELOAD
-    val simulated = OrderRules.simulate(catalog, unit, state.orders, occupied).finalUnit
+    val simulated = OrderRules.simulate(catalog, unit, state.orders, occupied, marked).finalUnit
 
     fun reset() {
         type = null
         component = null
-        quantity = 1
     }
 
     Panel(Modifier.fillMaxWidth()) {
         Text("Nuovo ordine", style = MaterialTheme.typography.titleLarge)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            OrderType.entries.sortedByDescending { possible[it] == true }.forEach { t ->
+            types.sortedByDescending { possible[it] == true }.forEach { t ->
                 FilterChip(
                     selected = t == current,
-                    onClick = { type = t; component = null; quantity = 1 },
+                    onClick = { type = t; component = null },
                     label = { Text(t.label) },
                     modifier = Modifier.alpha(if (possible[t] == true) 1f else 0.5f),
                 )
@@ -198,7 +220,7 @@ private fun NewOrderForm(vm: GameViewModel, state: GameState, unit: GameUnit, on
         if (needsComponent) {
             if (usable.isEmpty()) Text("Non hai componenti utilizzabili.", color = InkDim)
             val options = usable.map { name ->
-                name to OrderRules.isPossible(catalog, unit, state.orders, Order(current, component = name), occupied)
+                name to OrderRules.isPossible(catalog, unit, state.orders, Order(current, component = name), occupied, marked)
             }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 options.sortedByDescending { it.second }.forEach { (name, enabled) ->
@@ -220,22 +242,10 @@ private fun NewOrderForm(vm: GameViewModel, state: GameState, unit: GameUnit, on
                 }
             }
         } else if (current != null && !canDo) {
-            val draft = Order(current, quantity = 1.takeIf { current == OrderType.GIVE })
-            Text(OrderRules.whyNot(catalog, unit, state.orders, draft, occupied), color = Warning)
-        }
-        if (current == OrderType.GIVE && canDo) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = { quantity-- }, enabled = quantity > 1) { Text("−") }
-                Text("$quantity rifornimenti", fontWeight = FontWeight.SemiBold)
-                OutlinedButton(onClick = { quantity++ }, enabled = quantity < simulated.supplies) { Text("+") }
-            }
+            Text(OrderRules.whyNot(catalog, unit, state.orders, Order(current), occupied, marked), color = Warning)
         }
         if (current != null && canDo && (!needsComponent || component != null)) {
-            val draft = Order(
-                type = current,
-                component = if (needsComponent) component else null,
-                quantity = quantity.takeIf { current == OrderType.GIVE },
-            )
+            val draft = Order(type = current, component = if (needsComponent) component else null)
             if (OrderRules.needsTarget(catalog, unit, draft)) {
                 Button(onClick = { onPickOnMap(draft) }, modifier = Modifier.fillMaxWidth()) {
                     Text("Scegli la casella sulla mappa")

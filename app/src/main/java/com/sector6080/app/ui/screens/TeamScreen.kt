@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sector6080.app.model.GameState
 import com.sector6080.app.model.RANK_CAPTAIN
+import com.sector6080.app.model.RANK_RECRUIT
+import com.sector6080.app.model.RANK_SUPREME
 import com.sector6080.app.model.RankProposal
 import com.sector6080.app.model.TeamMember
 import com.sector6080.app.rules.HierarchyRules
@@ -38,7 +40,10 @@ import com.sector6080.app.ui.components.UnitSymbol
 import com.sector6080.app.ui.theme.Mono
 import com.sector6080.app.ui.theme.Signal
 
-/** Tutte le unità divise per grado, nell'ordine dato dal server. Toccandone una si apre la scheda. */
+/**
+ * Tutte le unità divise per grado, nell'ordine dato dal server. Toccandone una si apre la scheda.
+ * Comando Supremo e Reclute senza unità compaiono solo come numero, in cima e in fondo.
+ */
 @Composable
 fun TeamScreen(vm: GameViewModel, state: GameState) {
     var sheet by remember { mutableStateOf<TeamMember?>(null) }
@@ -59,10 +64,16 @@ fun TeamScreen(vm: GameViewModel, state: GameState) {
             item { SectionLabel("Votazioni", trailing = "${state.proposals.size}") }
             items(state.proposals, key = { "v-${it.id}" }) { ProposalCard(vm, state, it) }
         }
-        if (state.team.isEmpty()) item { CenteredNotice("Squadra vuota", "Nessuna unità in squadra.") }
-        state.team.groupBy { it.rank }.forEach { (rank, members) ->
+        if (state.team.isEmpty() && state.unitless.isEmpty()) {
+            item { CenteredNotice("Squadra vuota", "Nessuna unità in squadra.") }
+        }
+        val groups = state.team.groupBy { it.rank }
+        (listOf(RANK_SUPREME) + groups.keys + RANK_RECRUIT).distinct().forEach { rank ->
+            val members = groups[rank].orEmpty()
+            val unitless = state.unitless[rank] ?: 0
+            if (members.isEmpty() && unitless == 0) return@forEach
             item(key = rank) {
-                SectionLabel(rank, trailing = "${members.size}", leading = { RankBadge(rank, size = 18.dp) })
+                SectionLabel(rank, trailing = "${members.size + unitless}", leading = { RankBadge(rank, size = 18.dp) })
             }
             items(members, key = { it.unit.matricola }) { member ->
                 val unit = member.unit
@@ -79,12 +90,30 @@ fun TeamScreen(vm: GameViewModel, state: GameState) {
                     }
                 }
             }
+            if (unitless > 0) item(key = "$rank senza unità") { UnitlessRow(rank, unitless) }
         }
     }
 
     sheet?.let { member ->
         UnitSheetDialog(vm.catalog, member, onDismiss = { sheet = null }) {
             SheetActions(vm, state, member, onDone = { sheet = null })
+        }
+    }
+}
+
+/** Chi non ha un'unità non ha una matricola: niente nome e niente scheda, solo quanti sono. */
+@Composable
+private fun UnitlessRow(rank: String, players: Int) {
+    Panel(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            RankBadge(rank, size = 36.dp)
+            Column {
+                Text(if (rank == RANK_SUPREME) rank else "Senza unità", fontWeight = FontWeight.Bold)
+                Text(
+                    if (rank == RANK_SUPREME) "$players Game Master" else "$players player",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
 }

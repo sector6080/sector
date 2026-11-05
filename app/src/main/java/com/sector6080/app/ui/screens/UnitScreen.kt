@@ -45,6 +45,7 @@ import com.sector6080.app.model.GameState
 import com.sector6080.app.model.Stats
 import com.sector6080.app.model.UnitType
 import com.sector6080.app.rules.UnitRules
+import com.sector6080.app.ui.ComponentTile
 import com.sector6080.app.ui.GameViewModel
 import com.sector6080.app.ui.RULES_URL
 import com.sector6080.app.ui.components.Button
@@ -132,45 +133,6 @@ private fun CloseButton(onClose: () -> Unit) {
     IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Chiudi") }
 }
 
-/** Avviso finché Google non è collegato: la X lo chiude. */
-private fun LazyListScope.accountCard(vm: GameViewModel, state: GameState) {
-    if (state.access == Access.GOOGLE || state.accountNoticeClosed) return
-    item { GoogleLinkCard(onClose = { vm.setAccountNoticeClosed(true) }) }
-}
-
-/** Ad avviso chiuso resta solo un link discreto in fondo alla pagina. */
-private fun LazyListScope.accountLink(vm: GameViewModel, state: GameState) {
-    if (state.access == Access.GOOGLE || !state.accountNoticeClosed) return
-    item {
-        TextButton(onClick = { vm.setAccountNoticeClosed(false) }) {
-            Text(
-                "Collega Google",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun GoogleLinkCard(onClose: () -> Unit) {
-    Panel(Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Account non collegato",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
-            CloseButton(onClose)
-        }
-        Text(LOSS_WARNING, style = MaterialTheme.typography.bodyMedium)
-        Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
-            Text("Collega Google (+$GOOGLE_BONUS_PU PU)")
-        }
-        Text(GOOGLE_SOON, style = MaterialTheme.typography.bodySmall)
-    }
-}
-
 @Composable
 private fun RulesGate(vm: GameViewModel) {
     val context = LocalContext.current
@@ -236,7 +198,6 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
             Text("Hai $budget PU. Il tipo si paga all'approvazione.", color = InkDim)
             Text(COMPONENTS_AFTER_APPROVAL, color = Signal)
         }
-        accountCard(vm, state)
         item { SectionLabel("01 · Tipo di unità") }
         items(catalog.types.chunked(2)) { pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -279,7 +240,6 @@ private fun CreateUnitForm(vm: GameViewModel, state: GameState) {
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             ) { Text(if (busy) "Invio in corso..." else "Crea unità") }
         }
-        accountLink(vm, state)
     }
 }
 
@@ -289,7 +249,6 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
     val unit = state.unit ?: return
     val max = UnitRules.maxStats(vm.catalog, unit)
     val busy by vm.busy.collectAsStateWithLifecycle()
-    var shopOpen by rememberSaveable { mutableStateOf(false) }
     var buying by remember { mutableStateOf<Component?>(null) }
     val shop = vm.catalog.type(unit.type)?.components.orEmpty().filter { it.name !in unit.components }
 
@@ -314,6 +273,8 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
                 Spacer(Modifier.height(2.dp))
                 StatsRow(max, showHp = false, position = unit.position?.toString() ?: "—")
                 if (unit.transported) Text("A bordo di un mezzo", style = MaterialTheme.typography.bodySmall)
+                SectionLabel("Lore")
+                Text(unit.lore)
                 if (!unit.approved) {
                     StatusStrip("In attesa di approvazione di un Game Master", Warning)
                 } else if (!state.approvalClosed) {
@@ -321,7 +282,6 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
                 }
             }
         }
-        accountCard(vm, state)
         item { SectionLabel("Componenti", trailing = "${unit.components.size}") }
         items(unit.components) { name ->
             val c = vm.catalog.component(unit.type, name)
@@ -338,29 +298,24 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
                 )
             }
         }
-        item {
-            if (unit.approved) {
-                OutlinedButton(onClick = { shopOpen = !shopOpen }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (shopOpen) "Chiudi il negozio" else "Compra componenti · ${state.pu} PU")
-                }
-            } else {
-                Text(COMPONENTS_AFTER_APPROVAL, color = InkDim)
-            }
-        }
-        if (shopOpen && unit.approved) {
-            items(shop, key = { "shop/" + it.name }) { c ->
-                val missing = c.requires?.takeIf { req -> unit.components.none { it.equals(req, ignoreCase = true) } }
-                Panel(Modifier.fillMaxWidth()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(c.name, style = MaterialTheme.typography.titleMedium)
-                            Text(c.description, style = MaterialTheme.typography.bodySmall)
-                            if (missing != null) {
-                                Text("Richiede $missing", color = Warning, style = MaterialTheme.typography.bodySmall)
+        if (!unit.approved) {
+            item { Text(COMPONENTS_AFTER_APPROVAL, color = InkDim) }
+        } else {
+            item { SectionLabel("Negozio", trailing = "${state.pu} PU") }
+            shop.groupBy { it.cost }.toSortedMap().forEach { (cost, components) ->
+                item(key = "prezzo/$cost") { SectionLabel("$cost PU", trailing = "${components.size}") }
+                items(components, key = { "negozio/" + it.name }) { c ->
+                    val missing = c.requires?.takeIf { req -> unit.components.none { it.equals(req, ignoreCase = true) } }
+                    Panel(Modifier.fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ComponentTile(c)
+                            Column(Modifier.weight(1f)) {
+                                Text(c.name, style = MaterialTheme.typography.titleMedium)
+                                Text(c.description, style = MaterialTheme.typography.bodySmall)
+                                if (missing != null) {
+                                    Text("Richiede $missing", color = Warning, style = MaterialTheme.typography.bodySmall)
+                                }
                             }
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("${c.cost} PU", style = MaterialTheme.typography.labelMedium, color = Signal)
                             TextButton(
                                 onClick = { buying = c },
                                 enabled = !busy && missing == null && c.cost <= state.pu,
@@ -370,9 +325,6 @@ private fun UnitDetails(vm: GameViewModel, state: GameState) {
                 }
             }
         }
-        item { SectionLabel("Lore") }
-        item { Text(unit.lore) }
-        accountLink(vm, state)
     }
 
     buying?.let { c ->

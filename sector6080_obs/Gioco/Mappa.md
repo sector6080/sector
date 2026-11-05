@@ -40,6 +40,8 @@ I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: van
 
 ## Regole della mappa nell'app
 - Non si entra in acqua. Il percorso si calcola casella per casella senza diagonali, quindi un fiume si attraversa solo su un ponte.
+- Il Sistema Ponte Mobile trasforma per sempre una casella di fiume in ponte, per tutti (vedi [[Ordini]]).
+- Il pannello in basso compare solo toccando una casella, sopra la mappa: dice casella, terreno e distanza e apre la scheda di ciò che c'è sopra. Si chiude con Chiudi o toccando di nuovo la casella. Quando si sceglie la casella di un ordine resta sempre aperto.
 - Vale anche per salire e scendere dai mezzi.
 - **Le armi sparano anche sull'acqua**: il range ignora mare e fiumi, e il bersaglio può trovarsi in acqua.
 - Il blocco del movimento in acqua è una scelta confermata, anche se non è nel regolamento. Vedi anche [[Turni e meccaniche]].
@@ -55,7 +57,8 @@ I significati di giallo, azzurro e arancione scuro sono dedotti dalla mappa: van
 - **Nebbia di guerra condivisa**: tutti i player vedono la stessa cosa, cioè l'unione delle visioni di tutte le unità (senza diagonali). Non esiste una visione per singola unità. Fuori dalla visione il terreno resta visibile ma più scuro. I nemici, quando ci saranno, non dovranno mai arrivare al telefono dei player se non sono visibili alla squadra (vedi [[Multiplayer]]).
 - Quando un ordine richiede una casella, la mappa si avvicina all'unità ed evidenzia in verde le caselle valide (vedi [[Ordini]]).
 - Toccando una casella si leggono coordinate, terreno e struttura.
-- **Simboli:** una targa con la sagoma del tipo: elmetto per la Fanteria, camion per la Motorizzata, carro armato per la Corazzata, cannone per l'Artiglieria. Restano leggibili anche con la mappa rimpicciolita.
+- **Simboli:** una targa con la sagoma del tipo: elmetto per la Fanteria, camion per la Motorizzata, carro armato per la Corazzata, cannone per l'Artiglieria. Restano leggibili anche con la mappa rimpicciolita. La propria unità ha la stessa misura delle altre e si distingue per il colore ambra.
+- **Flare:** le caselle marcate hanno un flare arancione che pulsa, visibile a tutti (vedi [[Ordini]]).
 - **Nemici:** rombi rossi con un segnale pulsante, solo dentro la visione comune. Toccandone uno si legge la sua scheda.
 - **Alleati:** le unità approvate compaiono in blu, la propria in ambra con un segnale pulsante. Il percorso degli ordini è una linea tratteggiata. Toccandone una, o aprendo l'elenco "Squadra", si legge la sua scheda: grado e PU del player, statistiche, componenti, posizione e lore.
 

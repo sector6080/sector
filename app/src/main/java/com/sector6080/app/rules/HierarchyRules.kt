@@ -10,6 +10,9 @@ import com.sector6080.app.model.RANK_SOLDIER
 import com.sector6080.app.model.SquadRequest
 import com.sector6080.app.model.TeamMember
 
+/** Chi ha scritto un messaggio, letto dalla firma. Il Comando Supremo non ha matricola né tipo. */
+data class ChatAuthor(val rank: String, val matricola: String? = null, val type: String? = null)
+
 /** I due livelli: i Soldati entrano nel gruppo di un Caporale, il gruppo nello squadrone di un Capitano. */
 enum class Formation(
     val channel: ChatChannel,
@@ -25,11 +28,17 @@ enum class Formation(
 /** Decide cosa mostrare a ogni grado. Il server ricontrolla ogni azione. */
 object HierarchyRules {
     const val MAX_SQUAD_NAME = 8
-    private val SIGNATURE = Regex("""\(([A-Z]{3}-\d{3})\)""")
+    private val SIGNATURE = Regex("""^([\s\S]*?)\s*\(([A-Z]{3}-\d{3})\)-(.+)$""")
     private val EVERYONE = Regex("""(^|\s)@tutti(\s|$)""", RegexOption.IGNORE_CASE)
 
     /** La matricola nella firma di un messaggio: il Comando Supremo non ne ha. */
-    fun authorMatricola(author: String): String? = SIGNATURE.find(author)?.groupValues?.get(1)
+    fun authorMatricola(author: String): String? = chatAuthor(author).matricola
+
+    fun chatAuthor(author: String): ChatAuthor {
+        val signature = author.trim()
+        val parts = SIGNATURE.find(signature)?.groupValues ?: return ChatAuthor(signature)
+        return ChatAuthor(parts[1], parts[2], parts[3])
+    }
 
     /** Il messaggio cita il player, oppure è un @tutti del Comando Supremo. */
     fun mentionsMe(state: GameState, message: ChatMessage): Boolean {

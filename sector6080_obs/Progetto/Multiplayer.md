@@ -64,10 +64,12 @@ Quadro completo, compreso ciò che manca. Le tabelle già definite e i loro nomi
 ## Un turno
 1. Il GM apre il turno (`game/current`).
 2. I player scelgono gli ordini dalla mappa e li inviano.
-3. Allo scadere gli ordini si bloccano.
-4. Il GM li rivede: la sezione GM riusa `OrderRules`, le stesse regole Kotlin del player, quindi un ordine truccato viene scoperto.
-5. Il GM applica i risultati, muove i nemici e pubblica la visione comune.
-6. Parte il turno dopo, con una notifica.
+3. Allo scadere il server esegue gli ordini: ricontrolla le regole, quindi un ordine truccato viene saltato.
+4. Applica danni e area ai nemici e manda a ogni player l'esito.
+5. Parte il turno dopo, con una notifica.
+6. Il GM muove i nemici, risolve i loro attacchi e applica gli effetti speciali.
+
+Salire, scendere e cedere rifornimenti non aspettano il turno: partono subito, sempre sul server.
 
 ## Ordine di lavoro consigliato
 1. ✅ Backend scelto, accesso anonimo, unità online. Provato dal vivo.

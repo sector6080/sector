@@ -28,14 +28,17 @@ import com.sector6080.app.model.SquadRequest
 import com.sector6080.app.model.Stats
 import com.sector6080.app.model.TeamMember
 import com.sector6080.app.model.UnitType
+import com.sector6080.app.model.Weapon
 import com.sector6080.app.model.deployed
 import com.sector6080.app.model.occupiedCells
+import com.sector6080.app.rules.ChatAuthor
 import com.sector6080.app.rules.FogSpan
 import com.sector6080.app.rules.Formation
 import com.sector6080.app.rules.HierarchyRules
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
 import com.sector6080.app.rules.Vision
+import com.sector6080.app.ui.ComponentFamily
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -150,10 +153,7 @@ class RulesTest {
         val unit = newUnit("XYZ-789", "l", type, listOf(gun)).copy(position = Cell(40, 40))
         val moved = listOf(Order(OrderType.MOVE, target = Cell(41, 40)))
         assertEquals("Massimo 1 movimento per turno", OrderRules.whyNot(catalog, unit, moved, Order(OrderType.MOVE)))
-        assertEquals(
-            "L'unità non è a bordo di un mezzo",
-            OrderRules.whyNot(catalog, unit, emptyList(), Order(OrderType.DISEMBARK)),
-        )
+        assertEquals("L'unità ha già tutti gli HP", OrderRules.whyNot(catalog, unit, emptyList(), Order(OrderType.HEAL)))
     }
 
     @Test
@@ -293,6 +293,12 @@ class RulesTest {
     fun mentionsAreReadFromTheChat() {
         assertEquals("ASD-543", HierarchyRules.authorMatricola("Soldato(ASD-543)-Fanteria"))
         assertNull(HierarchyRules.authorMatricola("Comando Supremo"))
+        assertEquals(ChatAuthor("Soldato", "ASD-543", "Fanteria"), HierarchyRules.chatAuthor("Soldato(ASD-543)-Fanteria"))
+        assertEquals(ChatAuthor("Comando Supremo"), HierarchyRules.chatAuthor("Comando Supremo"))
+        assertEquals(
+            ChatAuthor("Comando Supremo", "ASD-543", "Fanteria"),
+            HierarchyRules.chatAuthor("Comando Supremo\r\n(ASD-543)-Fanteria"),
+        )
 
         val unit = newUnit("ASD-543", "l", catalog.type("Fanteria")!!, emptyList())
         val state = GameState(unit = unit, rank = "Soldato")
@@ -425,8 +431,7 @@ class RulesTest {
         val shots = OrderRules.validTargets(catalog, unit, chain, Order(OrderType.ACTIVATE, component = gun.name))
         assertTrue(Cell(44, 40) in shots)
 
-        assertEquals(4, OrderRules.validTargets(catalog, unit, emptyList(), Order(OrderType.GIVE, quantity = 1)).size)
-        assertFalse(OrderRules.isPossible(catalog, unit, emptyList(), Order(OrderType.DISEMBARK)))
+        assertTrue(OrderRules.validTargets(catalog, unit, emptyList(), Order(OrderType.DISEMBARK)).isEmpty())
         // arma già carica: ricaricarla sprecherebbe un rifornimento
         assertFalse(OrderRules.isPossible(catalog, unit, emptyList(), Order(OrderType.RELOAD, component = gun.name)))
     }
@@ -506,6 +511,179 @@ class RulesTest {
         assertTrue(shots.any { !GameMap.terrainAt(it).walkable })
         // il movimento invece resta bloccato
         assertFalse(sea in OrderRules.validTargets(catalog, unit, emptyList(), Order(OrderType.MOVE)))
+    }
+
+    @Test
+    fun instantActionsStayOutOfTheChain() {
+        val type = catalog.type("Fanteria")!!
+        val unit = newUnit("XYZ-789", "l", type, emptyList()).copy(position = Cell(40, 40))
+        val result = OrderRules.simulate(catalog, unit, listOf(Order(OrderType.GIVE, quantity = 1, target = Cell(41, 40))))
+        assertFalse(result.isValid)
+        assertEquals(unit.supplies, result.finalUnit.supplies)
+        assertTrue(OrderType.BOARD.instant && OrderType.DISEMBARK.instant && OrderType.GIVE.instant)
+        assertFalse(OrderType.MOVE.instant || OrderType.ACTIVATE.instant || OrderType.RELOAD.instant || OrderType.HEAL.instant)
+    }
+
+    @Test
+    fun vehiclesHaveSeatsAndUnitsCanLeaveThem() {
+        val ramp = Component("Rampa da Carico", "Motorizzata", 1, "", capacity = 1)
+        val crane = Component("Gru Mobile", "Motorizzata", 2, "", capacity = 1)
+        val platform = Component("Piattaforma Mobile", "Corazzata", 3, "", capacity = 2, carries = "Fanteria")
+        val rules = Catalog(
+            listOf(
+                UnitType("Fanteria", 0, Stats(hp = 9, movement = 2, supplies = 4), emptyList()),
+                UnitType("Motorizzata", 1, Stats(hp = 12, movement = 3, supplies = 3), listOf(ramp, crane)),
+                UnitType("Corazzata", 4, Stats(hp = 14, movement = 3, supplies = 2), listOf(platform)),
+            ),
+        )
+        fun unit(matricola: String, type: String, components: List<String>, cell: Cell, carrier: String? = null) =
+            GameUnit(
+                matricola, type, components, "l", 9, 2, emptyMap(), cell,
+                transported = carrier != null, approved = true, carrier = carrier,
+            )
+
+        val soldier = unit("AAA-001", "Fanteria", emptyList(), Cell(40, 40))
+        val truck = unit("BBB-002", "Motorizzata", listOf("Rampa da Carico", "Gru Mobile"), Cell(41, 40))
+        val tank = unit("CCC-003", "Corazzata", listOf("Piattaforma Mobile"), Cell(40, 41))
+        val empty = unit("DDD-004", "Motorizzata", emptyList(), Cell(39, 40))
+        val far = truck.copy(matricola = "EEE-005", position = Cell(45, 40))
+        val team = listOf(soldier, truck, tank, empty, far)
+
+        assertEquals(listOf(truck, tank), OrderRules.vehiclesInReach(rules, soldier, team))
+        assertEquals(2, OrderRules.freeSeats(rules, truck, "Fanteria", team))
+        assertEquals(0, OrderRules.freeSeats(rules, tank, "Motorizzata", team))
+
+        val onBoard = listOf(
+            unit("FFF-006", "Fanteria", emptyList(), truck.position!!, carrier = truck.matricola),
+            unit("GGG-007", "Fanteria", emptyList(), truck.position!!, carrier = truck.matricola),
+        )
+        assertEquals(listOf(tank), OrderRules.vehiclesInReach(rules, soldier, team + onBoard))
+        // chi trasporta qualcuno e chi è già a bordo non salgono su altri mezzi
+        assertTrue(OrderRules.vehiclesInReach(rules, truck, team + onBoard).isEmpty())
+        assertTrue(OrderRules.vehiclesInReach(rules, onBoard[0], team + onBoard).isEmpty())
+
+        val rider = onBoard[0]
+        assertTrue(OrderRules.disembarkCells(soldier, emptySet()).isEmpty())
+        assertEquals(
+            setOf(Cell(42, 40), Cell(41, 39), Cell(41, 41)),
+            OrderRules.validTargets(rules, rider, emptyList(), Order(OrderType.DISEMBARK), setOf(Cell(40, 40))),
+        )
+    }
+
+    @Test
+    fun suppliesGoOnlyToAlliesInReachWithSpace() {
+        val depot = Component("Scarico Avanzato", "Fanteria", 1, "")
+        val rules = Catalog(listOf(UnitType("Fanteria", 0, Stats(hp = 9, movement = 2, supplies = 4), listOf(depot))))
+        fun unit(matricola: String, cell: Cell, supplies: Int, components: List<String> = emptyList()) =
+            GameUnit(matricola, "Fanteria", components, "l", 9, supplies, emptyMap(), cell, approved = true)
+
+        val giver = unit("AAA-001", Cell(40, 40), 2)
+        val near = unit("BBB-002", Cell(41, 40), 3)
+        val full = unit("CCC-003", Cell(40, 41), 4)
+        val twoAway = unit("DDD-004", Cell(42, 40), 0)
+        val corner = unit("EEE-005", Cell(41, 41), 0)
+        val farCorner = unit("FFF-006", Cell(42, 42), 0)
+        val team = listOf(giver, near, full, twoAway, corner, farCorner)
+
+        assertEquals(1, OrderRules.supplySpace(rules, near))
+        assertEquals(listOf(near, corner), OrderRules.supplyRecipients(rules, giver, team))
+        val extended = giver.copy(components = listOf(depot.name))
+        assertEquals(listOf(near, twoAway, corner, farCorner), OrderRules.supplyRecipients(rules, extended, team))
+        assertTrue(OrderRules.supplyRecipients(rules, giver.copy(supplies = 0), team).isEmpty())
+    }
+
+    @Test
+    fun rangeBonusesApplyToWeaponsOnly() {
+        val rifle = Component("Fucile", "Fanteria", 1, "", weapon = Weapon(2, 2), range = 3, maxUses = 2, firearm = true)
+        val grenade = Component("Granata", "Fanteria", 1, "", weapon = Weapon(1, 1), range = 2, maxUses = 1)
+        val medkit = Component("Kit", "Fanteria", 1, "", range = 1, maxUses = 1)
+        val trap = Component("Trappola", "Fanteria", 1, "", weapon = Weapon(1, 1), maxUses = 1)
+        val zoom = Component("Ottica", "Fanteria", 1, "", forFirearms = true, bonusRange = 2)
+        val laser = Component("Puntatore", "Fanteria", 1, "", bonusRange = 1)
+        val rules = Catalog(
+            listOf(UnitType("Fanteria", 0, Stats(hp = 9, movement = 2), listOf(rifle, grenade, medkit, trap, zoom, laser))),
+        )
+        val unit = GameUnit(
+            "AAA-001", "Fanteria", listOf("Fucile", "Ottica", "Puntatore"), "l", 9, 2,
+            mapOf("Fucile" to 2), Cell(40, 40), approved = true,
+        )
+
+        assertEquals(6, OrderRules.effectiveRange(rules, unit, rifle))
+        assertEquals(3, OrderRules.effectiveRange(rules, unit, grenade)) // l'ottica vale solo per le armi da fuoco
+        assertEquals(1, OrderRules.effectiveRange(rules, unit, medkit))
+        assertNull(OrderRules.effectiveRange(rules, unit, trap))
+
+        val shot = Order(OrderType.ACTIVATE, component = "Fucile", target = Cell(46, 40))
+        assertTrue(OrderRules.simulate(rules, unit, listOf(shot)).isValid)
+        assertFalse(OrderRules.simulate(rules, unit, listOf(shot.copy(target = Cell(47, 40)))).isValid)
+        assertTrue(Cell(46, 40) in OrderRules.validTargets(rules, unit, emptyList(), shot.copy(target = null)))
+    }
+
+    @Test
+    fun marksAndBridgesFollowTheirRules() {
+        val beacon = Component("Faro Laser", "Motorizzata", 1, "", range = 4, maxUses = 1, marks = true)
+        val strike = Component("Supporto Aereo", "Motorizzata", 1, "", weapon = Weapon(2, 5), range = 6, maxUses = 1, needsMark = true)
+        val bridge = Component("Ponte", "Motorizzata", 1, "", range = 1, maxUses = 1, buildsBridge = true)
+        val rules = Catalog(
+            listOf(UnitType("Motorizzata", 1, Stats(hp = 12, movement = 3, armor = 1, supplies = 3), listOf(beacon, strike, bridge))),
+        )
+        val names = listOf(beacon.name, strike.name, bridge.name)
+        val unit = GameUnit("AAA-001", "Motorizzata", names, "l", 12, 3, names.associateWith { 1 }, Cell(40, 40), approved = true)
+        val target = Cell(43, 40)
+        val shot = Order(OrderType.ACTIVATE, component = strike.name, target = target)
+
+        assertFalse(OrderRules.simulate(rules, unit, listOf(shot)).isValid)
+        assertTrue(OrderRules.simulate(rules, unit, listOf(shot), marked = setOf(target)).isValid)
+        assertEquals(
+            setOf(target),
+            OrderRules.validTargets(rules, unit, emptyList(), shot.copy(target = null), marked = setOf(target)),
+        )
+        // il faro marca la casella per gli ordini che lo seguono nella catena
+        val mark = Order(OrderType.ACTIVATE, component = beacon.name, target = target)
+        assertTrue(OrderRules.simulate(rules, unit, listOf(mark, shot)).isValid)
+
+        val cells = (1..MAP_WIDTH).flatMap { x -> (1..MAP_HEIGHT).map { y -> Cell(x, y) } }
+        fun around(c: Cell) = listOf(Cell(c.x + 1, c.y), Cell(c.x - 1, c.y), Cell(c.x, c.y + 1), Cell(c.x, c.y - 1))
+            .filter { it.inBounds }
+        val river = cells.first { c ->
+            GameMap.terrainAt(c) == Terrain.RIVER && around(c).any { GameMap.terrainAt(it).walkable }
+        }
+        val bank = around(river).first { GameMap.terrainAt(it).walkable }
+        val build = Order(OrderType.ACTIVATE, component = bridge.name)
+        val spots = OrderRules.validTargets(rules, unit.copy(position = bank), emptyList(), build)
+        assertTrue(river in spots)
+        assertTrue(spots.all { GameMap.terrainAt(it) == Terrain.RIVER })
+        assertTrue(OrderRules.validTargets(rules, unit, emptyList(), build).isEmpty())
+
+        assertEquals(1, UnitRules.maxStats(rules, unit).armor)
+        assertEquals(6, UnitRules.maxStats(rules, unit.copy(armorBonus = 5)).armor)
+    }
+
+    @Test
+    fun everyComponentBelongsToAFamily() {
+        fun family(name: String, stats: Stats = Stats(), weapon: Weapon? = null) =
+            ComponentFamily.of(Component(name, "Fanteria", 1, "", statMods = stats, weapon = weapon))
+
+        assertEquals(ComponentFamily.PISTOL, family("Pistola Silenziata"))
+        assertEquals(ComponentFamily.RIFLE, family("Mitragliatrice Pesante"))
+        assertEquals(ComponentFamily.AMMO, family("Proiettili EMP"))
+        assertEquals(ComponentFamily.AMMO, family("Proiettili Esplosivi"))
+        assertEquals(ComponentFamily.EXPLOSIVE, family("Esplosivo C4"))
+        assertEquals(ComponentFamily.ELECTRIC, family("Scaricatore EMP"))
+        assertEquals(ComponentFamily.CANNON, family("Mortai Medi"))
+        assertEquals(ComponentFamily.MEDICAL, family("Kit Medico"))
+        assertEquals(ComponentFamily.ROCKET, family("Piattaforma Lanciarazzi"))
+        assertEquals(ComponentFamily.TRANSPORT, family("Piattaforma Mobile"))
+        assertEquals(ComponentFamily.RECON, family("Torretta Ricognizione"))
+        // un nome nuovo prende la famiglia dai suoi valori
+        assertEquals(ComponentFamily.RIFLE, family("Nuova arma", weapon = Weapon(1, 1)))
+        assertEquals(ComponentFamily.ARMOR, family("Nuova piastra", Stats(armor = 1)))
+        assertEquals(ComponentFamily.ENGINE, family("Nuovo turbo", Stats(movement = 1)))
+
+        ComponentFamily.entries.forEach { entry ->
+            assertEquals(16, entry.sprite.size)
+            assertTrue(entry.sprite.all { it.length == 16 })
+        }
     }
 
     @Test

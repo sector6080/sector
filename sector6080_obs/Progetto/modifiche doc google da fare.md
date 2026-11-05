@@ -39,12 +39,27 @@ Differenze tra il [Regolamento](https://docs.google.com/document/d/1Sfr3UhyqTXyW
 - [ ] **Armi:** sparano anche sopra e dentro l'acqua, ma non attraverso un'altra unità.
 - [ ] **Movimento:** non si attraversano mare e fiumi, solo i ponti. Non ci si ferma su altre unità.
 - [ ] **Ordini:** si scelgono nell'app, senza testo libero, e le caselle si toccano sulla mappa.
+- [ ] **Esecuzione:** movimento, attivazione, ricarica e cura partono allo scadere del turno, eseguiti dal server. Il GM non li applica.
+- [ ] **Azioni immediate:** salire, scendere e cedere rifornimenti partono subito.
+- [ ] **Rifornimenti:** si cedono anche in diagonale, senza superare il massimo del destinatario. Nell'app si cedono solo alle unità.
+- [ ] **Danni:** quelli ai nemici sono automatici. Effetti speciali e attacchi dei nemici restano al GM.
+- [ ] **Bonus alle armi:** si sommano. Corto e lungo raggio dipendono dalla distanza del bersaglio: fino a 3 caselle, oppure da 4 in su.
+- [ ] **Armi da fuoco:** pistole, SMG, mitra, mitragliatrice leggera, fucili e kit da cecchino.
+- [ ] **Cingolati e semicingolati:** Armatura Reattiva e Kit da Supporto valgono per ogni Corazzata.
+- [ ] **Postazione Comando Mobile:** +1 PU ogni 2 unità diverse rifornite nello stesso turno.
+- [ ] **Faro Laser:** range 4. Le caselle marcate si vedono sulla mappa con un flare.
+- [ ] **Bunker Antiproiettile:** +4 armor se l'unità non si è mossa nel turno.
+- [ ] **Sistema ECM:** diventa +1 armor agli alleati entro 3 caselle.
+- [ ] **Generatore di Scudi:** solo +2 armor, senza immunità agli esplosivi.
+- [ ] **Scaricatore EMP:** 1 utilizzo, l'effetto lo applica il Comando Supremo.
+- [ ] **Sistema Ponte Mobile:** il ponte è permanente e si costruisce solo sui fiumi.
+- [ ] **Descrizioni dei componenti:** stesse parole ovunque: Perf, Range, armor, veicoli, a bordo, (x/y) per gli utilizzi.
 - [ ] **PU:** sono visibili a tutti, come le schede delle unità.
 
 ## Da decidere prima di scrivere
 - [ ] **Depositi:** i magazzini della [[Mappa]] sono i depositi del regolamento?
 - [ ] **Salire su un mezzo:** l'app richiede una casella adiacente, ma il regolamento non lo dice.
 - [ ] **Nuova unità dopo una perdita:** oggi si usano i PU rimasti, senza altri PU iniziali.
-- [ ] **Unità in attesa:** oggi può preparare gli ordini, ma non inviarli.
+- [ ] **Unità in attesa:** non può dare ordini finché non viene approvata.
 
 Vedi anche [[Gerarchia e Costituzione]], [[Turni e meccaniche]] e [[Unità]].

@@ -43,7 +43,7 @@ In gioco tutti si chiamano con la **matricola**: non esiste un nome del player.
 Costo, HP, rifornimenti e porto di partenza li calcola il server. Approvazioni e modifiche spettano solo ai [[Game Master]].
 
 ## Nuovi componenti
-Il player può comprare altri componenti del proprio tipo con i PU rimasti, dalla scheda Unità. Si applicano subito e si perdono insieme all'unità.
+Il player può comprare altri componenti del proprio tipo con i PU rimasti, dalla scheda Unità. Si applicano subito e si perdono insieme all'unità. Il negozio è sempre aperto sotto i componenti, diviso per prezzo, e ogni componente ha una texturina generata dal codice, con un disegno per famiglia e uno sfondo legato al nome. La lore sta sotto le statistiche.
 
 ## Unità rifiutata
 Se un GM la rifiuta, tornano tutti i PU spesi per l'unità e i suoi componenti.

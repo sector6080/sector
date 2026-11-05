@@ -5,6 +5,8 @@ import kotlin.math.abs
 
 const val MAP_WIDTH = 80
 const val MAP_HEIGHT = 60
+const val RANK_SUPREME = "Comando Supremo"
+const val RANK_RECRUIT = "Recluta"
 const val GOOGLE_BONUS_PU = 1
 const val DEFAULT_TURN_HOURS = 24
 const val RANK_SOLDIER = "Soldato"
@@ -18,6 +20,9 @@ data class Cell(val x: Int, val y: Int) {
 
     /** Distanza senza diagonali (regolamento: movimento e range solo orizzontale/verticale). */
     fun distance(o: Cell) = abs(x - o.x) + abs(y - o.y)
+
+    /** Distanza contando una diagonale come un passo. */
+    fun diagonalDistance(o: Cell) = maxOf(abs(x - o.x), abs(y - o.y))
 
     override fun toString() = "$x,$y"
 }
@@ -36,6 +41,10 @@ data class GameUnit(
     val transported: Boolean = false,
     /** Solo un Game Master può approvare un'unità. */
     val approved: Boolean = false,
+    /** Matricola del mezzo su cui viaggia. */
+    val carrier: String? = null,
+    /** Armatura in più di questo momento, calcolata dal server: Bunker e Sistema ECM. */
+    val armorBonus: Int = 0,
 )
 
 /** Unità della squadra, approvata o in attesa: tutti possono guardarne la scheda. */
@@ -68,19 +77,28 @@ data class TeamMember(
 @Serializable
 data class GmUnit(val member: TeamMember, val pending: Boolean, val muted: Boolean = false)
 
+/** Player visto dal Comando Supremo: chi non ha un'unità non ha una matricola. */
+@Serializable
+data class GmPlayer(val id: String, val matricola: String?, val rank: String, val pu: Int, val muted: Boolean)
+
 /** Ordini inviati da un'unità e non ancora applicati. */
 @Serializable
 data class GmOrders(val matricola: String, val turn: Int, val orders: List<Order>)
 
+/** Casella marcata: sulla mappa ha un flare, vale fino al turno indicato. */
 @Serializable
-enum class OrderType(val label: String) {
+data class Mark(val cell: Cell, val expiresTurn: Int)
+
+/** Le azioni [instant] partono subito, le altre allo scadere del turno. */
+@Serializable
+enum class OrderType(val label: String, val instant: Boolean = false) {
     MOVE("Muoversi"),
-    BOARD("Salire su mezzo"),
-    DISEMBARK("Scendere da mezzo"),
+    BOARD("Salire su mezzo", instant = true),
+    DISEMBARK("Scendere da mezzo", instant = true),
     ACTIVATE("Attivare componente"),
     RELOAD("Ricaricare componente"),
     HEAL("Curarsi"),
-    GIVE("Cedere rifornimenti"),
+    GIVE("Cedere rifornimenti", instant = true),
 }
 
 @Serializable
@@ -182,19 +200,22 @@ data class GameState(
     val settings: Map<String, Int> = emptyMap(),
     /** Avvisi chiusi con la X. */
     val approvalClosed: Boolean = false,
-    val accountNoticeClosed: Boolean = false,
     /** Effetti sonori dell'app. Il suono delle notifiche dipende dalle impostazioni di Android. */
-    val soundOn: Boolean = true,
+    val soundVolume: Float = 1f,
     val chat: List<ChatMessage> = emptyList(),
     /** Tutte le unità, compresa la propria, dal grado più alto. Comprende quelle in attesa. */
     val team: List<TeamMember> = emptyList(),
+    /** Membri senza unità per grado: non hanno una matricola, quindi resta solo il numero. */
+    val unitless: Map<String, Int> = emptyMap(),
     val enemies: List<Enemy> = emptyList(),
+    val marks: List<Mark> = emptyList(),
     val proposals: List<RankProposal> = emptyList(),
     /** Richieste fatte o ricevute dal player. */
     val squadRequests: List<SquadRequest> = emptyList(),
     val notifications: List<GameNotification> = emptyList(),
     val gmUnits: List<GmUnit> = emptyList(),
     val gmOrders: List<GmOrders> = emptyList(),
+    val gmPlayers: List<GmPlayer> = emptyList(),
     val enemyTemplates: List<EnemyTemplate> = emptyList(),
 )
 
@@ -205,3 +226,5 @@ val GameState.deployed: List<TeamMember> get() = team.filter { it.unit.approved 
 fun GameState.occupiedCells(): Set<Cell> =
     deployed.filter { it.unit.matricola != unit?.matricola }.mapNotNull { it.unit.position }.toSet() +
         enemies.map { it.position }
+
+fun GameState.markedCells(): Set<Cell> = marks.map { it.cell }.toSet()

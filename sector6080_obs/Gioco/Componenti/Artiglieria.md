@@ -13,7 +13,7 @@
 ## 3 PU
 - Espansione Deposito – +1 max rifornimenti
 - Posizione Camuffata – +2 armor
-- Proiettili AP – +2 perforazione (solo cannoni) | (2/2)
+- Proiettili AP – +2 Perf (solo cannoni) | (2/2)
 - Proiettili HE – +10 danni (solo contro strutture) (solo cannoni) | (2/2)
 - Munizioni Incendiarie – +1 danno, infligge "Bruciatura" (1 danno/turno) | (2/2)
 
@@ -22,8 +22,8 @@
 - Sistema di Fuga Rapida – +2 movimento per 1 turno | (1/1) (non può sparare)
 
 ## 5 PU
-- Piattaforma Stabilizzata – +1 perforazione, +1 danno
-- Sistema di Puntamento Laser – +1 perforazione, +1 range
+- Piattaforma Stabilizzata – +1 Perf, +1 danno
+- Sistema di Puntamento Laser – +1 Perf, +1 Range
 - Mortai Medi – Perf. 2 | Range 6 | 5 danni (area 2x2) | (1/1) (non può muoversi)
 - Cannone da 75mm – Perf. 2 | Range 5 | 9 danni | (3/3) (non può muoversi)
 
@@ -32,7 +32,7 @@
 - Proiettili EMP – Disabilita l'elettronica | (1/1)
 
 ## 7 PU
-- Bunker Antiproiettile – +4 armor quando è fermo
+- Bunker Antiproiettile – +4 armor se non si è mosso nel turno
 - Cannone 120mm – Perf. 3 | Range 9 | 7 danni | (2/2) (non può muoversi)
 - Cannone a Doppio Fuoco – Perf. 3 | Range 7 | 2x4 danni | (1/1)
 

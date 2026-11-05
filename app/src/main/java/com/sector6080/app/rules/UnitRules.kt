@@ -15,7 +15,8 @@ object UnitRules {
 
     fun maxStats(catalog: Catalog, unit: GameUnit): Stats {
         val type = catalog.type(unit.type) ?: return Stats()
-        return maxStats(type, unit.components.mapNotNull { catalog.component(unit.type, it) })
+        val stats = maxStats(type, unit.components.mapNotNull { catalog.component(unit.type, it) })
+        return stats.copy(armor = stats.armor + unit.armorBonus)
     }
 
     /** Restituisce gli errori che impediscono la creazione (lista vuota = ok). */

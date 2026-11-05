@@ -13,15 +13,15 @@
 - Mitragliatrice Leggera – Perf. 1 | Range 3 | 2 danni | (2/2)
 - Fucile a Precisione per Equipaggio – Perf. 2 | Range 4 | 2 danni | (1/1)
 - Scudi Laterali – +2 armor
-- Scafo Rinforzato – +4 max HP
+- Scafo Rinforzato – +4 HP
 - Pneumatici Rinforzati – +2 armor
 - Motore 4x4 – +2 movimento
-- Faro Laser – Marca una casella per 2 turni | (1/1)
+- Faro Laser – Range 4 | Marca una casella per 2 turni | (1/1)
 
 ## 3 PU
 - Mitragliatrice Pesante – Perf. 2 | Range 4 | 3 danni | (3/3)
 - Razzi HE – Perf. 1 | Range 5 | 4 danni | (1/1)
-- Piattaforma Mobile – Può trasportare 2 unità di fanteria
+- Piattaforma Mobile – Trasporta 2 unità di fanteria
 
 ## 4 PU
 - Cannone Automatico 20mm – Perf. 2 | Range 4 | 4 danni | (2/2)
@@ -33,9 +33,9 @@
 ## 5 PU
 - Mitragliatrice Frontale – Perf. 3 | Range 4 | 2x3 danni | (2/2)
 - Lanciarazzi Multiplo – Perf. 1 | Range 4 | 3x3 danni | (1/1)
-- Sistema ECM – -2 precisione ai nemici in range 3
-- Armatura Reattiva – +3 armor, -1 movimento (solo cingolati)
-- Kit da Supporto – Cura 1 HP/turno alla fanteria trasportata (solo semicingolati)
+- Sistema ECM – +1 armor agli alleati entro 3 caselle
+- Armatura Reattiva – +3 armor, -1 movimento
+- Kit da Supporto – Rigenera 1 HP/turno alla fanteria a bordo
 
 ## 6 PU
 - Cannone 60mm – Perf. 4 | Range 6 | 9 danni | (1/1)
@@ -60,8 +60,7 @@
 ## 20 PU
 - Cannone a Ioni – Perf. 6 | Range 8 | 20 danni | (1/1) (ricarica: 3 rifornimenti)
 
-> [!question] Da chiarire
-> - "Precisione" (Sistema ECM) non è una statistica definita nel regolamento.
-> - "Cingolati" e "semicingolati" non sono sottotipi definiti della corazzata.
+> [!note] Munizioni Esplosive
+> Oggi non fa nulla: gli edifici non hanno HP e non si attaccano. Resta nel catalogo per quando diventeranno bersagli.
 
 Vedi [[Unità]] · [[Fanteria]] · [[Motorizzata]] · [[Artiglieria]]

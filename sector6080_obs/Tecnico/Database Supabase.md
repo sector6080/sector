@@ -8,9 +8,9 @@ Definite in `supabase/schema-app.sql`. Le vecchie tabelle del sito non vengono t
 | Tabella | Contenuto | Lettura | Scrittura del player |
 |---|---|---|---|
 | `players` | PU e grado, creato in automatico con l'account. Il grado torna `Recluta` quando l'unità viene persa | solo il proprio | nessuna |
-| `game_units` | unità, proprietario, stato | solo la propria | con `create_unit` |
+| `game_units` | unità, proprietario, stato, mezzo su cui viaggia (`carried_by`), turno dell'ultimo spostamento (`moved_turn`) | solo la propria | con `create_unit` |
 | `game_turn` | turno corrente, inizio e durata | tutti | nessuna |
-| `game_orders` | ordini per unità e turno | solo i propri | con `send_orders` e `withdraw_orders` |
+| `game_orders` | ordini per unità e turno, `applied_at` segna quando il server li ha eseguiti | solo i propri | con `send_orders` e `withdraw_orders` |
 | `chat_messages` | messaggi per canale, firmati dal server: `grado(matricola)-tipo` | con `get_chat`, secondo canale e grado | con `send_chat` |
 | `rank_proposals`, `rank_votes` | cambi di grado in votazione | con `get_proposals`, Capitani, GM e chi ha creato la votazione | con `propose_rank`, `vote_rank` e `close_proposal` |
 | `game_enemies` | nemici | con `get_enemies`, solo dentro la visione comune | solo GM |
@@ -18,6 +18,7 @@ Definite in `supabase/schema-app.sql`. Le vecchie tabelle del sito non vengono t
 | `notifications` | notifiche di ogni player, cancellate dopo 30 giorni | con `get_notifications`, solo le proprie | le crea il server |
 | `squad_requests` | richieste per entrare in un gruppo o in uno squadrone | con `get_squad_requests`, chi le ha fatte o ricevute | con `request_squad` e `answer_squad_request` |
 | `game_map` | una riga per casella: terreno e struttura | tutti | nessuna |
+| `game_marks` | caselle marcate, con il turno di scadenza | tutti | le crea il server |
 | `game_sites` | descrizione delle strutture | tutti | nessuna |
 | `game_components` | i 138 componenti, con costi e statistiche | tutti | nessuna |
 | `unit_types` | tipi di unità e statistiche base | tutti | nessuna |
@@ -49,6 +50,18 @@ Il 04/11/2026 è stato collegato il connettore Supabase: il cambio turno `sector
 `supabase/richieste-squadrone.sql` (eseguito il 04/11/2026): aggiunge le richieste per entrare in uno squadrone.
 
 `supabase/gruppi-capitani.sql` (eseguito il 04/11/2026): permette ai Capitani di guidare uno squadrone e mette i limiti di 6 e 40 Soldati in `game_settings`, alle voci `squad_limit_corporal` e `squad_limit_captain`. Il limite di 40 ora conta Caporali e Soldati dello squadrone.
+
+`supabase/gm-player.sql` (eseguito il 06/11/2026 e provato con account simulati, senza salvare nulla): `gm_players` elenca tutti i player, `gm_change_pu` cambia i PU senza scendere sotto zero, `gm_mute_player` silenzia anche chi non ha un'unità, `gm_delete_player` cancella l'account e a cascata tutto il resto. Solo per i GM.
+
+`supabase/rifornimenti-in-diagonale.sql` (applicato il 05/11/2026 e provato con account simulati, senza salvare nulla): `give_supplies` conta una diagonale come un passo. Cambia solo il corpo della funzione.
+
+`supabase/squadra-senza-unita.sql` (eseguito il 05/11/2026 e provato con account simulati, senza salvare nulla): `get_unitless` dice alla scheda Squadra quanti sono il Comando Supremo e i player senza unità, senza rivelare chi sono. Senza unità si conta come Recluta, anche se il grado salvato è rimasto quello di prima.
+
+`supabase/marcature-e-ponti.sql` (eseguito il 05/11/2026 e provato con account simulati, senza salvare nulla): `game_components` guadagna `marks`, `needs_mark`, `mark_damage`, `builds_bridge`, `still_armor`, `aura_armor` e `aura_range`. `armor_bonus` calcola l'armatura di Bunker e Sistema ECM ed esce da `get_team` e `gm_units`. Un ponte nuovo aumenta `map_version` in `game_settings`, così i telefoni riscaricano la mappa. Lo script uniforma anche le descrizioni dei componenti.
+
+`supabase/componenti-passivi.sql` (eseguito il 05/11/2026 e provato con account simulati, senza salvare nulla): `game_components` guadagna `firearm`, `for_firearms`, `bonus_perf`, `bonus_damage`, `bonus_range`, `perf_from`, `perf_to` e `regen`. `weapon_bonus` somma i bonus, `heal_passengers` cura chi è a bordo a ogni cambio turno, la tabella `supply_log` conta le unità rifornite nel turno per la Postazione Comando Mobile. I valori si cambiano dal Table Editor senza aggiornare l'app.
+
+`supabase/ordini-automatici.sql` (eseguito il 05/11/2026 e provato con account simulati, senza salvare nulla): `pay_and_advance` chiama `execute_turn_orders`, che esegue gli ordini del turno con `execute_orders` e applica i danni con `fire`. Un ordine rotto non blocca il cambio turno. `board_vehicle`, `leave_vehicle` e `give_supplies` sono le azioni immediate. `game_components` guadagna `capacity` (posti del mezzo), `carries` (solo quel tipo di unità) e `manual` (armi il cui effetto lo applica il GM). I trigger `on_vehicle_moved` e `on_unit_left_game` tengono insieme mezzo e passeggeri. `gm_apply_orders` è stata eliminata.
 
 `supabase/voti-e-chiusura.sql` (eseguito il 05/11/2026 e provato con account simulati, senza salvare nulla): `resolve_proposal` decide l'esito contando solo i Capitani attuali, `get_proposals` mostra lo stesso conteggio e dice chi può chiudere, `close_proposal` chiude una votazione senza esito, il trigger `on_captains_changed` rifà i conti quando cambia il numero dei Capitani.
 

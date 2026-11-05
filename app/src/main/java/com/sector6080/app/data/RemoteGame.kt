@@ -3,14 +3,16 @@ package com.sector6080.app.data
 import com.sector6080.app.model.Catalog
 import com.sector6080.app.model.Cell
 import com.sector6080.app.model.ChatMessage
+import com.sector6080.app.model.Component
 import com.sector6080.app.model.Enemy
 import com.sector6080.app.model.EnemyTemplate
-import com.sector6080.app.model.Component
 import com.sector6080.app.model.GameNotification
 import com.sector6080.app.model.GameUnit
 import com.sector6080.app.model.GmOrders
+import com.sector6080.app.model.GmPlayer
 import com.sector6080.app.model.GmUnit
 import com.sector6080.app.model.MapSite
+import com.sector6080.app.model.Mark
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.RankProposal
 import com.sector6080.app.model.SquadRequest
@@ -27,6 +29,7 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.serializer.KotlinXSerializer
+import java.time.OffsetDateTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
@@ -34,7 +37,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.time.OffsetDateTime
 
 private const val SUPABASE_URL = "https://jnfqfowidqwrmmvxnvhe.supabase.co"
 
@@ -84,6 +86,14 @@ data class ComponentRow(
     @SerialName("reload_cost") val reloadCost: Int = 1,
     val stationary: Boolean = false,
     val requires: String? = null,
+    val capacity: Int = 0,
+    val carries: String? = null,
+    val firearm: Boolean = false,
+    @SerialName("for_firearms") val forFirearms: Boolean = false,
+    @SerialName("bonus_range") val bonusRange: Int = 0,
+    val marks: Boolean = false,
+    @SerialName("needs_mark") val needsMark: Boolean = false,
+    @SerialName("builds_bridge") val buildsBridge: Boolean = false,
 ) {
     fun toComponent() = Component(
         name = name,
@@ -106,6 +116,14 @@ data class ComponentRow(
         reloadCost = reloadCost,
         requiresStationary = stationary,
         requires = requires,
+        capacity = capacity,
+        carries = carries,
+        firearm = firearm,
+        forFirearms = forFirearms,
+        bonusRange = bonusRange,
+        marks = marks,
+        needsMark = needsMark,
+        buildsBridge = buildsBridge,
     )
 }
 
@@ -169,6 +187,8 @@ data class TeamRow(
     @SerialName("group_name") val groupName: String? = null,
     @SerialName("squadron_leader") val squadron: String? = null,
     @SerialName("squadron_name") val squadronName: String? = null,
+    @SerialName("carried_by") val carrier: String? = null,
+    @SerialName("armor_bonus") val armorBonus: Int = 0,
 ) {
     fun toGmUnit() = GmUnit(toTeamMember(), status == "pending", muted)
 
@@ -184,6 +204,8 @@ data class TeamRow(
             position = Cell(posX, posY),
             transported = transported,
             approved = status == "active",
+            carrier = carrier,
+            armorBonus = armorBonus,
         ),
         rank,
         pu,
@@ -261,6 +283,14 @@ data class ProposalRow(
     @SerialName("can_close") val canClose: Boolean = false,
 ) {
     fun toProposal() = RankProposal(id, matricola, fromRank, newRank, proposedBy, votesYes, votesNo, myVote, canClose)
+}
+
+@Serializable
+data class UnitlessRow(val rank: String, val players: Int)
+
+@Serializable
+data class MarkRow(val x: Int, val y: Int, @SerialName("expires_turn") val expiresTurn: Int) {
+    fun toMark() = Mark(Cell(x, y), expiresTurn)
 }
 
 fun parseMillis(timestamp: String): Long = OffsetDateTime.parse(timestamp).toInstant().toEpochMilli()
@@ -346,6 +376,30 @@ class RemoteGame private constructor() {
 
     suspend fun withdrawOrders() {
         client.postgrest.rpc("withdraw_orders")
+    }
+
+    suspend fun boardVehicle(matricola: String) {
+        client.postgrest.rpc("board_vehicle", buildJsonObject { put("p_matricola", matricola) })
+    }
+
+    suspend fun leaveVehicle(cell: Cell) {
+        client.postgrest.rpc(
+            "leave_vehicle",
+            buildJsonObject {
+                put("p_x", cell.x)
+                put("p_y", cell.y)
+            },
+        )
+    }
+
+    suspend fun giveSupplies(matricola: String, quantity: Int) {
+        client.postgrest.rpc(
+            "give_supplies",
+            buildJsonObject {
+                put("p_matricola", matricola)
+                put("p_quantity", quantity)
+            },
+        )
     }
 
     suspend fun sendChat(channel: String, text: String) {
@@ -450,23 +504,6 @@ class RemoteGame private constructor() {
         client.postgrest.rpc("gm_mark_lost", buildJsonObject { put("p_matricola", matricola) })
     }
 
-    suspend fun gmApplyOrders(turn: Int, result: GameUnit) {
-        val position = requireNotNull(result.position)
-        client.postgrest.rpc(
-            "gm_apply_orders",
-            buildJsonObject {
-                put("p_matricola", result.matricola)
-                put("p_turn", turn)
-                put("p_hp", result.hp)
-                put("p_supplies", result.supplies)
-                put("p_uses", buildJsonObject { result.uses.forEach { (name, left) -> put(name, left) } })
-                put("p_x", position.x)
-                put("p_y", position.y)
-                put("p_transported", result.transported)
-            },
-        )
-    }
-
     suspend fun gmNextTurn() {
         client.postgrest.rpc("gm_next_turn")
     }
@@ -485,11 +522,27 @@ class RemoteGame private constructor() {
         client.postgrest.rpc("gm_delete_message", buildJsonObject { put("p_id", id) })
     }
 
-    suspend fun gmSetMuted(matricola: String, muted: Boolean) {
+    suspend fun gmPlayers(): List<GmPlayer> = client.postgrest.rpc("gm_players").decodeList<GmPlayer>()
+
+    suspend fun gmChangePu(player: String, amount: Int) {
         client.postgrest.rpc(
-            "gm_set_muted",
+            "gm_change_pu",
             buildJsonObject {
-                put("p_matricola", matricola)
+                put("p_player", player)
+                put("p_amount", amount)
+            },
+        )
+    }
+
+    suspend fun gmDeletePlayer(player: String) {
+        client.postgrest.rpc("gm_delete_player", buildJsonObject { put("p_player", player) })
+    }
+
+    suspend fun gmMutePlayer(player: String, muted: Boolean) {
+        client.postgrest.rpc(
+            "gm_mute_player",
+            buildJsonObject {
+                put("p_player", player)
                 put("p_muted", muted)
             },
         )
@@ -548,6 +601,13 @@ class RemoteGame private constructor() {
     suspend fun enemies(): List<Enemy> =
         client.postgrest.rpc("get_enemies").decodeList<EnemyRow>().map { it.toEnemy() }
 
+    /** Comando Supremo e Reclute senza unità: si legge anche senza account. */
+    suspend fun unitless(): Map<String, Int> =
+        client.postgrest.rpc("get_unitless").decodeList<UnitlessRow>().associate { it.rank to it.players }
+
+    /** Caselle marcate: si leggono anche senza account. */
+    suspend fun marks(): List<Mark> = client.from("game_marks").select().decodeList<MarkRow>().map { it.toMark() }
+
     /** Messaggi dei canali che il player può leggere, dal più vecchio al più recente. */
     suspend fun chat(): List<ChatMessage> =
         client.postgrest.rpc("get_chat").decodeList<ChatRow>().map { it.toChatMessage() }
@@ -583,6 +643,7 @@ fun friendlyError(error: Throwable): String {
         "Componente non disponibile" in text || "Componente duplicato" in text -> "Componente non disponibile."
         "Porti occupati" in text -> "Tutti i porti sono occupati: riprova più tardi."
         "Solo Game Master" in text -> "Azione riservata ai Game Master."
+        "Comando Supremo non cancellabile" in text -> "Il Comando Supremo si cancella solo dalla console."
         "Comando Supremo non puo" in text -> "Il Comando Supremo non può avere unità."
         "Messaggi troppo ravvicinati" in text -> "Aspetta un attimo prima di scrivere ancora."
         "Sei stato silenziato" in text -> "Il Comando Supremo ti ha tolto la parola in chat."
@@ -603,8 +664,21 @@ fun friendlyError(error: Throwable): String {
         "Non guida un gruppo" in text -> "Questa unità non guida un gruppo."
         "Nome squadrone non valido" in text -> "Il nome deve avere al massimo 8 caratteri, senza numeri."
         "Casella occupata" in text -> "La casella è occupata."
+        "Ordini non validi" in text -> "Questi ordini non sono validi."
+        "Gia a bordo" in text -> "Sei già a bordo di un mezzo."
+        "Non a bordo" in text -> "Non sei a bordo di un mezzo."
+        "Hai unita a bordo" in text -> "Prima devono scendere le unità a bordo."
+        "Mezzo non disponibile" in text -> "Su questo mezzo non si può salire."
+        "Mezzo non adiacente" in text -> "Il mezzo deve essere su una casella adiacente."
+        "Mezzo al completo" in text -> "Il mezzo non ha posti liberi."
+        "Casella non adiacente" in text -> "Si scende solo su una casella adiacente."
+        "Quantita non valida" in text -> "Quantità non valida."
+        "Destinatario non valido" in text -> "Questa unità non può ricevere rifornimenti."
+        "Destinatario lontano" in text -> "Il destinatario è troppo lontano."
+        "Destinatario pieno" in text -> "Il destinatario non può portare altri rifornimenti."
+        "Rifornimenti insufficienti" in text -> "Non hai abbastanza rifornimenti."
         "signups" in text.lowercase() || "anonymous" in text.lowercase() -> "Accesso senza account non disponibile."
-        "Could not find" in text || "does not exist" in text -> "Il server non è ancora pronto."
+        "Could not find" in text || "does not exist" in text -> "Riprova più tardi."
         "permission denied" in text -> "Accesso non valido: chiudi e riapri l'app."
         else -> "Connessione al server non riuscita."
     }

@@ -20,6 +20,8 @@ Problemi trovati leggendo il codice del sito, ora tolto dal repository. Valgono 
 
 ## Lezioni per l'app
 - Un messaggio "connessione non riuscita" può nascondere un errore del server: i log di Supabase dicono quale.
+- "Riprova più tardi" vuol dire che l'app chiama sul server qualcosa che non esiste: uno script non eseguito, oppure un APK vecchio dopo una modifica al server. I log mostrano un 404.
+- Una chiamata nuova non deve bloccare quelle vecchie: ogni dato va salvato appena arriva. Il 05/11/2026 una funzione mancante ha impedito al GM di vedere le unità in attesa.
 - Autenticazione vera (Supabase Auth o simile), password mai inviate al client.
-- Validazione degli ordini **lato server**.
+- Validazione degli ordini **lato server**: fatta da `supabase/ordini-automatici.sql`.
 - Database strutturato (es. Firestore) al posto del parsing di testo da Google Form.

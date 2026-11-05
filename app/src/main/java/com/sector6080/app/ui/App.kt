@@ -80,6 +80,10 @@ private enum class Tab(val label: String, val glyph: DrawScope.(Color) -> Unit) 
     GM("GM", Glyphs.command),
 }
 
+private const val BLINGS = 3
+private const val BLING_MILLIS = 500L
+private const val BLING_PAUSE_MILLIS = 5_000L
+
 @Composable
 fun App(vm: GameViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -101,8 +105,24 @@ fun App(vm: GameViewModel = viewModel()) {
     val pager = key(state.isGm) { rememberPagerState(initialPage = tabs.indexOf(tab).coerceAtLeast(0)) { tabs.size } }
 
     DisposableEffect(sounds) { onDispose { sounds.release() } }
-    SideEffect { sounds.enabled = state.soundOn }
+    SideEffect { sounds.volume = state.soundVolume }
     LaunchedEffect(notice) { if (notice != null) sounds.play(Sfx.ERROR) }
+
+    // Bling bling bling: continua finché le notifiche non vengono aperte, solo con l'app in primo piano
+    val ringing = state.notifications.any { !it.read } && !showNotifications
+    LaunchedEffect(ringing, lifecycle) {
+        if (ringing) {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    repeat(BLINGS) {
+                        sounds.play(Sfx.ALERT)
+                        delay(BLING_MILLIS)
+                    }
+                    delay(BLING_PAUSE_MILLIS)
+                }
+            }
+        }
+    }
 
     // Scheda scelta dalla barra o da un ordine: il pager ci scorre
     LaunchedEffect(tab, tabs) {
@@ -186,13 +206,15 @@ fun App(vm: GameViewModel = viewModel()) {
                         userScrollEnabled = tab != Tab.MAP,
                         key = { tabs[it].name },
                         modifier = Modifier.fillMaxSize(),
+                        // Le schede corte partono dall'alto, non da metà schermo
+                        verticalAlignment = Alignment.Top,
                     ) { page ->
                         when (tabs[page]) {
                             Tab.UNIT -> UnitScreen(vm, state)
                             Tab.ORDERS -> OrdersScreen(vm, state, onPickOnMap = { picking = it; selected = Tab.MAP })
                             Tab.MAP -> MapScreen(
                                 vm, state, picking,
-                                onConfirm = { vm.addOrder(it); picking = null; selected = Tab.ORDERS },
+                                onConfirm = { vm.confirmTarget(it); picking = null; selected = Tab.ORDERS },
                                 onCancel = { picking = null; selected = Tab.ORDERS },
                             )
                             Tab.TEAM -> TeamScreen(vm, state)

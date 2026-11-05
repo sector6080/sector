@@ -1,6 +1,5 @@
 package com.sector6080.app.ui.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,36 +26,6 @@ import com.sector6080.app.ui.components.UnitSymbol
 import com.sector6080.app.ui.theme.Friend
 import com.sector6080.app.ui.theme.Mono
 import com.sector6080.app.ui.theme.Warning
-
-@Composable
-fun TeamListDialog(team: List<TeamMember>, onOpen: (TeamMember) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Squadra (${team.size})") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                if (team.isEmpty()) Text("Nessuna unità approvata sulla mappa.")
-                team.forEach { member ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable { onOpen(member) }.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        UnitSymbol(member.unit.type, size = 30.dp)
-                        Column {
-                            Text(member.unit.matricola, fontFamily = Mono, fontWeight = FontWeight.Bold)
-                            Text(
-                                listOfNotNull(member.unit.type, member.rank, member.squadLabel).joinToString(" · "),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Chiudi") } },
-    )
-}
 
 /** Scheda in sola lettura di un'unità della squadra. */
 @Composable

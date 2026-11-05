@@ -1,8 +1,12 @@
 package com.sector6080.app.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -386,6 +390,8 @@ fun Logo(modifier: Modifier = Modifier, size: Dp = 96.dp) {
 }
 
 /** Testata comune: nome del gioco, sezione aperta e, se c'è, grado e PU del player. */
+private const val BELL_BLINK_MILLIS = 500
+
 @Composable
 fun CommandHeader(section: String, rank: String?, status: String?, unread: Int, onBell: (() -> Unit)?) {
     Column(Modifier.fillMaxWidth().background(Void).statusBarsPadding()) {
@@ -410,18 +416,34 @@ fun CommandHeader(section: String, rank: String?, status: String?, unread: Int, 
                     Modifier.clickable(onClickLabel = "Apri le notifiche", role = Role.Button, onClick = onBell),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        Icons.Filled.Notifications,
-                        contentDescription = "Notifiche",
-                        tint = if (unread > 0) Signal else InkDim,
-                        modifier = Modifier.size(22.dp),
-                    )
-                    if (unread > 0) Text("$unread", style = MaterialTheme.typography.labelMedium, color = Signal)
+                    Bell(unread)
                 }
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(Line))
     }
+}
+
+/** Con notifiche da leggere la campanella lampeggia. L'animazione gira solo in quel caso. */
+@Composable
+private fun Bell(unread: Int) {
+    if (unread == 0) {
+        Icon(Icons.Filled.Notifications, contentDescription = "Notifiche", tint = InkDim, modifier = Modifier.size(22.dp))
+        return
+    }
+    val opacity by rememberInfiniteTransition(label = "campanella").animateFloat(
+        initialValue = 1f,
+        targetValue = 0.15f,
+        animationSpec = infiniteRepeatable(tween(BELL_BLINK_MILLIS), RepeatMode.Reverse),
+        label = "campanella",
+    )
+    Icon(
+        Icons.Filled.Notifications,
+        contentDescription = "Notifiche da leggere: $unread",
+        tint = Signal,
+        modifier = Modifier.size(22.dp).graphicsLayer { alpha = opacity },
+    )
+    Text("$unread", style = MaterialTheme.typography.labelMedium, color = Signal)
 }
 
 /** Barra di navigazione in basso. */
@@ -544,12 +566,12 @@ private fun DrawScope.drawRank(rank: String, color: Color) {
         RANK_SOLDIER -> listOf(0.2f, 0.52f).forEach { chevron(it) }
         RANK_CORPORAL -> rows.forEach { chevron(it) }
         RANK_CAPTAIN -> rows.forEachIndexed { i, y -> chevron(y, inverted = i == 2) }
-        "Comando Supremo" -> rows.forEachIndexed { i, y -> chevron(y, inverted = i > 0) }
+        "Comando Supremo" -> listOf(0.02f, 0.25f, 0.48f, 0.71f).forEachIndexed { i, y -> chevron(y, inverted = i > 1) }
         else -> drawRect(color, Offset(w * 0.3f, w * 0.3f), Size(w * 0.4f, w * 0.4f), style = Stroke(w * 0.1f))
     }
 }
 
-/** Mostrine del grado: da una a tre frecce, poi le frecce invertite per Capitano e Comando Supremo. */
+/** Mostrine del grado: da una a tre frecce, una invertita per il Capitano, quattro per il Comando Supremo. */
 @Composable
 fun RankBadge(rank: String, modifier: Modifier = Modifier, color: Color = Signal, size: Dp = 20.dp) {
     Canvas(modifier.size(size)) { drawRank(rank, color) }

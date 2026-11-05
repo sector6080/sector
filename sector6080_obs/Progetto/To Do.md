@@ -15,7 +15,7 @@
 - [x] Eliminare le vecchie tabelle del sito
 - [x] Attivare gli accessi anonimi nella dashboard
 - [x] Provare il collegamento dell'app: unità, ordini, chat, approvazione, secondo player
-- [ ] Togliere dal database i dati di prova prima di aprire ad altri
+- [ ] Togliere dal database i dati di prova prima di aprire ad altri (05/11/2026: tolti i player di prova; restano i nemici di prova, PCC-000 e 7 account senza player)
 - [ ] Attivare un CAPTCHA o un altro limite per gli accessi anonimi
 - [x] Unità rifiutate senza perdite: il tipo si paga all'approvazione, quindi il rimborso non serve più
 - [x] Controllare le regole di sicurezza RLS di Supabase (vedi [[Database Supabase]])
@@ -36,18 +36,30 @@
 - [x] Eseguire `supabase/template-nemici.sql`
 - [x] Eseguire `supabase/notifiche.sql`
 - [x] Eseguire `supabase/voti-e-chiusura.sql`
+- [x] Eseguire `supabase/ordini-automatici.sql`
+- [x] Eseguire `supabase/componenti-passivi.sql`
+- [x] Eseguire `supabase/marcature-e-ponti.sql`
+- [x] Eseguire `supabase/squadra-senza-unita.sql`
+- [x] Eseguire `supabase/gm-player.sql`
+- [ ] Provare nell'app la nuova scheda Ordini e il negozio per prezzo con le texturine
+- [ ] Provare nell'app flare, Supporto Aereo, ponte sul fiume e armatura di Bunker ed ECM
+- [x] Decidere cosa fare dei passivi non implementati
+- [ ] Decidere quali armi contano come armi da fuoco, oggi è una scelta dell'app
+- [ ] Provare nell'app salire, scendere, cedere rifornimenti e l'esecuzione degli ordini a fine turno
+- [ ] Decidere quali effetti attivi dei componenti rendere automatici (elenco in [[Ordini]])
+- [ ] Decidere se le armi ad area colpiscono anche gli alleati
 - [ ] Provare nell'app la chiusura delle votazioni
 - [ ] Provare nell'app notifiche, menzioni, creazione senza componenti e negozio dopo l'approvazione
 - [ ] Decidere se aggiungere Firebase per le notifiche immediate ad app chiusa
 - [ ] Bilanciare i valori dei template dei nemici
 - [x] Correggere il grado scritto con un a capo finale
 - [ ] Provare canali della chat, squadroni, votazioni, moderazione e nemici
-- [ ] Rendere i danni degli attacchi automatici
+- [x] Rendere i danni degli attacchi automatici
 - [x] Guardare il nuovo stile su ingresso, creazione unità, scheda GM e nemici
 - [ ] Decidere se aggiungere un carattere dedicato, per esempio Chakra Petch
 - [x] Provare GM, cambio turno automatico, stipendi e blocchi di movimento e tiro (negozio, timer, mappa 60×80 e descrizioni edifici provati il 04/11/2026)
 - [x] Impedire di fermarsi sulla casella di un alleato e di sparare attraverso le unità
-- [ ] Controllare la presenza del mezzo o del destinatario per salire e cedere rifornimenti
+- [x] Controllare la presenza del mezzo o del destinatario per salire e cedere rifornimenti
 - [x] Decidere il metodo di accesso: Google + anonimo
 - [ ] Sciogliere i dubbi rimasti in [[Account e identità]]
 - [x] Prototipo: chat solo in lettura senza unità, messaggi firmati dall'unità
@@ -55,7 +67,7 @@
 - [ ] Accesso Google reale e bonus PU dal server
 - [x] Rendere comune la visione di tutta la squadra
 - [ ] Iniziare il [[Multiplayer]]: login e sezione [[Game Master]] minima
-- [ ] Aggiornare `origin` di git al nuovo indirizzo `github.com/sector6080/sector`
+- [x] Aggiornare `origin` di git al nuovo indirizzo `github.com/sector6080/sector`
 - [ ] Fare le cosi dette "azioni istantanee" che non hanno bis
 ## Vecchia lista del sito
 Copiata dal `README.md` di dicembre 2025 (aggiornata dopo la riunione del comando supremo del 13/12/2025). Il README attuale ne ha una versione più recente. Le voci già completate sono barrate.
@@ -89,7 +101,7 @@ Copiata dal `README.md` di dicembre 2025 (aggiornata dopo la riunione del comand
 - [ ] Check ✓ verde / evidenziazione rossa sui campi del form
 - [ ] Sistema di notifiche nell'html
 - [ ] Login/unità salvati in locale
-- [ ] Ordini salire/scendere: indicare l'unità invece della posizione
+- [x] Ordini salire/scendere: indicare l'unità invece della posizione
 
 ## Next
 - [x] Dark mode: l'app è sempre scura

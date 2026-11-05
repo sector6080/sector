@@ -57,6 +57,22 @@ data class Component(
     val requiresStationary: Boolean = false,
     /** Nome di un altro componente richiesto (es. Gru Mobile → Rampa da Carico). */
     val requires: String? = null,
+    /** Posti che aggiunge al mezzo. */
+    val capacity: Int = 0,
+    /** Se presente, i posti valgono solo per questo tipo di unità. */
+    val carries: String? = null,
+    /** L'arma conta come arma da fuoco per mirini e proiettili. */
+    val firearm: Boolean = false,
+    /** Il bonus vale solo per le armi da fuoco. */
+    val forFirearms: Boolean = false,
+    /** Range in più per le armi dell'unità. Gli altri bonus li calcola il server. */
+    val bonusRange: Int = 0,
+    /** Marca la casella bersaglio. */
+    val marks: Boolean = false,
+    /** Si usa solo su caselle marcate. */
+    val needsMark: Boolean = false,
+    /** Costruisce un ponte sul fiume. */
+    val buildsBridge: Boolean = false,
 ) {
     val isUsable get() = maxUses != null
 }

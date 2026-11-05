@@ -30,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.sector6080.app.data.GM_RANK
 import com.sector6080.app.model.ChatChannel
 import com.sector6080.app.model.ChatMessage
 import com.sector6080.app.model.GameState
@@ -41,6 +40,8 @@ import com.sector6080.app.ui.components.Button
 import com.sector6080.app.ui.components.Card
 import com.sector6080.app.ui.components.FilterChip
 import com.sector6080.app.ui.components.OutlinedButton
+import com.sector6080.app.ui.components.RankBadge
+import com.sector6080.app.ui.components.UnitSymbol
 import com.sector6080.app.ui.theme.Danger
 import com.sector6080.app.ui.theme.Friend
 import com.sector6080.app.ui.theme.InkDim
@@ -93,11 +94,8 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
         ) {
             items(state.chat.filter { it.channel == channel.id }.asReversed()) { m ->
                 val mine = state.unit?.matricola?.let { it in m.author } == true
-                val tint = when {
-                    m.author == GM_RANK -> Signal
-                    mine -> Friend
-                    else -> InkDim
-                }
+                val tint = if (mine) Friend else InkDim
+                val author = HierarchyRules.chatAuthor(m.author)
                 Card(
                     Modifier.fillMaxWidth().padding(
                         start = if (mine) 36.dp else 0.dp,
@@ -107,13 +105,10 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 10.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                val signature = HierarchyRules.authorMatricola(m.author)
+                                val signature = author.matricola
                                     ?.takeIf { blocked == null && it != state.unit?.matricola }
-                                Text(
-                                    m.author,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = tint,
-                                    modifier = Modifier
+                                Row(
+                                    Modifier
                                         .weight(1f)
                                         .then(
                                             if (signature != null) {
@@ -122,7 +117,17 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
                                                 Modifier
                                             },
                                         ),
-                                )
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    RankBadge(author.rank, size = 14.dp)
+                                    author.type?.let { UnitSymbol(it, size = 22.dp) }
+                                    Text(
+                                        author.matricola ?: author.rank,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = tint,
+                                    )
+                                }
                                 Text(
                                     time.format(Date(m.sentAt)),
                                     style = MaterialTheme.typography.labelSmall,
@@ -172,7 +177,10 @@ fun ChatScreen(vm: GameViewModel, state: GameState) {
         AlertDialog(
             onDismissRequest = { deleting = null },
             title = { Text("Cancellare il messaggio?") },
-            text = { Text("${message.author}: ${message.text}") },
+            text = {
+                val author = HierarchyRules.chatAuthor(message.author)
+                Text("${author.matricola ?: author.rank}: ${message.text}")
+            },
             confirmButton = {
                 TextButton(onClick = { vm.gmDeleteMessage(message.id); deleting = null }) {
                     Text("Cancella", color = Danger)

@@ -9,6 +9,7 @@
 | `app/.../data/RemoteGame.kt` | Collegamento a Supabase |
 | `app/.../rules/` | Regole di [[Unità]] e [[Ordini]], visione condivisa |
 | `app/.../ui/MapRenderer.kt` | Texture della mappa generate dal codice |
+| `app/.../ui/ComponentArt.kt` | Texturine del negozio, generate dal codice: un disegno per famiglia di componenti |
 | `app/.../ui/screens/` | Schermate: Unità, Ordini, Mappa, Chat, Link |
 | `app/src/test/` | Test delle regole |
 | `dist/` | APK da condividere (non incluso in git) |
@@ -31,6 +32,12 @@
 | `supabase/template-nemici.sql` | Template tra cui il GM sceglie i nemici |
 | `supabase/notifiche.sql` | Notifiche di gioco e menzioni in chat |
 | `supabase/voti-e-chiusura.sql` | Conteggio dei voti sui Capitani attuali e chiusura delle votazioni |
+| `supabase/ordini-automatici.sql` | Ordini eseguiti dal server, danni automatici, mezzi e rifornimenti immediati |
+| `supabase/componenti-passivi.sql` | Bonus alle armi, cure a bordo e Postazione Comando Mobile |
+| `supabase/marcature-e-ponti.sql` | Caselle marcate, ponti permanenti, armatura di Bunker ed ECM, descrizioni uniformi |
+| `supabase/squadra-senza-unita.sql` | Comando Supremo e Reclute senza unità nella scheda Squadra |
+| `supabase/rifornimenti-in-diagonale.sql` | I rifornimenti si cedono anche in diagonale |
+| `supabase/gm-player.sql` | Sezione Player della scheda GM: elenco, PU, silenzio e cancellazione |
 
 ## Vecchio sito
 Tolto dal repository il 04/11/2026 perché l'app non lo usa: `index.html`, `map.html`, `style.css`, `api_stuff/`, `trasferire_in_backend.txt`, il logo in `foto/`, `supabase/pulizia-sito.sql` e `supabase/rimuovi-tabelle-sito.sql`. Restano nella storia di git, fino al commit `a322174`, insieme a `test.html`, `debugger.html` e agli script Apps Script.

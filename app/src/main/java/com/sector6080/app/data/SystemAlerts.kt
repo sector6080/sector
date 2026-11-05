@@ -25,7 +25,7 @@ import com.sector6080.app.R
 import com.sector6080.app.model.GameNotification
 import java.util.concurrent.TimeUnit
 
-/** Mostra sul telefono le notifiche nuove, una volta sola. */
+/** Annuncia le notifiche nuove una volta sola: con l'app aperta le suona l'app, altrimenti le mostra Android. */
 object SystemAlerts {
     private const val OLD_CHANNEL = "eventi"
     private const val CHANNEL = "eventi_suono"
@@ -33,15 +33,19 @@ object SystemAlerts {
     private const val LAST_SHOWN = "ultima"
     private const val MAX_AT_ONCE = 5
 
+    /** Le notifiche non ancora annunciate. Da qui in poi contano come annunciate. */
+    fun takeFresh(context: Context, notifications: List<GameNotification>): List<GameNotification> {
+        val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        val lastShown = preferences.getLong(LAST_SHOWN, 0)
+        val newest = notifications.maxOfOrNull { it.id } ?: return emptyList()
+        preferences.edit { putLong(LAST_SHOWN, maxOf(lastShown, newest)) }
+        return notifications.filter { it.id > lastShown && !it.read }
+    }
+
     // Il permesso lo controlla allowed(), che lint non riesce a seguire
     @SuppressLint("MissingPermission")
     fun show(context: Context, notifications: List<GameNotification>) {
-        val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-        val lastShown = preferences.getLong(LAST_SHOWN, 0)
-        val fresh = notifications.filter { it.id > lastShown && !it.read }
-        val newest = notifications.maxOfOrNull { it.id } ?: return
-        preferences.edit { putLong(LAST_SHOWN, maxOf(lastShown, newest)) }
-
+        val fresh = takeFresh(context, notifications)
         if (fresh.isEmpty() || !allowed(context)) return
         createChannel(context)
         val manager = NotificationManagerCompat.from(context)

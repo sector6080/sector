@@ -15,16 +15,18 @@ All'approvazione della prima unità la recluta diventa soldato. I GM coincidono 
 
 Quando l'unità muore il giocatore tiene i PU, ma perde il grado e torna Recluta (vedi [[Unità]]). Deciso il 04/11/2026: il regolamento dice ancora che il grado resta. Il Comando Supremo non ha unità e non è toccato da questa regola.
 
-Nell'app la scheda **Squadra** mostra tutte le unità divise per grado, comprese quelle in attesa. Da fuori si leggono solo matricola, tipo e nome dello squadrone. Toccandone una si apre la sua scheda, con PU, statistiche e lore. Il Comando Supremo e chi non ha un'unità non compaiono, perché non hanno una matricola.
+Nell'app la scheda **Squadra** mostra tutte le unità divise per grado, comprese quelle in attesa. Da fuori si leggono solo matricola, tipo e nome dello squadrone. Toccandone una si apre la sua scheda, con PU, statistiche e lore. Il Comando Supremo, in cima, e le Reclute senza unità, in fondo, compaiono solo come numero: senza una matricola non hanno nome né scheda. Le Reclute con un'unità in attesa compaiono con la loro matricola.
 
 ## Mostrine
+In chat ogni messaggio mostra mostrina, simbolo del tipo e matricola.
+
 | Grado | Frecce |
 |---|---|
 | Recluta | una |
 | Soldato | due |
 | Caporale | tre |
 | Capitano | tre, di cui una invertita |
-| Comando Supremo | tre, di cui due invertite |
+| Comando Supremo | quattro, di cui due invertite |
 
 ## Gruppi e squadroni
 La gerarchia ha due livelli:

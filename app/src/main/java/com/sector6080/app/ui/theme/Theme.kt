@@ -30,6 +30,7 @@ val Hostile = Color(0xFFFF4F45)
 val Success = Color(0xFF6FE08E)
 val Warning = Signal
 val Danger = Hostile
+val Flare = Color(0xFFFF6B2C)
 val Fog = Color(0xFF040706)
 
 private val Scheme = darkColorScheme(

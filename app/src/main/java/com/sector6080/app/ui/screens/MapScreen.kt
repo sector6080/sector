@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +37,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -56,6 +56,7 @@ import com.sector6080.app.model.MapSite
 import com.sector6080.app.model.Order
 import com.sector6080.app.model.TeamMember
 import com.sector6080.app.model.deployed
+import com.sector6080.app.model.markedCells
 import com.sector6080.app.model.occupiedCells
 import com.sector6080.app.rules.OrderRules
 import com.sector6080.app.rules.UnitRules
@@ -66,6 +67,7 @@ import com.sector6080.app.ui.components.OutlinedButton
 import com.sector6080.app.ui.components.drawHostileSymbol
 import com.sector6080.app.ui.components.drawUnitSymbol
 import com.sector6080.app.ui.theme.Danger
+import com.sector6080.app.ui.theme.Flare
 import com.sector6080.app.ui.theme.Fog
 import com.sector6080.app.ui.theme.Friend
 import com.sector6080.app.ui.theme.Hostile
@@ -73,11 +75,27 @@ import com.sector6080.app.ui.theme.Ink
 import com.sector6080.app.ui.theme.Signal
 import com.sector6080.app.ui.theme.Steel
 import com.sector6080.app.ui.theme.Void
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlinx.coroutines.delay
 
 private const val CELL = 24f
 
 private fun middle(cell: Cell) = Offset((cell.x - 0.5f) * CELL, (cell.y - 0.5f) * CELL)
+
+/** Flare delle caselle marcate: raggi che pulsano attorno a un nucleo chiaro. */
+private fun DrawScope.drawFlare(cell: Cell, size: Float, pulse: Float, stroke: Float) {
+    val center = middle(cell)
+    drawCircle(Flare.copy(alpha = 0.4f - 0.25f * pulse), radius = size * (0.45f + 0.35f * pulse), center = center)
+    repeat(8) { i ->
+        val angle = i * PI.toFloat() / 4f
+        val direction = Offset(cos(angle), sin(angle))
+        val length = size * (if (i % 2 == 0) 0.62f else 0.42f) * (0.85f + 0.25f * pulse)
+        drawLine(Flare, center + direction * (size * 0.16f), center + direction * length, stroke, StrokeCap.Round)
+    }
+    drawCircle(Ink, radius = size * 0.12f, center = center)
+}
 
 /** Angoli del mirino attorno alla casella scelta. */
 private fun DrawScope.drawBrackets(cell: Cell, stroke: Float) {
@@ -113,8 +131,8 @@ fun MapScreen(
     val unit = state.unit
     val mapImage by vm.mapImage.collectAsStateWithLifecycle()
     val occupied = state.occupiedCells()
-    val sim = unit?.let { OrderRules.simulate(vm.catalog, it, state.orders, occupied).finalUnit }
-    val vision = unit?.let { UnitRules.maxStats(vm.catalog, it).vision } ?: 0
+    val marked = state.markedCells()
+    val sim = unit?.let { OrderRules.simulate(vm.catalog, it, state.orders, occupied, marked).finalUnit }
     val here = unit?.position
     val planned = sim?.position
     // La propria unità si vede anche quando è ancora in attesa
@@ -128,9 +146,9 @@ fun MapScreen(
         member.unit.position?.let { Vision.Source(it, UnitRules.maxStats(vm.catalog, member.unit).vision) }
     }
     val fog = remember(sources) { Vision.fogSpans(sources) }
-    val valid = remember(picking, unit, state.orders, state.team, state.enemies, state.catalog) {
+    val valid = remember(picking, unit, state.orders, state.team, state.enemies, state.marks, state.catalog) {
         if (picking != null && unit != null) {
-            OrderRules.validTargets(vm.catalog, unit, state.orders, picking, occupied)
+            OrderRules.validTargets(vm.catalog, unit, state.orders, picking, occupied, marked)
         } else {
             emptySet()
         }
@@ -140,7 +158,6 @@ fun MapScreen(
     var offset by remember { mutableStateOf(Offset.Zero) }
     var selected by remember { mutableStateOf<Cell?>(null) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-    var showTeam by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf<TeamMember?>(null) }
     var siteSheet by remember { mutableStateOf<MapSite?>(null) }
     var enemySheet by remember { mutableStateOf<Enemy?>(null) }
@@ -179,158 +196,157 @@ fun MapScreen(
                 .weight(1f)
                 .fillMaxWidth()
                 .clipToBounds()
-                .onSizeChanged { canvasSize = it }
-                .pointerInput(Unit) {
-                    detectTransformGestures { centroid, pan, zoom, _ ->
-                        val newScale = (mapScale * zoom).coerceIn(fitScale(), 4f)
-                        // zoom attorno al punto tra le dita
-                        offset = centroid - (centroid - offset) * (newScale / mapScale) + pan
-                        mapScale = newScale
-                    }
-                }
-                .pointerInput(Unit) {
-                    detectTapGestures { tap ->
-                        val p = (tap - offset) / mapScale
-                        val c = Cell((p.x / CELL).toInt() + 1, (p.y / CELL).toInt() + 1)
-                        selected = if (p.x >= 0 && p.y >= 0 && c.inBounds) c else null
-                    }
-                },
+                .onSizeChanged { canvasSize = it },
         ) {
-            Canvas(Modifier.fillMaxSize()) {
-                withTransform({
-                    translate(offset.x, offset.y)
-                    scale(mapScale, mapScale, pivot = Offset.Zero)
-                }) {
-                    val cellSize = Size(CELL, CELL)
-                    val mapSize = Size(MAP_WIDTH * CELL, MAP_HEIGHT * CELL)
-                    val image = mapImage
-                    if (image != null) {
-                        drawImage(
-                            image,
-                            dstSize = IntSize(mapSize.width.toInt(), mapSize.height.toInt()),
-                            // pixel netti da vicino, immagine morbida quando è rimpicciolita
-                            filterQuality = if (mapScale >= 1f) FilterQuality.None else FilterQuality.Low,
-                        )
-                    } else {
-                        drawRect(Steel, Offset.Zero, mapSize)
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { centroid, pan, zoom, _ ->
+                            val newScale = (mapScale * zoom).coerceIn(fitScale(), 4f)
+                            // zoom attorno al punto tra le dita
+                            offset = centroid - (centroid - offset) * (newScale / mapScale) + pan
+                            mapScale = newScale
+                        }
                     }
-                    // Nebbia di guerra: il terreno resta visibile, solo più scuro.
-                    fog.forEach { span ->
-                        drawRect(
-                            Fog.copy(alpha = 0.45f),
-                            Offset((span.fromX - 1) * CELL, (span.y - 1) * CELL),
-                            Size((span.toX - span.fromX + 1) * CELL, CELL),
-                        )
-                    }
-                    // Griglia: compare solo quando si avvicina la mappa
-                    val gridAlpha = ((mapScale - 0.7f) * 0.5f).coerceIn(0f, 0.3f)
-                    if (gridAlpha > 0f) {
-                        val line = Color.White.copy(alpha = gridAlpha)
-                        val width = 1f / mapScale
-                        for (x in 0..MAP_WIDTH) drawLine(line, Offset(x * CELL, 0f), Offset(x * CELL, mapSize.height), width)
-                        for (y in 0..MAP_HEIGHT) drawLine(line, Offset(0f, y * CELL), Offset(mapSize.width, y * CELL), width)
-                    }
-                    valid.forEach {
-                        val tl = Offset((it.x - 1) * CELL, (it.y - 1) * CELL)
-                        drawRect(Target.copy(alpha = 0.35f), tl, cellSize)
-                        drawRect(Target, tl, cellSize, style = Stroke(1.5f))
-                    }
-                    // I simboli restano leggibili anche con la mappa rimpicciolita
-                    val symbol = maxOf(CELL, 16.dp.toPx() / mapScale)
-                    val stroke = 1.5.dp.toPx() / mapScale
-                    val backing = Void.copy(alpha = 0.8f)
-                    if (here != null && planned != null && planned != here) {
-                        drawLine(
-                            Signal,
-                            middle(here),
-                            middle(planned),
-                            stroke,
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(stroke * 3, stroke * 3)),
-                        )
-                        drawCircle(Signal, stroke * 2.5f, middle(planned))
-                    }
-                    allies.forEach { ally ->
-                        ally.position?.let { drawUnitSymbol(ally.type, middle(it), symbol, Friend, backing, stroke) }
-                    }
-                    state.enemies.forEach { drawHostileSymbol(middle(it.position), symbol, Hostile, backing, stroke) }
-                    if (unit != null && here != null) {
-                        drawUnitSymbol(unit.type, middle(here), symbol * 1.2f, Signal, backing, stroke * 1.4f)
-                    }
-                    selected?.let { drawBrackets(it, stroke * 1.5f) }
-                }
-            }
-            // Solo questo strato si ridisegna di continuo: la mappa sotto resta ferma
-            Canvas(Modifier.fillMaxSize()) {
-                withTransform({
-                    translate(offset.x, offset.y)
-                    scale(mapScale, mapScale, pivot = Offset.Zero)
-                }) {
-                    val base = maxOf(CELL, 16.dp.toPx() / mapScale)
-                    fun ping(cell: Cell, color: Color) = drawCircle(
-                        color.copy(alpha = (1f - pulse) * 0.7f),
-                        radius = base * (0.7f + pulse * 1.3f),
-                        center = middle(cell),
-                        style = Stroke(1.5.dp.toPx() / mapScale),
-                    )
-                    here?.let { ping(it, Signal) }
-                    state.enemies.forEach { ping(it.position, Hostile) }
-                }
-            }
-        }
-
-        // Altezza stabile: toccando una casella la mappa non si sposta
-        Surface(color = Steel) {
-            Column(
-                Modifier.fillMaxWidth().heightIn(min = 132.dp).padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                    .pointerInput(Unit) {
+                        detectTapGestures { tap ->
+                            val p = (tap - offset) / mapScale
+                            val c = Cell((p.x / CELL).toInt() + 1, (p.y / CELL).toInt() + 1)
+                            selected = if (p.x >= 0 && p.y >= 0 && c.inBounds && c != selected) c else null
+                        }
+                    },
             ) {
-                val sel = selected
-                if (picking != null) {
-                    Text(
-                        "Ordine: ${picking.type.label}" + (picking.component?.let { " · $it" } ?: ""),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    when {
-                        sel == null -> Text("Tocca una casella evidenziata.")
-                        sel in valid -> Text(OrderRules.describe(picking.copy(target = sel)))
-                        else -> Text("Casella $sel non valida per questo ordine.", color = Danger)
+                Canvas(Modifier.fillMaxSize()) {
+                    withTransform({
+                        translate(offset.x, offset.y)
+                        scale(mapScale, mapScale, pivot = Offset.Zero)
+                    }) {
+                        val cellSize = Size(CELL, CELL)
+                        val mapSize = Size(MAP_WIDTH * CELL, MAP_HEIGHT * CELL)
+                        val image = mapImage
+                        if (image != null) {
+                            drawImage(
+                                image,
+                                dstSize = IntSize(mapSize.width.toInt(), mapSize.height.toInt()),
+                                // pixel netti da vicino, immagine morbida quando è rimpicciolita
+                                filterQuality = if (mapScale >= 1f) FilterQuality.None else FilterQuality.Low,
+                            )
+                        } else {
+                            drawRect(Steel, Offset.Zero, mapSize)
+                        }
+                        // Nebbia di guerra: il terreno resta visibile, solo più scuro.
+                        fog.forEach { span ->
+                            drawRect(
+                                Fog.copy(alpha = 0.45f),
+                                Offset((span.fromX - 1) * CELL, (span.y - 1) * CELL),
+                                Size((span.toX - span.fromX + 1) * CELL, CELL),
+                            )
+                        }
+                        // Griglia: compare solo quando si avvicina la mappa
+                        val gridAlpha = ((mapScale - 0.7f) * 0.5f).coerceIn(0f, 0.3f)
+                        if (gridAlpha > 0f) {
+                            val line = Color.White.copy(alpha = gridAlpha)
+                            val width = 1f / mapScale
+                            for (x in 0..MAP_WIDTH) drawLine(line, Offset(x * CELL, 0f), Offset(x * CELL, mapSize.height), width)
+                            for (y in 0..MAP_HEIGHT) drawLine(line, Offset(0f, y * CELL), Offset(mapSize.width, y * CELL), width)
+                        }
+                        valid.forEach {
+                            val tl = Offset((it.x - 1) * CELL, (it.y - 1) * CELL)
+                            drawRect(Target.copy(alpha = 0.35f), tl, cellSize)
+                            drawRect(Target, tl, cellSize, style = Stroke(1.5f))
+                        }
+                        // I simboli restano leggibili anche con la mappa rimpicciolita
+                        val symbol = maxOf(CELL, 16.dp.toPx() / mapScale)
+                        val stroke = 1.5.dp.toPx() / mapScale
+                        val backing = Void.copy(alpha = 0.8f)
+                        if (here != null && planned != null && planned != here) {
+                            drawLine(
+                                Signal,
+                                middle(here),
+                                middle(planned),
+                                stroke,
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(stroke * 3, stroke * 3)),
+                            )
+                            drawCircle(Signal, stroke * 2.5f, middle(planned))
+                        }
+                        allies.filterNot { it.transported }.forEach { ally ->
+                            ally.position?.let { drawUnitSymbol(ally.type, middle(it), symbol, Friend, backing, stroke) }
+                        }
+                        state.enemies.forEach { drawHostileSymbol(middle(it.position), symbol, Hostile, backing, stroke) }
+                        if (unit != null && here != null) {
+                            drawUnitSymbol(unit.type, middle(here), symbol, Signal, backing, stroke)
+                        }
+                        selected?.let { drawBrackets(it, stroke * 1.5f) }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onCancel) { Text("Annulla") }
-                        Button(
-                            onClick = { sel?.let { onConfirm(picking.copy(target = it)) } },
-                            enabled = sel != null && sel in valid,
-                        ) { Text("Conferma") }
-                    }
-                } else {
-                    Text(
-                        when {
-                            state.isGm -> "Comando Supremo: visione della squadra."
-                            unit == null -> "Crea un'unità per vederla sulla mappa."
-                            here == null -> "Unità non ancora schierata."
-                            else -> "Unità in $here · visione $vision" +
-                                (if (planned != here) " · dopo gli ordini: $planned" else "")
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    if (sel != null) {
-                        Text(
-                            "Casella $sel · ${GameMap.describe(sel)}" + (here?.let { " · distanza ${it.distance(sel)}" } ?: ""),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Signal,
+                }
+                // Solo questo strato si ridisegna di continuo: la mappa sotto resta ferma
+                Canvas(Modifier.fillMaxSize()) {
+                    withTransform({
+                        translate(offset.x, offset.y)
+                        scale(mapScale, mapScale, pivot = Offset.Zero)
+                    }) {
+                        val base = maxOf(CELL, 16.dp.toPx() / mapScale)
+                        fun ping(cell: Cell, color: Color) = drawCircle(
+                            color.copy(alpha = (1f - pulse) * 0.7f),
+                            radius = base * (0.7f + pulse * 1.3f),
+                            center = middle(cell),
+                            style = Stroke(1.5.dp.toPx() / mapScale),
                         )
+                        here?.let { ping(it, Signal) }
+                        state.enemies.forEach { ping(it.position, Hostile) }
+                        state.marks.forEach { drawFlare(it.cell, base, pulse, 1.5.dp.toPx() / mapScale) }
                     }
-                    val tapped = members.firstOrNull { it.unit.position == sel }
-                    val tappedSite = sel?.let { GameMap.siteAt(it) }
-                    val tappedEnemy = state.enemies.firstOrNull { it.position == sel }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { showTeam = true }) { Text("Squadra (${members.size})") }
-                        if (tappedEnemy != null) {
-                            Button(onClick = { enemySheet = tappedEnemy }) { Text(tappedEnemy.name) }
-                        } else if (tapped != null) {
-                            Button(onClick = { sheet = tapped }) { Text("Scheda ${tapped.unit.matricola}") }
-                        } else if (tappedSite != null) {
-                            Button(onClick = { siteSheet = tappedSite }) { Text(tappedSite.name) }
+                }
+            }
+
+            // Sta sopra la mappa, così la mappa non si sposta quando compare
+            val sel = selected
+            if (picking != null || sel != null) {
+                Surface(Modifier.align(Alignment.BottomCenter).fillMaxWidth(), color = Steel) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        if (picking != null) {
+                            Text(
+                                "Ordine: ${picking.type.label}" + (picking.component?.let { " · $it" } ?: ""),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            when {
+                                sel == null -> Text("Tocca una casella evidenziata.")
+                                sel in valid -> Text(OrderRules.describe(picking.copy(target = sel)))
+                                else -> Text("Casella $sel non valida per questo ordine.", color = Danger)
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = onCancel) { Text("Annulla") }
+                                Button(
+                                    onClick = { sel?.let { onConfirm(picking.copy(target = it)) } },
+                                    enabled = sel != null && sel in valid,
+                                ) { Text("Conferma") }
+                            }
+                        } else if (sel != null) {
+                            val mark = state.marks.firstOrNull { it.cell == sel }
+                            Text(
+                                "Casella $sel · ${GameMap.describe(sel)}" +
+                                    (mark?.let { " · marcata fino al turno ${it.expiresTurn}" } ?: "") +
+                                    (here?.let { " · distanza ${it.distance(sel)}" } ?: ""),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Signal,
+                            )
+                            val tapped = members.sortedBy { it.unit.transported }.firstOrNull { it.unit.position == sel }
+                            val tappedSite = GameMap.siteAt(sel)
+                            val tappedEnemy = state.enemies.firstOrNull { it.position == sel }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                if (tappedEnemy != null) {
+                                    Button(onClick = { enemySheet = tappedEnemy }) { Text(tappedEnemy.name) }
+                                } else if (tapped != null) {
+                                    Button(onClick = { sheet = tapped }) { Text("Scheda ${tapped.unit.matricola}") }
+                                } else if (tappedSite != null) {
+                                    Button(onClick = { siteSheet = tappedSite }) { Text(tappedSite.name) }
+                                }
+                                OutlinedButton(onClick = { selected = null }) { Text("Chiudi") }
+                            }
                         }
                     }
                 }
@@ -338,13 +354,6 @@ fun MapScreen(
         }
     }
 
-    if (showTeam) {
-        TeamListDialog(
-            team = members,
-            onOpen = { sheet = it; showTeam = false },
-            onDismiss = { showTeam = false },
-        )
-    }
     sheet?.let { UnitSheetDialog(vm.catalog, it, onDismiss = { sheet = null }) }
     enemySheet?.let { enemy ->
         AlertDialog(

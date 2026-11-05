@@ -2,8 +2,9 @@
 
 ## Ciclo dei turni
 - Un turno dura **24 ore** (decisione del 04/11/2026: il Google Doc dice ancora 2 giorni).
-- Il cambio turno è **automatico**: il server controlla ogni minuto, aumenta il turno e paga gli stipendi, anche con tutti i telefoni spenti.
+- Il cambio turno è **automatico**: il server controlla ogni minuto, esegue gli ordini inviati, aumenta il turno e paga gli stipendi, anche con tutti i telefoni spenti.
 - Gli stipendi vanno ai player con un'unità attiva, in base al grado (vedi [[Gerarchia e Costituzione]]).
+- Salire, scendere e cedere rifornimenti sono **istantanei**. Gli altri ordini partono allo scadere del turno.
 - In un turno si possono dare questi ordini **quante volte si vuole e in qualsiasi ordine**, con i limiti indicati:
   - Attivare componenti: **max 1 volta per componente**
   - Salire / scendere da un mezzo
@@ -14,7 +15,7 @@
 - Dettagli e formato in [[Ordini]].
 
 ## Rifornimenti
-- Un'unità può dare rifornimenti **istantaneamente** a unità o edifici vicini.
+- Un'unità può dare rifornimenti **istantaneamente** a unità o edifici vicini. Nell'app solo alle unità, anche in diagonale, senza superare il massimo del destinatario.
 - Un'unità adiacente a un **deposito** ripristina di continuo scorte e abilità finché resta vicina, anche se le usa nello stesso turno.
 - Non c'è limite ai rifornimenti spendibili in un turno.
 - Ogni rifornimento speso permette di scegliere **una** cosa:
@@ -28,6 +29,7 @@
 - Le unità trasportate **non possono muoversi né attaccare**, ma **possono usare i rifornimenti**.
 - Le unità trasportate subiscono gli stessi attacchi del mezzo che le trasporta.
 - Il mezzo si muove come un'unità singola, carico compreso.
+- Cucina da Campo, Ospedale da Campo e Kit da Supporto curano chi è a bordo a ogni cambio turno, dopo gli ordini.
 - Capacità di trasporto: Rampa da Carico (1), Gru Mobile (2), Gru Pesante (4) per la [[Motorizzata]]; Piattaforma Mobile (2 fanti) per la [[Corazzata]].
 
 ## Combattimento
@@ -44,4 +46,4 @@
 - **Nebbia di guerra**: Visione N = vedi N caselle in tutte le direzioni, senza diagonali. La visione è **condivisa**: tutti i player vedono ciò che vede almeno un'unità della squadra.
 
 ## Effetti speciali citati
-Marcatura delle caselle (Faro Laser, per 2 turni), Bruciatura (1 danno/turno), EMP/disabilitazione, jammer radar, trappole, bersagli volanti, "non può muoversi" (armi pesanti), strutture ed edifici.
+Bruciatura (1 danno/turno), EMP/disabilitazione, jammer radar, trappole, bersagli volanti, "non può muoversi" (armi pesanti), strutture ed edifici. Caselle marcate e ponti sono in [[Ordini]].

@@ -31,3 +31,9 @@ Eseguire gli script nel SQL Editor di Supabase, in quest'ordine:
 13. `template-nemici.sql`
 14. `notifiche.sql`
 15. `voti-e-chiusura.sql`
+16. `ordini-automatici.sql`
+17. `componenti-passivi.sql`
+18. `marcature-e-ponti.sql`
+19. `squadra-senza-unita.sql`
+20. `rifornimenti-in-diagonale.sql`
+21. `gm-player.sql`
